@@ -112,7 +112,39 @@ class MainActivity : Activity() {
             text = "\nProof protocol:\n1. Confirm mobile data is on the Safaricom SIM and Wi-Fi is off.\n2. Check and record bundle/airtime balances using Safaricom.\n3. Load and navigate the free-access resource inside this app.\n4. Recheck balances.\n5. Report only what the evidence supports.\n\nSellKit cannot read Safaricom billing records directly. A loaded page alone does not prove zero-rating. Do not test large downloads or video; they may consume paid data."
             textSize = 14f
         }
+        val packageTitle = TextView(this).apply {
+            text = "\\nSellKit access packages (prototype)"
+            textSize = 20f
+            setTypeface(null, Typeface.BOLD)
+        }
+        val packageNote = TextView(this).apply {
+            text = "Target pricing: KSh 5 / 6 hours and KSh 10 / 12 hours. These are proposed packages only. This prototype cannot activate Safaricom unlimited data or confirm a payment; no charge is made by these buttons."
+            textSize = 14f
+            setPadding(0, pad / 3, 0, pad / 2)
+        }
+        val sixHourPackage = Button(this).apply {
+            text = "Select KSh 5 · 6 hours"
+            setOnClickListener {
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("KSh 5 · 6-hour target package")
+                    .setMessage("Prototype only: no payment was taken and no internet session was activated. A real session requires a working authorized data-access route and verified payment.")
+                    .setPositiveButton("OK", null).show()
+            }
+        }
+        val twelveHourPackage = Button(this).apply {
+            text = "Select KSh 10 · 12 hours"
+            setOnClickListener {
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("KSh 10 · 12-hour target package")
+                    .setMessage("Prototype only: no payment was taken and no internet session was activated. A real session requires a working authorized data-access route and verified payment.")
+                    .setPositiveButton("OK", null).show()
+            }
+        }
         layout.addView(title)
+        layout.addView(packageTitle)
+        layout.addView(packageNote)
+        layout.addView(sixHourPackage)
+        layout.addView(twelveHourPackage)
         layout.addView(intro)
         layout.addView(report)
         layout.addView(refresh)
