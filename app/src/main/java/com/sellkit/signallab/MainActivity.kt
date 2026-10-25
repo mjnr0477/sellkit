@@ -35,7 +35,7 @@ class MainActivity : Activity() {
             setTypeface(null, Typeface.BOLD)
         }
         val intro = TextView(this).apply {
-            text = "Goal: find and verify a real internet connection without buying a data bundle. Investigate sponsored data and public Wi-Fi, then test real connectivity. Signal bars alone are not internet."
+            text = "Objective: establish whether a real internet resource is reachable without paid data. Signal bars or a successful HTTP request alone cannot prove that access is free."
             textSize = 16f
             setPadding(0, pad / 2, 0, pad)
         }
@@ -45,12 +45,19 @@ class MainActivity : Activity() {
             setOnClickListener { report.text = networkReport() }
         }
         val test = Button(this).apply {
-            text = "Test real HTTPS connection"
+            text = "Test ordinary HTTPS connectivity"
             setOnClickListener { runProbe() }
         }
+        val zeroRated = Button(this).apply {
+            text = "Open Safaricom zero-rated learning resource"
+            setOnClickListener {
+                report.text = "Opening Internet of Good Things. Safaricom has described this resource as zero-rated, but current availability and charging must be verified on your SIM. Check balances before and after."
+                openPage("https://ke.goodinternet.org/")
+            }
+        }
         val opera = Button(this).apply {
-            text = "Investigate Opera Mini sponsored data"
-            setOnClickListener { openPage("https://press.opera.com/2025/11/19/opera-mini-free-data-kenya/") }
+            text = "Open Opera free-data information"
+            setOnClickListener { openPage("https://help.opera.com/en/mini/android/") }
         }
         val wifi = Button(this).apply {
             text = "Find government public Wi-Fi"
@@ -60,12 +67,8 @@ class MainActivity : Activity() {
             text = "Check Safaricom offers"
             setOnClickListener { openPage("https://myaccount.safaricom.co.ke/bundles?activeTab=1&monthlyBundles=true") }
         }
-        val thirdParty = Button(this).apply {
-            text = "View data-reward service (third party)"
-            setOnClickListener { openPage("https://freedata.co.ke/") }
-        }
         val note = TextView(this).apply {
-            text = "\nProof protocol:\n1. Record bundle and airtime balance before the test.\n2. Confirm a free/sponsored offer is actually activated or connect to public Wi-Fi.\n3. Load a fresh webpage and run the HTTPS probe.\n4. Check balances again through official Safaricom channels.\n5. Record success only if internet worked and paid data/airtime did not decrease.\n\nThe Opera/Safaricom campaign was announced in Nov 2025; current availability on your line must still be verified. Third-party reward services are not official Safaricom. Never share an M-PESA PIN."
+            text = "\nProof protocol:\n1. Check and record paid data and airtime balances through Safaricom.\n2. Open the zero-rated resource on the Safaricom SIM with Wi-Fi off.\n3. Navigate to a fresh page and confirm it actually loads.\n4. Recheck balances.\n5. Only claim free access if the resource loaded and no paid data or airtime was consumed.\n\nThis app cannot read Safaricom's billing records directly. A normal HTTPS success is not proof of zero-rating. Do not use video or download tests; they may consume paid data."
             textSize = 14f
         }
         layout.addView(title)
@@ -73,10 +76,10 @@ class MainActivity : Activity() {
         layout.addView(report)
         layout.addView(refresh)
         layout.addView(test)
+        layout.addView(zeroRated)
         layout.addView(opera)
         layout.addView(wifi)
         layout.addView(offers)
-        layout.addView(thirdParty)
         layout.addView(note)
         setContentView(ScrollView(this).apply { addView(layout) })
     }
@@ -98,14 +101,11 @@ class MainActivity : Activity() {
         if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) transports.add("Cellular")
         if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) transports.add("Wi-Fi")
         if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) transports.add("Ethernet")
-        val internet = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        val validated = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-        val unmetered = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
         return "Active transport: " + transports.joinToString().ifEmpty { "Other/unknown" } +
-            "\nAndroid internet capability: " + internet +
-            "\nAndroid validated internet: " + validated +
-            "\nAndroid reports unmetered: " + unmetered +
-            "\n\nAndroid's unmetered flag does not prove Safaricom will not charge. Check bundle and airtime balances before and after testing."
+            "\nAndroid internet capability: " + caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) +
+            "\nAndroid validated internet: " + caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) +
+            "\nAndroid reports unmetered: " + caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) +
+            "\n\nThese Android flags do not establish whether Safaricom charges for access."
     }
 
     private fun runProbe() {
@@ -127,11 +127,11 @@ class MainActivity : Activity() {
                     connection.connect()
                     val code = connection.responseCode
                     connection.disconnect()
-                    if (code == 204) "HTTPS probe SUCCESS (HTTP 204). A real endpoint responded. This does NOT prove the connection was free; verify balances."
-                    else "HTTPS endpoint responded with HTTP $code. Verify the result using a fresh webpage and balance checks."
+                    if (code == 204) "HTTPS probe SUCCESS (HTTP 204). Internet endpoint reached. This does NOT prove free access; verify balances and the exact offer."
+                    else "Endpoint returned HTTP $code. Check with a fresh page and verify whether paid data was used."
                 }
             } catch (e: Exception) {
-                "HTTPS probe FAILED: " + e.javaClass.simpleName + ": " + (e.message ?: "no detail") + ". Failure may be caused by coverage, DNS, authentication, or no active data service."
+                "HTTPS probe FAILED: " + e.javaClass.simpleName + ": " + (e.message ?: "no detail") + ". This may indicate no data access, DNS failure, coverage, or endpoint blocking."
             }
             runOnUiThread { report.text = networkReport() + "\n\n" + result }
         }
