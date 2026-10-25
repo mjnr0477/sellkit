@@ -57,11 +57,11 @@ class MainActivity : Activity() {
             }
         }
         val testIoGt = Button(this).apply {
-            text = "Test IoGT endpoint (may use data)"
+            text = "Test Safaricom line access (Wi-Fi OFF)"
             setOnClickListener {
                 AlertDialog.Builder(this@MainActivity)
                     .setTitle("Small internet test")
-                    .setMessage("A small request will be sent to ke.goodinternet.org. If Safaricom does not zero-rate it on your SIM, it may consume paid data. Continue only if you accept this risk.")
+                    .setMessage("Turn Wi-Fi OFF first and use your Safaricom SIM. This sends a small request directly through the active cellular network to ke.goodinternet.org. It may consume paid data if the resource is not zero-rated on your line. Record your bundle balance first. Continue only if you accept this risk.")
                     .setNegativeButton("Cancel", null)
                     .setPositiveButton("Test") { _, _ -> runIoGtProbe() }
                     .show()
@@ -126,7 +126,13 @@ class MainActivity : Activity() {
         report.text = networkReport() + "\n\nTesting IoGT endpoint…"
         executor.execute {
             val result = try {
-                val connection = URL("https://ke.goodinternet.org/").openConnection() as HttpURLConnection
+                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val network = cm.activeNetwork
+                val caps = network?.let { cm.getNetworkCapabilities(it) }
+                if (network == null || caps == null || !caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                    throw IllegalStateException("Cellular network is not active. Turn Wi-Fi off and ensure the Safaricom SIM has signal, then retry.")
+                }
+                val connection = network.openConnection(URL("https://ke.goodinternet.org/")) as HttpURLConnection
                 connection.connectTimeout = 7000
                 connection.readTimeout = 7000
                 connection.instanceFollowRedirects = false
@@ -149,12 +155,12 @@ class MainActivity : Activity() {
                 }
                 connection.disconnect()
                 when {
-                    code in 200..299 -> "IoGT ENDPOINT REACHED: HTTP $code; read at most $bytes bytes. This proves endpoint reachability only, NOT free access. Check Safaricom data/airtime balances before and after."
+                    code in 200..299 -> "CELLULAR TEST: IoGT endpoint reached over Android's active cellular network (HTTP $code); read at most $bytes bytes. This proves cellular reachability only, NOT free access or long-distance Wi-Fi. Compare Safaricom bundle/airtime balance before and after and repeat with a fresh page."
                     code in 300..399 -> "IoGT returned redirect HTTP $code. Redirect not followed. Location: ${location ?: "not provided"}. Page access is not yet proven."
                     else -> "IoGT endpoint responded HTTP $code. Access not confirmed."
                 }
             } catch (e: Exception) {
-                "IoGT test FAILED: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}. This does not by itself prove that all internet access is unavailable."
+                "CELLULAR TEST FAILED: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}. No fallback to Wi-Fi is attempted. This does not by itself prove that free access is unavailable."
             }
             runOnUiThread { report.text = networkReport() + "\n\n" + result }
         }
