@@ -1,6 +1,7 @@
 package com.sellkit.signallab
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.os.Bundle
 import android.content.Context
 import android.content.Intent
@@ -55,6 +56,17 @@ class MainActivity : Activity() {
                 openPage("https://ke.goodinternet.org/")
             }
         }
+        val testIoGt = Button(this).apply {
+            text = "Test IoGT endpoint (may use data)"
+            setOnClickListener {
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Small internet test")
+                    .setMessage("A small request will be sent to ke.goodinternet.org. If Safaricom does not zero-rate it on your SIM, it may consume paid data. Continue only if you accept this risk.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Test") { _, _ -> runIoGtProbe() }
+                    .show()
+            }
+        }
         val opera = Button(this).apply {
             text = "Open Opera free-data information"
             setOnClickListener { openPage("https://help.opera.com/en/mini/android/") }
@@ -77,6 +89,7 @@ class MainActivity : Activity() {
         layout.addView(refresh)
         layout.addView(test)
         layout.addView(zeroRated)
+        layout.addView(testIoGt)
         layout.addView(opera)
         layout.addView(wifi)
         layout.addView(offers)
@@ -106,6 +119,45 @@ class MainActivity : Activity() {
             "\nAndroid validated internet: " + caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) +
             "\nAndroid reports unmetered: " + caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) +
             "\n\nThese Android flags do not establish whether Safaricom charges for access."
+    }
+
+
+    private fun runIoGtProbe() {
+        report.text = networkReport() + "\n\nTesting IoGT endpoint…"
+        executor.execute {
+            val result = try {
+                val connection = URL("https://ke.goodinternet.org/").openConnection() as HttpURLConnection
+                connection.connectTimeout = 7000
+                connection.readTimeout = 7000
+                connection.instanceFollowRedirects = false
+                connection.requestMethod = "GET"
+                connection.setRequestProperty("Range", "bytes=0-1023")
+                connection.setRequestProperty("User-Agent", "SellKit-Free-Access-Lab/1.0")
+                connection.connect()
+                val code = connection.responseCode
+                val location = connection.getHeaderField("Location")
+                var bytes = 0
+                if (code in 200..299) {
+                    val stream = connection.inputStream
+                    val buffer = ByteArray(512)
+                    while (bytes < 2048) {
+                        val n = stream.read(buffer, 0, minOf(buffer.size, 2048 - bytes))
+                        if (n <= 0) break
+                        bytes += n
+                    }
+                    stream.close()
+                }
+                connection.disconnect()
+                when {
+                    code in 200..299 -> "IoGT ENDPOINT REACHED: HTTP $code; read at most $bytes bytes. This proves endpoint reachability only, NOT free access. Check Safaricom data/airtime balances before and after."
+                    code in 300..399 -> "IoGT returned redirect HTTP $code. Redirect not followed. Location: ${location ?: "not provided"}. Page access is not yet proven."
+                    else -> "IoGT endpoint responded HTTP $code. Access not confirmed."
+                }
+            } catch (e: Exception) {
+                "IoGT test FAILED: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}. This does not by itself prove that all internet access is unavailable."
+            }
+            runOnUiThread { report.text = networkReport() + "\n\n" + result }
+        }
     }
 
     private fun runProbe() {
