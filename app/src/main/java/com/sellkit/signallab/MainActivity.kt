@@ -129,13 +129,7 @@ class MainActivity : Activity() {
         }
         val back = Button(this).apply {
             text = "Back to test results"
-            setOnClickListener {
-                (webView.parent as? ViewGroup)?.removeView(webView)
-                setContentView(ScrollView(this@MainActivity).apply {
-                    addView((this@MainActivity.window.decorView.findViewById<ViewGroup>(android.R.id.content).getChildAt(0) as? ViewGroup))
-                })
-                recreate()
-            }
+            setOnClickListener { recreate() }
         }
         container.addView(back)
         container.addView(webView, LinearLayout.LayoutParams(
