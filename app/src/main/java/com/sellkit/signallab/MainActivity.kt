@@ -82,8 +82,23 @@ class MainActivity : Activity() {
             }
         }
         val opera = Button(this).apply {
-            text = "Open Opera Mini information"
-            setOnClickListener { openPage("https://www.opera.com/browsers/opera-mini") }
+            text = "Try Safaricom + Opera Mini free browsing"
+            setOnClickListener {
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Check free-browsing eligibility")
+                    .setMessage("Opera and Safaricom announced a free Opera Mini browsing offer. We cannot verify that it is currently active for your line. Before browsing, confirm the offer with Safaricom; otherwise normal data or airtime charges may apply. SellKit cannot transfer the offer into other apps.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Open Opera Mini") { _, _ ->
+                        try {
+                            val launch = packageManager.getLaunchIntentForPackage("com.opera.mini.native")
+                            if (launch != null) startActivity(launch)
+                            else openPage("https://play.google.com/store/apps/details?id=com.opera.mini.native")
+                        } catch (_: Exception) {
+                            openPage("https://www.opera.com/browsers/opera-mini")
+                        }
+                    }
+                    .show()
+            }
         }
         val wifi = Button(this).apply {
             text = "Find government public Wi-Fi"
