@@ -10,6 +10,10 @@ import android.net.NetworkCapabilities
 import android.graphics.Typeface
 import android.net.Uri
 import android.view.Gravity
+import android.view.ViewGroup
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -36,7 +40,7 @@ class MainActivity : Activity() {
             setTypeface(null, Typeface.BOLD)
         }
         val intro = TextView(this).apply {
-            text = "Objective: establish whether a real internet resource is reachable without paid data. Signal bars or a successful HTTP request alone cannot prove that access is free."
+            text = "Objective: test a real free-access resource inside this app over your Safaricom mobile connection. A successful load proves reachability; only carrier balance evidence can support a claim that it was free."
             textSize = 16f
             setPadding(0, pad / 2, 0, pad)
         }
@@ -50,51 +54,94 @@ class MainActivity : Activity() {
             setOnClickListener { runProbe() }
         }
         val zeroRated = Button(this).apply {
-            text = "Open Safaricom zero-rated learning resource"
+            text = "Open free-access resource INSIDE app"
             setOnClickListener {
-                report.text = "Opening Internet of Good Things. Safaricom has described this resource as zero-rated, but current availability and charging must be verified on your SIM. Check balances before and after."
-                openPage("https://ke.goodinternet.org/")
+                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val network = cm.activeNetwork
+                val caps = network?.let { cm.getNetworkCapabilities(it) }
+                if (caps == null || !caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                    AlertDialog.Builder(this@MainActivity)
+                        .setTitle("Switch to Safaricom mobile data")
+                        .setMessage("Turn Wi-Fi off and make sure mobile data is using your Safaricom SIM. Then try again. This helps keep the test on the cellular connection.")
+                        .setPositiveButton("OK", null).show()
+                } else {
+                    report.text = "Opening Internet of Good Things inside SellKit over the active cellular connection. If the page loads, record balances before and after to check whether your line was charged."
+                    showResourceInApp()
+                }
             }
         }
         val testIoGt = Button(this).apply {
-            text = "Test Safaricom line access (Wi-Fi OFF)"
+            text = "Test Safaricom cellular endpoint"
             setOnClickListener {
                 AlertDialog.Builder(this@MainActivity)
                     .setTitle("Small internet test")
-                    .setMessage("Turn Wi-Fi OFF first and use your Safaricom SIM. This sends a small request directly through the active cellular network to ke.goodinternet.org. It may consume paid data if the resource is not zero-rated on your line. Record your bundle balance first. Continue only if you accept this risk.")
+                    .setMessage("Turn Wi-Fi OFF and use your Safaricom SIM. This sends a small request to ke.goodinternet.org through the active cellular network. It may consume paid data if not zero-rated on your line. Record your bundle balance first. Continue only if you accept this risk.")
                     .setNegativeButton("Cancel", null)
                     .setPositiveButton("Test") { _, _ -> runIoGtProbe() }
                     .show()
             }
         }
         val opera = Button(this).apply {
-            text = "Open Opera free-data information"
-            setOnClickListener { openPage("https://help.opera.com/en/mini/android/") }
+            text = "Open Opera Mini information"
+            setOnClickListener { openPage("https://www.opera.com/browsers/opera-mini") }
         }
         val wifi = Button(this).apply {
             text = "Find government public Wi-Fi"
             setOnClickListener { openPage("https://bilawaya.go.ke/") }
         }
         val offers = Button(this).apply {
-            text = "Check Safaricom offers"
+            text = "Check Safaricom bundles"
             setOnClickListener { openPage("https://myaccount.safaricom.co.ke/bundles?activeTab=1&monthlyBundles=true") }
         }
         val note = TextView(this).apply {
-            text = "\nProof protocol:\n1. Check and record paid data and airtime balances through Safaricom.\n2. Open the zero-rated resource on the Safaricom SIM with Wi-Fi off.\n3. Navigate to a fresh page and confirm it actually loads.\n4. Recheck balances.\n5. Only claim free access if the resource loaded and no paid data or airtime was consumed.\n\nThis app cannot read Safaricom's billing records directly. A normal HTTPS success is not proof of zero-rating. Do not use video or download tests; they may consume paid data."
+            text = "\nProof protocol:\n1. Confirm mobile data is on the Safaricom SIM and Wi-Fi is off.\n2. Check and record bundle/airtime balances using Safaricom.\n3. Load and navigate the free-access resource inside this app.\n4. Recheck balances.\n5. Report only what the evidence supports.\n\nSellKit cannot read Safaricom billing records directly. A loaded page alone does not prove zero-rating. Do not test large downloads or video; they may consume paid data."
             textSize = 14f
         }
         layout.addView(title)
         layout.addView(intro)
         layout.addView(report)
         layout.addView(refresh)
-        layout.addView(test)
         layout.addView(zeroRated)
         layout.addView(testIoGt)
+        layout.addView(test)
         layout.addView(opera)
         layout.addView(wifi)
         layout.addView(offers)
         layout.addView(note)
         setContentView(ScrollView(this).apply { addView(layout) })
+    }
+
+    private fun showResourceInApp() {
+        val webView = WebView(this).apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.loadsImagesAutomatically = true
+            webChromeClient = WebChromeClient()
+            webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    report.text = networkReport() + "\n\nIN-APP PAGE LOADED: ${url ?: "unknown URL"}. This confirms the resource rendered in SellKit, not that all internet is free. Compare your Safaricom balances."
+                }
+            }
+            loadUrl("https://ke.goodinternet.org/")
+        }
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        val back = Button(this).apply {
+            text = "Back to test results"
+            setOnClickListener {
+                (webView.parent as? ViewGroup)?.removeView(webView)
+                setContentView(ScrollView(this@MainActivity).apply {
+                    addView((this@MainActivity.window.decorView.findViewById<ViewGroup>(android.R.id.content).getChildAt(0) as? ViewGroup))
+                })
+                recreate()
+            }
+        }
+        container.addView(back)
+        container.addView(webView, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+        ))
+        setContentView(container)
     }
 
     private fun openPage(url: String) {
@@ -120,7 +167,6 @@ class MainActivity : Activity() {
             "\nAndroid reports unmetered: " + caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) +
             "\n\nThese Android flags do not establish whether Safaricom charges for access."
     }
-
 
     private fun runIoGtProbe() {
         report.text = networkReport() + "\n\nTesting IoGT endpoint…"
@@ -155,7 +201,7 @@ class MainActivity : Activity() {
                 }
                 connection.disconnect()
                 when {
-                    code in 200..299 -> "CELLULAR TEST: IoGT endpoint reached over Android's active cellular network (HTTP $code); read at most $bytes bytes. This proves cellular reachability only, NOT free access or long-distance Wi-Fi. Compare Safaricom bundle/airtime balance before and after and repeat with a fresh page."
+                    code in 200..299 -> "CELLULAR TEST: IoGT endpoint reached over Android's active cellular network (HTTP $code); read at most $bytes bytes. This proves cellular reachability only, NOT free access or long-distance Wi-Fi. Compare Safaricom bundle/airtime balance before and after."
                     code in 300..399 -> "IoGT returned redirect HTTP $code. Redirect not followed. Location: ${location ?: "not provided"}. Page access is not yet proven."
                     else -> "IoGT endpoint responded HTTP $code. Access not confirmed."
                 }
