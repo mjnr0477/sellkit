@@ -35,7 +35,7 @@ class MainActivity : Activity() {
             setTypeface(null, Typeface.BOLD)
         }
         val intro = TextView(this).apply {
-            text = "Goal: find and verify a real internet connection without buying a data bundle. This app cannot create internet from signal bars or bypass carrier billing. Test only connections and offers you are eligible to use."
+            text = "Goal: find and verify a real internet connection without buying a data bundle. Investigate sponsored data and public Wi-Fi, then test real connectivity. Signal bars alone are not internet."
             textSize = 16f
             setPadding(0, pad / 2, 0, pad)
         }
@@ -47,6 +47,10 @@ class MainActivity : Activity() {
         val test = Button(this).apply {
             text = "Test real HTTPS connection"
             setOnClickListener { runProbe() }
+        }
+        val opera = Button(this).apply {
+            text = "Investigate Opera Mini sponsored data"
+            setOnClickListener { openPage("https://press.opera.com/2025/11/19/opera-mini-free-data-kenya/") }
         }
         val wifi = Button(this).apply {
             text = "Find government public Wi-Fi"
@@ -61,7 +65,7 @@ class MainActivity : Activity() {
             setOnClickListener { openPage("https://freedata.co.ke/") }
         }
         val note = TextView(this).apply {
-            text = "\nHow to prove the result:\n1. Record your remaining bundle balance before testing.\n2. Use an eligible free offer or public Wi-Fi.\n3. Run the HTTPS test and load a fresh webpage.\n4. Check your balance again using Safaricom's official channel.\n\nA successful HTTPS request proves connectivity only. A free-data claim needs evidence that no paid bundle or airtime was consumed. Never enter your M-PESA PIN or Safaricom password into third-party reward sites."
+            text = "\nProof protocol:\n1. Record bundle and airtime balance before the test.\n2. Confirm a free/sponsored offer is actually activated or connect to public Wi-Fi.\n3. Load a fresh webpage and run the HTTPS probe.\n4. Check balances again through official Safaricom channels.\n5. Record success only if internet worked and paid data/airtime did not decrease.\n\nThe Opera/Safaricom campaign was announced in Nov 2025; current availability on your line must still be verified. Third-party reward services are not official Safaricom. Never share an M-PESA PIN."
             textSize = 14f
         }
         layout.addView(title)
@@ -69,6 +73,7 @@ class MainActivity : Activity() {
         layout.addView(report)
         layout.addView(refresh)
         layout.addView(test)
+        layout.addView(opera)
         layout.addView(wifi)
         layout.addView(offers)
         layout.addView(thirdParty)
@@ -80,7 +85,7 @@ class MainActivity : Activity() {
         try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (_: Exception) {
-            report.text = "Could not open browser. Copy this address into your browser: $url"
+            report.text = "Could not open browser. Address: $url"
         }
     }
 
@@ -100,7 +105,7 @@ class MainActivity : Activity() {
             "\nAndroid internet capability: " + internet +
             "\nAndroid validated internet: " + validated +
             "\nAndroid reports unmetered: " + unmetered +
-            "\n\nImportant: Android's unmetered flag is not proof that Safaricom will not charge. Verify bundle balance before and after the test."
+            "\n\nAndroid's unmetered flag does not prove Safaricom will not charge. Check bundle and airtime balances before and after testing."
     }
 
     private fun runProbe() {
@@ -122,8 +127,8 @@ class MainActivity : Activity() {
                     connection.connect()
                     val code = connection.responseCode
                     connection.disconnect()
-                    if (code == 204) "HTTPS probe SUCCESS (HTTP 204). A real endpoint responded. This does NOT prove access is free; check the bundle balance and the offer's terms."
-                    else "HTTPS endpoint responded with HTTP $code. Repeat with a fresh webpage and verify whether any paid data was used."
+                    if (code == 204) "HTTPS probe SUCCESS (HTTP 204). A real endpoint responded. This does NOT prove the connection was free; verify balances."
+                    else "HTTPS endpoint responded with HTTP $code. Verify the result using a fresh webpage and balance checks."
                 }
             } catch (e: Exception) {
                 "HTTPS probe FAILED: " + e.javaClass.simpleName + ": " + (e.message ?: "no detail") + ". Failure may be caused by coverage, DNS, authentication, or no active data service."
