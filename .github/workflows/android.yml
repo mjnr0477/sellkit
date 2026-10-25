@@ -1,5 +1,11 @@
 name: Build SellKit Signal Lab APK
 on:
+  pull_request:
+    paths:
+      - 'app/**'
+      - '*.gradle.kts'
+      - 'settings.gradle.kts'
+      - '.github/workflows/android.yml'
   workflow_dispatch:
   push:
     branches: [main]
