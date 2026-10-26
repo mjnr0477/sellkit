@@ -174,7 +174,7 @@ class MainActivity : Activity() {
                     else (0 until manufacturers.size()).joinToString { index ->
                         "id=0x%04X:%dB".format(Locale.US, manufacturers.keyAt(index), manufacturers.valueAt(index).size)
                     }
-                val services = record?.serviceUuids?.joinToString { it.uuid } ?: "none"
+                val services = record?.serviceUuids?.joinToString { it.uuid.toString() } ?: "none"
                 bleObservations[address] = name + " • " + address + " • RSSI " + result.rssi + " dBm • txPower " + result.txPower + " dBm • manufacturer data " + manufacturerSummary + " • service UUIDs " + services
                 val preview = bleObservations.values.take(25).joinToString("\n")
                 runOnUiThread { output.text = "Bluetooth LE scan running… " + bleObservations.size + " unique devices observed\n\n" + preview }
