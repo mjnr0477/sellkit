@@ -34,13 +34,23 @@ class RtlSdrLiveSampleProcessor(
                 }
             },
             onStopped = { reason ->
-                synchronized(this) { reader = null }
+                synchronized(this) {
+                    // Clear only this reader. A stale callback must not clear a newer session.
+                    if (reader === newReaderHolder[0]) reader = null
+                }
                 onStopped(reason)
             }
         )
-        val error = newReader.start()
-        if (error != null) return error
+        // Publish the reader before starting its worker. Otherwise a fast worker
+        // can stop and clear reader before this method assigns it, leaving stale state.
+        newReaderHolder[0] = newReader
         reader = newReader
+        val error = newReader.start()
+        if (error != null) {
+            if (reader === newReader) reader = null
+            newReaderHolder[0] = null
+            return error
+        }
         return null
     }
 
@@ -50,4 +60,8 @@ class RtlSdrLiveSampleProcessor(
     }
 
     fun isRunning(): Boolean = reader?.isRunning() == true
+
+    // A stable holder lets the worker callback compare against the exact reader
+    // instance even though the callback is created before the reader is assigned.
+    private val newReaderHolder = arrayOfNulls<RtlSdrUsbBulkReader>(1)
 }
