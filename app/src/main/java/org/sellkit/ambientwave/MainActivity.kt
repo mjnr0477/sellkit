@@ -558,7 +558,7 @@ class MainActivity : Activity() {
                 put("internetReachable", reachable)
             }
             val result = try {
-                val conn = (URL("\${registryBaseUrl}/v1/sources/register").openConnection() as HttpURLConnection).apply {
+                val conn = (URL("${registryBaseUrl}/v1/sources/register").openConnection() as HttpURLConnection).apply {
                     connectTimeout = 10000
                     readTimeout = 10000
                     requestMethod = "POST"
@@ -573,10 +573,10 @@ class MainActivity : Activity() {
                 if (code in 200..299) {
                     val id = JSONObject(body).optString("id")
                     getSharedPreferences("ambient_registry", Context.MODE_PRIVATE).edit().putString("source_id", id).apply()
-                    "SOURCE REGISTERED\\nName: $name\\nCoordinates: $latitude, $longitude\\nRoute: \${activeRouteType()}\\nHTTPS reachable at registration: $reachable\\nRegistry ID: $id\\n\\nThis is a self-reported source listing, not a relay. The source expires after five minutes unless registered again."
+                    "SOURCE REGISTERED\nName: $name\nCoordinates: $latitude, $longitude\nRoute: ${activeRouteType()}\nHTTPS reachable at registration: $reachable\nRegistry ID: $id\n\nThis is a self-reported source listing, not a relay. The source expires after five minutes unless registered again."
                 } else "Registration failed (HTTP $code): $body"
             } catch (e: Exception) {
-                "Registry unavailable: \${e.message ?: e.javaClass.simpleName}"
+                "Registry unavailable: ${e.message ?: e.javaClass.simpleName}"
             }
             recordExperiment("remote_source_registration", result)
             runOnUiThread { output.text = result }
@@ -587,7 +587,7 @@ class MainActivity : Activity() {
         output.text = "Searching registered sources within 1,000 km…"
         thread {
             val result = try {
-                val address = "\${registryBaseUrl}/v1/sources?lat=$latitude&lon=$longitude&radiusKm=1000"
+                val address = "${registryBaseUrl}/v1/sources?lat=$latitude&lon=$longitude&radiusKm=1000"
                 val conn = (URL(address).openConnection() as HttpURLConnection).apply {
                     connectTimeout = 12000
                     readTimeout = 12000
@@ -601,23 +601,23 @@ class MainActivity : Activity() {
                     val json = JSONObject(body)
                     val list = json.optJSONArray("sources")
                     buildString {
-                        append("REMOTE INTERNET SOURCE DISCOVERY\\nRadius: 1,000 km\\nSearch centre: $latitude, $longitude\\nRegistered sources found: ").append(json.optInt("count")).append("\\n\\n")
-                        if (list == null || list.length() == 0) append("No sources have registered within this radius recently. This is not proof that no internet exists there; the registry only knows participating sources.\\n")
+                        append("REMOTE INTERNET SOURCE DISCOVERY\nRadius: 1,000 km\nSearch centre: $latitude, $longitude\nRegistered sources found: ").append(json.optInt("count")).append("\n\n")
+                        if (list == null || list.length() == 0) append("No sources have registered within this radius recently. This is not proof that no internet exists there; the registry only knows participating sources.\n")
                         else for (i in 0 until list.length()) {
                             val item = list.getJSONObject(i)
-                            append(i + 1).append(". ").append(item.optString("name")).append("\\n")
-                            append("   Provider: ").append(item.optString("provider")).append("\\n")
-                            append("   Distance: ").append(item.optDouble("distanceKm")).append(" km\\n")
-                            append("   Route type: ").append(item.optString("routeType")).append("\\n")
-                            append("   Reachability: ").append(item.optString("status")).append("\\n")
-                            append("   Last seen: ").append(item.optString("lastSeen")).append("\\n")
-                            append("   Connection: not directly connectable from this registry\\n\\n")
+                            append(i + 1).append(". ").append(item.optString("name")).append("\n")
+                            append("   Provider: ").append(item.optString("provider")).append("\n")
+                            append("   Distance: ").append(item.optDouble("distanceKm")).append(" km\n")
+                            append("   Route type: ").append(item.optString("routeType")).append("\n")
+                            append("   Reachability: ").append(item.optString("status")).append("\n")
+                            append("   Last seen: ").append(item.optString("lastSeen")).append("\n")
+                            append("   Connection: not directly connectable from this registry\n\n")
                         }
                         append("IMPORTANT: source status is self-reported. The registry does not provide a data tunnel, Wi-Fi credentials or permission to connect.")
                     }
                 }
             } catch (e: Exception) {
-                "Remote discovery failed: \${e.message ?: e.javaClass.simpleName}. Check internet access and retry."
+                "Remote discovery failed: ${e.message ?: e.javaClass.simpleName}. Check internet access and retry."
             }
             recordExperiment("remote_source_search", result)
             runOnUiThread { output.text = result }
