@@ -7,7 +7,7 @@ create or replace function private.vybora_can_upload_media()
 returns boolean language sql stable security definer set search_path = '' as $$
  select (select auth.uid()) is not null
  and (select coalesce(sum(case when (o.metadata->>'size') ~ '^[0-9]+$' then (o.metadata->>'size')::bigint else 0 end),0)
-      from storage.objects o where o.bucket_id='vybora-media') < 700*1024*1024
+      from storage.objects o where o.bucket_id='vybora-media') < 400*1024*1024
  and (select count(*) from storage.objects o
       where o.bucket_id='vybora-media'
         and (storage.foldername(o.name))[1]=(select auth.uid())::text
