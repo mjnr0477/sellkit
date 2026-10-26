@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -20,13 +21,16 @@ import android.os.Bundle
 import android.os.BatteryManager
 import android.hardware.usb.UsbManager
 import android.net.Network
+import android.location.LocationManager
 import android.telephony.CellInfo
 import android.telephony.TelephonyManager
 import android.view.Gravity
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
@@ -37,6 +41,7 @@ import kotlin.concurrent.thread
 class MainActivity : Activity() {
     private lateinit var output: TextView
     private val requestCode = 741
+    private val registryBaseUrl = "https://ambient-wave-source-registry.onrender.com"
     private val mainHandler = Handler(Looper.getMainLooper())
     private var bleScanCallback: ScanCallback? = null
     private var bleScanner: BluetoothLeScanner? = null
@@ -77,6 +82,8 @@ class MainActivity : Activity() {
         root.addView(actionButton("Test USB, TV connection & charging") { testUsbAndPower() })
         root.addView(actionButton("Test actual internet route") { testInternet() })
         root.addView(actionButton("Discover & test usable internet sources") { discoverInternetSources() })
+        root.addView(actionButton("Search remote sources (1,000 km)") { promptRemoteSearch() })
+        root.addView(actionButton("Register this phone as a source") { promptSourceRegistration() })
         root.addView(actionButton("Full-wave radio discovery (Android-visible survey)") { discoverRadioEnvironment() })
         root.addView(actionButton("Discover Flutterwave service (no payment)") { discoverFlutterwave() })
         root.addView(actionButton("Measure ambient EM observations") { measureSignals() })
@@ -446,6 +453,173 @@ class MainActivity : Activity() {
             report.append("\\nThis is a public-host reachability check only. It does not verify merchant credentials, create transactions, or prove that payments are configured. Never enter or store secret keys in this experiment.")
             val result = report.toString()
             recordExperiment("flutterwave_service_discovery", result)
+            runOnUiThread { output.text = result }
+        }
+    }
+
+
+    private fun lastKnownCoordinates(): Pair<Double, Double>? {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) return null
+        return try {
+            val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val candidates = listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER, LocationManager.PASSIVE_PROVIDER)
+            candidates.mapNotNull { provider ->
+                try { if (lm.isProviderEnabled(provider)) lm.getLastKnownLocation(provider) else null }
+                catch (_: Exception) { null }
+            }.maxByOrNull { it.time }?.let { Pair(it.latitude, it.longitude) }
+        } catch (_: Exception) { null }
+    }
+
+    private fun coordinateDialog(title: String, onSubmit: (Double, Double) -> Unit) {
+        val last = lastKnownCoordinates()
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(40, 12, 40, 0)
+        }
+        val lat = EditText(this).apply {
+            hint = "Latitude (e.g. -0.56)"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setText(last?.first?.toString() ?: "")
+        }
+        val lon = EditText(this).apply {
+            hint = "Longitude (e.g. 34.56)"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setText(last?.second?.toString() ?: "")
+        }
+        panel.addView(TextView(this).apply { text = if (last == null) "No recent phone location found. Enter coordinates manually." else "Pre-filled from the phone's last known location; check it before continuing." })
+        panel.addView(lat)
+        panel.addView(lon)
+        AlertDialog.Builder(this).setTitle(title).setView(panel)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Continue") { _, _ ->
+                val a = lat.text.toString().trim().toDoubleOrNull()
+                val b = lon.text.toString().trim().toDoubleOrNull()
+                if (a == null || b == null || a !in -90.0..90.0 || b !in -180.0..180.0) {
+                    output.text = "Invalid coordinates. Latitude must be -90..90 and longitude -180..180."
+                } else onSubmit(a, b)
+            }.show()
+    }
+
+    private fun promptRemoteSearch() {
+        coordinateDialog("Search within 1,000 km") { lat, lon -> searchRemoteSources(lat, lon) }
+    }
+
+    private fun promptSourceRegistration() {
+        val nameInput = EditText(this).apply { hint = "Source name (e.g. My phone)" }
+        AlertDialog.Builder(this).setTitle("Register this phone")
+            .setMessage("Registration shares the name, coordinates, current route type and reachability status with the public discovery registry. Do not register a location you do not want to share.")
+            .setView(nameInput)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Next") { _, _ ->
+                val name = nameInput.text.toString().trim().ifBlank { "Anonymous Android source" }
+                coordinateDialog("Confirm source location") { lat, lon -> registerThisPhone(name, lat, lon) }
+            }.show()
+    }
+
+    private fun activeRouteType(): String {
+        return try {
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val caps = cm.activeNetwork?.let { cm.getNetworkCapabilities(it) }
+            when {
+                caps == null -> "other"
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "ethernet"
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH) -> "bluetooth-tether"
+                else -> "other"
+            }
+        } catch (_: Exception) { "other" }
+    }
+
+    private fun testCurrentRouteQuick(): Boolean {
+        return try {
+            val conn = (URL("https://www.google.com/generate_204").openConnection() as HttpURLConnection).apply {
+                connectTimeout = 5000
+                readTimeout = 5000
+                requestMethod = "GET"
+            }
+            val code = conn.responseCode
+            conn.disconnect()
+            code == 204
+        } catch (_: Exception) { false }
+    }
+
+    private fun registerThisPhone(name: String, latitude: Double, longitude: Double) {
+        output.text = "Testing this phone's current internet route, then registering the source…"
+        thread {
+            val reachable = testCurrentRouteQuick()
+            val payload = JSONObject().apply {
+                put("name", name)
+                put("provider", "Android phone (self-reported)")
+                put("routeType", activeRouteType())
+                put("latitude", latitude)
+                put("longitude", longitude)
+                put("internetReachable", reachable)
+            }
+            val result = try {
+                val conn = (URL("\${registryBaseUrl}/v1/sources/register").openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 10000
+                    readTimeout = 10000
+                    requestMethod = "POST"
+                    doOutput = true
+                    setRequestProperty("Content-Type", "application/json")
+                }
+                conn.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
+                val code = conn.responseCode
+                val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+                val body = stream?.bufferedReader()?.use { it.readText() } ?: ""
+                conn.disconnect()
+                if (code in 200..299) {
+                    val id = JSONObject(body).optString("id")
+                    getSharedPreferences("ambient_registry", Context.MODE_PRIVATE).edit().putString("source_id", id).apply()
+                    "SOURCE REGISTERED\\nName: $name\\nCoordinates: $latitude, $longitude\\nRoute: \${activeRouteType()}\\nHTTPS reachable at registration: $reachable\\nRegistry ID: $id\\n\\nThis is a self-reported source listing, not a relay. The source expires after five minutes unless registered again."
+                } else "Registration failed (HTTP $code): $body"
+            } catch (e: Exception) {
+                "Registry unavailable: \${e.message ?: e.javaClass.simpleName}"
+            }
+            recordExperiment("remote_source_registration", result)
+            runOnUiThread { output.text = result }
+        }
+    }
+
+    private fun searchRemoteSources(latitude: Double, longitude: Double) {
+        output.text = "Searching registered sources within 1,000 km…"
+        thread {
+            val result = try {
+                val address = "\${registryBaseUrl}/v1/sources?lat=$latitude&lon=$longitude&radiusKm=1000"
+                val conn = (URL(address).openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 12000
+                    readTimeout = 12000
+                    requestMethod = "GET"
+                }
+                val code = conn.responseCode
+                val body = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
+                conn.disconnect()
+                if (code !in 200..299) "Remote registry returned HTTP $code: $body"
+                else {
+                    val json = JSONObject(body)
+                    val list = json.optJSONArray("sources")
+                    buildString {
+                        append("REMOTE INTERNET SOURCE DISCOVERY\\nRadius: 1,000 km\\nSearch centre: $latitude, $longitude\\nRegistered sources found: ").append(json.optInt("count")).append("\\n\\n")
+                        if (list == null || list.length() == 0) append("No sources have registered within this radius recently. This is not proof that no internet exists there; the registry only knows participating sources.\\n")
+                        else for (i in 0 until list.length()) {
+                            val item = list.getJSONObject(i)
+                            append(i + 1).append(". ").append(item.optString("name")).append("\\n")
+                            append("   Provider: ").append(item.optString("provider")).append("\\n")
+                            append("   Distance: ").append(item.optDouble("distanceKm")).append(" km\\n")
+                            append("   Route type: ").append(item.optString("routeType")).append("\\n")
+                            append("   Reachability: ").append(item.optString("status")).append("\\n")
+                            append("   Last seen: ").append(item.optString("lastSeen")).append("\\n")
+                            append("   Connection: not directly connectable from this registry\\n\\n")
+                        }
+                        append("IMPORTANT: source status is self-reported. The registry does not provide a data tunnel, Wi-Fi credentials or permission to connect.")
+                    }
+                }
+            } catch (e: Exception) {
+                "Remote discovery failed: \${e.message ?: e.javaClass.simpleName}. Check internet access and retry."
+            }
+            recordExperiment("remote_source_search", result)
             runOnUiThread { output.text = result }
         }
     }
