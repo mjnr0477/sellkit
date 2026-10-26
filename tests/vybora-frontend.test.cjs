@@ -66,6 +66,13 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.doesNotMatch(html, /Profile editing is the next feature/);
 });
 
+test('curated videos use VYBORA branding without stripping creator attribution', () => {
+  assert.match(html, /isCurated\?'VYBORA PICKS'/);
+  assert.match(html, />Watch video ↗<\/a>/);
+  assert.doesNotMatch(html, /esc\(p\.source_name\|\|'ONLINE'\)/);
+  assert.match(html, /p\.username\|\|p\.name\|\|'VYBORA creator'/);
+});
+
 test('Live tab provides a scrollable feed of official event-stream providers', () => {
   assert.match(html, /data-tab="Live"/);
   assert.match(html, /function renderLiveEvents\(\)/);
