@@ -14,7 +14,9 @@ test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
 
 test('guest browsing remains available without account creation', () => {
   assert.match(html, /async function loadFeed\(\)/);
-  assert.match(html, /render\(posts\.length\?posts:demo\)/);\n  assert.match(html, /vybora_external_videos/);\n  assert.match(html, /WATCH FROM THE ORIGINAL SOURCE/);
+  assert.match(html, /render\(posts\.length\?posts:demo\)/);
+  assert.match(html, /vybora_external_videos/);
+  assert.match(html, /WATCH FROM THE ORIGINAL SOURCE/);
   assert.match(html, /You can keep watching without one/);
 });
 
@@ -33,7 +35,12 @@ test('frontend uses public publishable credentials only', () => {
 
 test('video upload uses VYBORA storage and database records', () => {
   assert.match(html, /sb\.storage\.from\('vybora-media'\)\.upload/);
-  assert.match(html, /sb\.from\('vybora_posts'\)\.insert/);\n  assert.match(html, /media_path:path/);\n  assert.match(html, /expires_at:new Date\(Date\.now\(\)\+24\*60\*60\*1000\)/);\n  assert.match(html, /file\.size>30\*1024\*1024/);\n  assert.match(html, /vybora_record_video_view/);\n  assert.match(html, /views_count/);
+  assert.match(html, /sb\.from\('vybora_posts'\)\.insert/);
+  assert.match(html, /media_path:path/);
+  assert.match(html, /expires_at:new Date\(Date\.now\(\)\+24\*60\*60\*1000\)/);
+  assert.match(html, /file\.size>30\*1024\*1024/);
+  assert.match(html, /vybora_record_video_view/);
+  assert.match(html, /views_count/);
   assert.match(html, /sb\.from\('vybora_comments'\)\.insert/);
   assert.match(html, /sb\.from\('vybora_reactions'\)/);
   assert.match(html, /vybora_post_stats/);
