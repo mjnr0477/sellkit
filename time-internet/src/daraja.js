@@ -1,7 +1,5 @@
 'use strict';
 
-const crypto = require('node:crypto');
-
 function requiredEnv(env, key) {
   const value = env[key];
   if (typeof value !== 'string' || value.trim() === '') {
@@ -16,6 +14,17 @@ function normalizePhone(phone) {
   if (/^[17]\d{8}$/.test(digits)) return `254${digits}`;
   if (/^254[17]\d{8}$/.test(digits)) return digits;
   throw new TypeError('Enter a valid Kenyan Safaricom-format mobile number');
+}
+
+function formatDarajaTimestamp(date) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Africa/Nairobi',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}${values.month}${values.day}${values.hour}${values.minute}${values.second}`;
 }
 
 function createDarajaClient({ env = process.env, fetchImpl = fetch, now = () => new Date() } = {}) {
@@ -46,7 +55,7 @@ function createDarajaClient({ env = process.env, fetchImpl = fetch, now = () => 
     const shortcode = requiredEnv(env, 'DARAJA_SHORTCODE');
     const passkey = requiredEnv(env, 'DARAJA_PASSKEY');
     const callbackUrl = requiredEnv(env, 'DARAJA_CALLBACK_URL');
-    const timestamp = now().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
+    const timestamp = formatDarajaTimestamp(now());
     const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
     const token = await getAccessToken();
 
@@ -86,4 +95,4 @@ function createDarajaClient({ env = process.env, fetchImpl = fetch, now = () => 
   return { initiateStkPush };
 }
 
-module.exports = { createDarajaClient, normalizePhone };
+module.exports = { createDarajaClient, normalizePhone, formatDarajaTimestamp };
