@@ -31,12 +31,12 @@ class MainActivity : Activity() {
             gravity = Gravity.TOP
         }
         val title = TextView(this).apply {
-            text = "SellKit Free Access Lab"
+            text = "SellKit Internet Access Lab"
             textSize = 26f
             setTypeface(null, Typeface.BOLD)
         }
         val intro = TextView(this).apply {
-            text = "Objective: establish whether a real internet resource is reachable without paid data. Signal bars or a successful HTTP request alone cannot prove that access is free."
+            text = "Connectivity proof prototype. It checks network reachability and helps you investigate approved sponsored-data options. It does not bypass Safaricom billing or provide unlimited internet by itself."
             textSize = 16f
             setPadding(0, pad / 2, 0, pad)
         }
@@ -76,8 +76,15 @@ class MainActivity : Activity() {
             setOnClickListener { openPage("https://bilawaya.go.ke/") }
         }
         val offers = Button(this).apply {
-            text = "Check Safaricom offers"
+            text = "Check Safaricom consumer bundles"
             setOnClickListener { openPage("https://myaccount.safaricom.co.ke/bundles?activeTab=1&monthlyBundles=true") }
+        }
+        val sponsored = Button(this).apply {
+            text = "Explore Safaricom sponsored data"
+            setOnClickListener {
+                report.text = "Opening Safaricom Your Saf Connect Hub. Sponsored data requires enterprise eligibility and an approved resource; it does not automatically provide unlimited access to every app. Confirm current fees, caps, and terms with Safaricom."
+                openPage("https://ysconnecthub.safaricom.co.ke/")
+            }
         }
         val note = TextView(this).apply {
             text = "\nProof protocol:\n1. Check and record paid data and airtime balances through Safaricom.\n2. Open the zero-rated resource on the Safaricom SIM with Wi-Fi off.\n3. Navigate to a fresh page and confirm it actually loads.\n4. Recheck balances.\n5. Only claim free access if the resource loaded and no paid data or airtime was consumed.\n\nThis app cannot read Safaricom's billing records directly. A normal HTTPS success is not proof of zero-rating. Do not use video or download tests; they may consume paid data."
@@ -93,6 +100,7 @@ class MainActivity : Activity() {
         layout.addView(opera)
         layout.addView(wifi)
         layout.addView(offers)
+        layout.addView(sponsored)
         layout.addView(note)
         setContentView(ScrollView(this).apply { addView(layout) })
     }
