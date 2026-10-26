@@ -34,5 +34,8 @@ jobs:
           for (const table of ['vybora_friend_requests','vybora_messages','vybora_reports','vybora_live_sessions','vybora_live_signals']) {
             if (!migration.includes(table)) throw new Error('Missing schema: ' + table);
           }
+          if (!js.includes("sb.from('vybora_live_participants').insert({session_id:id,user_id:user.id})") || js.includes("sb.from('vybora_live_participants').upsert(")) {
+            throw new Error('Live-room join must use INSERT and must not require UPDATE privileges.');
+          }
           console.log('VYBORA social feature contracts passed.');
           NODE
