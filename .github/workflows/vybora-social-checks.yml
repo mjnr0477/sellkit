@@ -1,0 +1,38 @@
+name: VYBORA social feature checks
+on:
+  push:
+    branches: [feat/vybora-friends-chat-live-safety]
+  pull_request:
+    branches: [main]
+jobs:
+  syntax-and-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check social feature JavaScript syntax
+        run: node --check social-features.js
+      - name: Extract and check main inline script
+        run: |
+          node -e "const fs=require('fs'); const h=fs.readFileSync('index.html','utf8'); const m=h.match(/<script>([\\s\\S]*?)<\\/script>/); if(!m) throw Error('Main inline script not found'); fs.writeFileSync('/tmp/vybora-inline.js',m[1]);"
+          node --check /tmp/vybora-inline.js
+      - name: Check required feature wiring
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const js = fs.readFileSync('social-features.js', 'utf8');
+          const migration = fs.readFileSync('supabase/migrations/20261026190000_vybora_friends_chat_live_mature_content.sql', 'utf8');
+          for (const id of ['friendsBackdrop','chatBackdrop','liveBackdrop','reportBackdrop','allowMatureSetting']) {
+            if (!html.includes('id="' + id + '"')) throw new Error('Missing UI element: ' + id);
+          }
+          for (const fn of ['openFriends','openChat','startLive','submitReport','saveMaturePreference']) {
+            if (!js.includes('function ' + fn) && !js.includes('async function ' + fn)) throw new Error('Missing feature: ' + fn);
+          }
+          for (const table of ['vybora_friend_requests','vybora_messages','vybora_reports','vybora_live_sessions','vybora_live_signals']) {
+            if (!migration.includes(table)) throw new Error('Missing schema: ' + table);
+          }
+          console.log('VYBORA social feature contracts passed.');
+          NODE
