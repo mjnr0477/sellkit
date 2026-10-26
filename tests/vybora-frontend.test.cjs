@@ -16,7 +16,7 @@ test('guest browsing remains available without account creation', () => {
   assert.match(html, /async function loadFeed\(\)/);
   assert.match(html, /render\(posts\.length\?posts:demo\)/);
   assert.match(html, /vybora_external_videos/);
-  assert.match(html, /WATCH FROM THE ORIGINAL SOURCE/);
+  assert.match(html, /Your universe, in motion/);
   assert.match(html, /You can keep watching without one/);
 });
 
@@ -70,7 +70,8 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
 
 test('curated videos use VYBORA branding without stripping creator attribution', () => {
   assert.match(html, /isCurated\?'VYBORA PICKS'/);
-  assert.match(html, />Watch video ↗<\/a>/);
+  assert.match(html, /aria-label="Curated for VYBORA">VYBORA PICKS/);
+  assert.doesNotMatch(html, /Watch video ↗/);
   assert.doesNotMatch(html, /esc\(p\.source_name\|\|'ONLINE'\)/);
   assert.match(html, /p\.username\|\|p\.name\|\|'VYBORA creator'/);
 });
@@ -105,7 +106,7 @@ test('feed uses touch-friendly smooth scrolling and avoids forced stop on every 
 });
 
 test('curated video feed requests up to 100 entries and validates trusted HTTPS embeds', () => {
-  assert.match(html, /vybora_external_videos'[\s\S]*?\.limit\(100\)/);
+  assert.match(html, /vybora_external_videos'[\s\S]*?\.range\(0,99\)/);
   assert.match(html, /externalRows=.*new URL\(v\.embed_url\)/);
 });
 
@@ -126,4 +127,29 @@ test('video feed avoids downloading every clip at once and does not fake variety
   assert.match(html, /index===0\?'auto':'none'/);
   assert.match(html, /v\.preload='auto';v\.load\(\)/);
   assert.equal((html.match(/id:'demo-/g) || []).length, 1);
+});
+
+test('Watch feed paginates endlessly as the user nears the bottom', () => {
+  assert.match(html, /async function loadMoreFeed\(\)/);
+  assert.match(html, /\.range\(feedPostOffset,feedPostOffset\+49\)/);
+  assert.match(html, /feed\.addEventListener\('scroll'/);
+  assert.match(html, /feed\.insertAdjacentHTML\('beforeend'/);
+  assert.match(html, /feedHasMore/);
+});
+
+test('video search checks public posts and curated titles, descriptions and creators', () => {
+  assert.match(html, /async function searchVideos\(query\)/);
+  assert.match(html, /\.ilike\('body',pattern\)/);
+  assert.match(html, /\.ilike\('title',pattern\)/);
+  assert.match(html, /\.ilike\('description',pattern\)/);
+  assert.match(html, /\.ilike\('creator',pattern\)/);
+  assert.match(html, /searchInput'\)\.addEventListener\('keydown'/);
+  assert.match(html, /data-search-suggest="Music"/);
+});
+
+test('curated video UI does not show provider-source banners or external watch links', () => {
+  assert.doesNotMatch(html, /WATCH FROM THE ORIGINAL SOURCE/);
+  assert.doesNotMatch(html, /Watch video ↗/);
+  assert.match(html, /handle:'@vybora'/);
+  assert.match(html, /username:v\.creator\|\|'VYBORA Picks'/);
 });
