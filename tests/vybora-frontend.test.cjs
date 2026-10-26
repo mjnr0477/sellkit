@@ -29,7 +29,9 @@ test('account-only interactions prompt guests to authenticate', () => {
 
 test('frontend uses public publishable credentials only', () => {
   assert.match(html, /sb_publishable_[A-Za-z0-9_-]+/);
-  assert.match(html, /emailRedirectTo:\(window\.Capacitor\?\.isNativePlatform\?\.\(\)\?'https:\/\/vybora-social-live\.onrender\.com\/'\:location\.origin\+location\.pathname\)/);
+  assert.match(html, /emailRedirectTo:'https:\/\/vybora-social-live\.onrender\.com\/'/);
+  assert.match(html, /redirectTo:'https:\/\/vybora-social-live\.onrender\.com\/'/);
+  assert.doesNotMatch(html, /location\.origin\+location\.pathname/);
   assert.doesNotMatch(html, /service_role|sb_secret_/);
 });
 
@@ -92,4 +94,27 @@ test('inline application JavaScript parses without syntax errors', () => {
     .filter(source => source.trim());
   assert.ok(scripts.length > 0, 'expected inline application script');
   for (const source of scripts) new vm.Script(source);
+});
+
+test('feed uses touch-friendly smooth scrolling and avoids forced stop on every card', () => {
+  assert.match(html, /scroll-behavior:smooth;-webkit-overflow-scrolling:touch;touch-action:pan-y/);
+  assert.match(html, /\.video-card\{[^}]*scroll-snap-stop:normal/);
+});
+
+test('curated video feed requests up to 100 entries and validates trusted HTTPS embeds', () => {
+  assert.match(html, /vybora_external_videos'[\s\S]*?\.limit\(100\)/);
+  assert.match(html, /externalRows=\(external\|\|\)\.filter\(v=>[\s\S]*?new URL\(v\.embed_url\)/);
+});
+
+test('uploaded community videos are limited to short clips', () => {
+  assert.match(html, /async function getVideoDuration\(file\)/);
+  assert.match(html, /duration>60/);
+  assert.match(html, /short videos must be 60 seconds or less/i);
+});
+
+test('Live tab offers in-app live room participation and keeps official sports links as secondary options', () => {
+  assert.match(html, /data-open-live="join"/);
+  assert.match(html, /data-open-live="start"/);
+  assert.match(html, /Join a live room/);
+  assert.match(html, /Go live/);
 });
