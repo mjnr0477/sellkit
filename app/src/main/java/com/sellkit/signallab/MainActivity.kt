@@ -3,8 +3,13 @@ package com.sellkit.signallab
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
 import android.content.pm.PackageManager
 import android.graphics.Typeface
 import android.net.ConnectivityManager
@@ -30,6 +35,21 @@ class MainActivity : Activity() {
     private val executor = Executors.newSingleThreadExecutor()
     private val scanPermissionRequest = 410
     private val phoneStatePermissionRequest = 411
+    private val usbPermissionAction = "com.sellkit.signallab.USB_PERMISSION"
+    private var usbReceiverRegistered = false
+    private val usbPermissionReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action != usbPermissionAction) return
+            val device = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
+                else @Suppress("DEPRECATION") (intent.getParcelableExtra(UsbManager.EXTRA_DEVICE) as? UsbDevice)
+            val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
+            report.text = when {
+                device == null -> "USB permission result received, but Android did not provide the device. Tap Inspect USB radio / SDR hardware again."
+                granted -> "USB permission granted for " + device.deviceName + ".\n\nNext step is SDR-specific initialization and tuning; this app does not yet configure the tuner or prove that incoming bytes are radio I/Q samples. Tap Inspect USB radio / SDR hardware again to refresh diagnostics."
+                else -> "USB permission was denied for " + device.deviceName + ". No USB data was read. Tap Inspect USB radio / SDR hardware and approve the Android permission prompt if you want to continue."
+            }
+        }
+    }
     private val scanPermissions: Array<String>
         get() = if (Build.VERSION.SDK_INT >= 33)
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.NEARBY_WIFI_DEVICES)
@@ -37,6 +57,10 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val usbFilter = IntentFilter(usbPermissionAction)
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(usbPermissionReceiver, usbFilter, Context.RECEIVER_NOT_EXPORTED)
+        else @Suppress("DEPRECATION") registerReceiver(usbPermissionReceiver, usbFilter)
+        usbReceiverRegistered = true
         val pad = (resources.displayMetrics.density * 20).toInt()
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -139,7 +163,17 @@ class MainActivity : Activity() {
 
     private fun inspectUsbRadio() {
         val result = UsbRadioDiscovery.inspect(this)
-        val usbManager = getSystemService(Context.USB_SERVICE) as? android.hardware.usb.UsbManager
+        val usbManager = getSystemService(Context.USB_SERVICE) as? UsbManager
+        val unpermittedDevice = usbManager?.deviceList?.values?.firstOrNull { !usbManager.hasPermission(it) }
+        if (unpermittedDevice != null) {
+            val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+            val permissionIntent = PendingIntent.getBroadcast(this, 412, Intent(usbPermissionAction).setPackage(packageName), flags)
+            report.text = "Requesting Android USB permission for " + unpermittedDevice.deviceName + "… Approve the system dialog if this is your receiver. Permission only allows USB access; it does not initialize or tune an RTL-SDR."
+            try { usbManager.requestPermission(unpermittedDevice, permissionIntent) }
+            catch (e: Exception) { report.text = "Could not request USB permission: " + e.javaClass.simpleName + ": " + (e.message ?: "no detail") }
+            return
+        }
         val details = result.devices.joinToString("\n\n") { device ->
             val actual = usbManager?.deviceList?.get(device.deviceName)
             val permission = if (actual == null) "device unavailable" else
@@ -470,5 +504,12 @@ class MainActivity : Activity() {
         }
     }
 
-    override fun onDestroy() { executor.shutdownNow(); super.onDestroy() }
+    override fun onDestroy() {
+        if (usbReceiverRegistered) {
+            try { unregisterReceiver(usbPermissionReceiver) } catch (_: IllegalArgumentException) { }
+            usbReceiverRegistered = false
+        }
+        executor.shutdownNow()
+        super.onDestroy()
+    }
 }
