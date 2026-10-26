@@ -1,0 +1,17 @@
+{
+  "name": "vybora-android-wrapper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Android Capacitor packaging for the VYBORA website",
+  "scripts": {
+    "build:web": "node scripts/prepare-web.mjs",
+    "android:sync": "npm run build:web && cap add android && cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3"
+  }
+}
