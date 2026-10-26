@@ -14,6 +14,7 @@ test('hosted VYBORA feed loads and guests can watch but cannot interact without 
       document.querySelector('#commentsBackdrop') &&
       document.querySelector('#profileBackdrop') &&
       document.querySelector('#savedBackdrop') &&
+      document.querySelector('#resetBackdrop') &&
       document.querySelector('#authBackdrop'),
       { timeout: 30000 }
     );
@@ -34,6 +35,11 @@ test('hosted VYBORA feed loads and guests can watch but cannot interact without 
     await page.locator('#createBtn').click();
     await page.waitForFunction(() => document.querySelector('#authBackdrop').classList.contains('open'));
     assert.match(await page.locator('#authDescription').innerText(), /publish|create an account/i);
+
+    await page.locator('#authClose').click();
+    await page.locator('#accountBtn').click();
+    await page.locator('#authSwitch').click();
+    assert.equal(await page.locator('#forgotPassword').isVisible(), true, 'forgot-password action should be available during sign-in');
   } finally {
     await browser.close();
   }
