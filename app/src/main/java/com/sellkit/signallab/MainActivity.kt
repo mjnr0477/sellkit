@@ -9,6 +9,8 @@ import android.content.pm.PackageManager
 import android.graphics.Typeface
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Network
+import android.net.NetworkRequest
 import android.net.Uri
 import android.net.wifi.WifiManager
 import android.telephony.TelephonyManager
@@ -68,6 +70,17 @@ class MainActivity : Activity() {
             text = "Test ordinary HTTPS connectivity"
             setOnClickListener { runProbe() }
         }
+        val cellularTest = Button(this).apply {
+            text = "Test mobile-data path only (may use data)"
+            setOnClickListener {
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Cellular-only internet test")
+                    .setMessage("Android will request a cellular network and send a small HTTPS request through it, even if Wi-Fi is connected. This may use paid mobile data. Continue only if you accept the risk.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Test") { _, _ -> runCellularProbe() }
+                    .show()
+            }
+        }
         val zeroRated = Button(this).apply {
             text = "Open Safaricom learning resource"
             setOnClickListener {
@@ -105,6 +118,7 @@ class MainActivity : Activity() {
         layout.addView(cellular)
         layout.addView(refresh)
         layout.addView(test)
+        layout.addView(cellularTest)
         layout.addView(zeroRated)
         layout.addView(testIoGt)
         layout.addView(wifi)
@@ -240,6 +254,58 @@ class MainActivity : Activity() {
             "\n\nThese Android flags do not establish whether Safaricom charges for access."
     }
 
+    private fun runCellularProbe() {
+        report.text = networkReport() + "\n\nRequesting cellular network for a mobile-data-only test…"
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val request = NetworkRequest.Builder()
+            .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+        val finished = java.util.concurrent.atomic.AtomicBoolean(false)
+        val timeout = android.os.Handler(mainLooper)
+        lateinit var callback: ConnectivityManager.NetworkCallback\n        callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                if (!finished.compareAndSet(false, true)) return
+                timeout.removeCallbacksAndMessages(null)
+                executor.execute {
+                    val result = try {
+                        val connection = network.openConnection(URL("https://connectivitycheck.gstatic.com/generate_204")) as HttpURLConnection
+                        connection.connectTimeout = 8000
+                        connection.readTimeout = 8000
+                        connection.instanceFollowRedirects = false
+                        connection.requestMethod = "GET"
+                        connection.connect()
+                        val code = connection.responseCode
+                        connection.disconnect()
+                        if (code == 204) "Cellular-only HTTPS probe succeeded (HTTP 204). Mobile data can reach this endpoint; this does not mean access is free." else "Cellular-only endpoint returned HTTP $code. Internet access was not confirmed."
+                    } catch (e: Exception) {
+                        "Cellular-only HTTPS probe failed: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}."
+                    }
+                    runOnUiThread {
+                        report.text = networkReport() + "\n\n" + result
+                        try { cm.unregisterNetworkCallback(callback) } catch (_: Exception) { }
+                    }
+                }
+            }
+            override fun onUnavailable() {
+                if (!finished.compareAndSet(false, true)) return
+                timeout.removeCallbacksAndMessages(null)
+                runOnUiThread { report.text = networkReport() + "\n\nAndroid could not provide a cellular network for this test. Check SIM registration, mobile data, coverage, and carrier restrictions." }
+            }
+        }
+        timeout.postDelayed({
+            if (finished.compareAndSet(false, true)) {
+                try { cm.unregisterNetworkCallback(callback) } catch (_: Exception) { }
+                report.text = networkReport() + "\n\nTimed out waiting for a cellular network. No conclusion about signal strength can be drawn from this timeout alone."
+            }
+        }, 20000)
+        try {
+            cm.requestNetwork(request, callback, 20000)
+        } catch (e: Exception) {
+            timeout.removeCallbacksAndMessages(null)
+            report.text = networkReport() + "\n\nCould not request cellular network: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}"
+        }
+    }
     private fun runIoGtProbe() {
         report.text = networkReport() + "\n\nTesting learning endpoint…"
         executor.execute {
