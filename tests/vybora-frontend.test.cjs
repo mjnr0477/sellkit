@@ -29,7 +29,7 @@ test('account-only interactions prompt guests to authenticate', () => {
 
 test('frontend uses public publishable credentials only', () => {
   assert.match(html, /sb_publishable_[A-Za-z0-9_-]+/);
-  assert.match(html, /emailRedirectTo:location\.origin\+location\.pathname/);
+  assert.match(html, /emailRedirectTo:\(window\.Capacitor\?\.isNativePlatform\?\.\(\)\?'https:\/\/vybora-social-live\.onrender\.com\/'\:location\.origin\+location\.pathname\)/);
   assert.doesNotMatch(html, /service_role|sb_secret_/);
 });
 
@@ -64,6 +64,26 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.match(html, /PASSWORD_RECOVERY/);
   assert.match(html, /updateUser\(\{password\}\)/);
   assert.doesNotMatch(html, /Profile editing is the next feature/);
+});
+
+test('curated videos use VYBORA branding without stripping creator attribution', () => {
+  assert.match(html, /isCurated\?'VYBORA PICKS'/);
+  assert.match(html, />Watch video ↗<\/a>/);
+  assert.doesNotMatch(html, /esc\(p\.source_name\|\|'ONLINE'\)/);
+  assert.match(html, /p\.username\|\|p\.name\|\|'VYBORA creator'/);
+});
+
+test('Live tab provides a scrollable feed of official event-stream providers', () => {
+  assert.match(html, /data-tab="Live"/);
+  assert.match(html, /function renderLiveEvents\(\)/);
+  assert.match(html, /class="live-hub"/);
+  assert.match(html, /scroll-snap-type:y mandatory/);
+  assert.match(html, /https:\/\/www\.fifa\.com\/en\/watch/);
+  assert.match(html, /https:\/\/www\.uefa\.tv\//);
+  assert.match(html, /https:\/\/footballkenya\.org\/media\/broadcasters/);
+  assert.match(html, /https:\/\/azamtv\.co\.tz\//);
+  assert.match(html, /rel="noopener noreferrer"/);
+  assert.match(html, /We don’t promise every event is free or available in every country/);
 });
 
 test('inline application JavaScript parses without syntax errors', () => {
