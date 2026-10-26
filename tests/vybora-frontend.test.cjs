@@ -16,7 +16,7 @@ test('guest browsing remains available without account creation', () => {
   assert.match(html, /async function loadFeed\(\)/);
   assert.match(html, /render\(posts\.length\?posts:demo\)/);
   assert.match(html, /vybora_external_videos/);
-  assert.match(html, /WATCH FROM THE ORIGINAL SOURCE/);
+  assert.match(html, /Your universe, in motion/);
   assert.match(html, /You can keep watching without one/);
 });
 
@@ -29,7 +29,9 @@ test('account-only interactions prompt guests to authenticate', () => {
 
 test('frontend uses public publishable credentials only', () => {
   assert.match(html, /sb_publishable_[A-Za-z0-9_-]+/);
-  assert.match(html, /emailRedirectTo:\(window\.Capacitor\?\.isNativePlatform\?\.\(\)\?'https:\/\/vybora-social-live\.onrender\.com\/'\:location\.origin\+location\.pathname\)/);
+  assert.match(html, /emailRedirectTo:'https:\/\/vybora-social-live\.onrender\.com\/'/);
+  assert.match(html, /redirectTo:'https:\/\/vybora-social-live\.onrender\.com\/'/);
+  assert.doesNotMatch(html, /location\.origin\+location\.pathname/);
   assert.doesNotMatch(html, /service_role|sb_secret_/);
 });
 
@@ -68,22 +70,26 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
 
 test('curated videos use VYBORA branding without stripping creator attribution', () => {
   assert.match(html, /isCurated\?'VYBORA PICKS'/);
-  assert.match(html, />Watch video ↗<\/a>/);
+  assert.match(html, /aria-label="Curated for VYBORA">VYBORA PICKS/);
+  assert.doesNotMatch(html, /Watch video ↗/);
   assert.doesNotMatch(html, /esc\(p\.source_name\|\|'ONLINE'\)/);
   assert.match(html, /p\.username\|\|p\.name\|\|'VYBORA creator'/);
 });
 
-test('Live tab provides a scrollable feed of official event-stream providers', () => {
+test('Live tab provides in-app live participation and official football coverage', () => {
   assert.match(html, /data-tab="Live"/);
   assert.match(html, /function renderLiveEvents\(\)/);
   assert.match(html, /class="live-hub"/);
-  assert.match(html, /scroll-snap-type:y mandatory/);
+  assert.match(html, /data-open-live="join"/);
+  assert.match(html, /data-open-live="start"/);
+  assert.match(html, /data-live-rooms/);
+  assert.match(html, /data-join-vybora-live/);
+  assert.match(html, /vybora_live_sessions/);
   assert.match(html, /https:\/\/www\.fifa\.com\/en\/watch/);
   assert.match(html, /https:\/\/www\.uefa\.tv\//);
   assert.match(html, /https:\/\/footballkenya\.org\/media\/broadcasters/);
   assert.match(html, /https:\/\/azamtv\.co\.tz\//);
   assert.match(html, /rel="noopener noreferrer"/);
-  assert.match(html, /We don’t promise every event is free or available in every country/);
 });
 
 test('inline application JavaScript parses without syntax errors', () => {
@@ -92,4 +98,58 @@ test('inline application JavaScript parses without syntax errors', () => {
     .filter(source => source.trim());
   assert.ok(scripts.length > 0, 'expected inline application script');
   for (const source of scripts) new vm.Script(source);
+});
+
+test('feed uses touch-friendly smooth scrolling and avoids forced stop on every card', () => {
+  assert.match(html, /scroll-behavior:smooth;-webkit-overflow-scrolling:touch;touch-action:pan-y/);
+  assert.match(html, /\.video-card\{[^}]*scroll-snap-stop:normal/);
+});
+
+test('curated video feed requests up to 100 entries and validates trusted HTTPS embeds', () => {
+  assert.match(html, /vybora_external_videos'[\s\S]*?\.range\(0,99\)/);
+  assert.match(html, /externalRows=.*new URL\(v\.embed_url\)/);
+});
+
+test('uploaded community videos are limited to short clips', () => {
+  assert.match(html, /async function getVideoDuration\(file\)/);
+  assert.match(html, /duration>60/);
+  assert.match(html, /short videos must be 60 seconds or less/i);
+});
+
+test('Live tab offers in-app live room participation and keeps official sports links as secondary options', () => {
+  assert.match(html, /data-open-live="join"/);
+  assert.match(html, /data-open-live="start"/);
+  assert.match(html, /Open live rooms/);
+  assert.match(html, /Go live/);
+});
+
+test('video feed avoids downloading every clip at once and does not fake variety with duplicate demo clips', () => {
+  assert.match(html, /index===0\?'auto':'none'/);
+  assert.match(html, /v\.preload='auto';v\.load\(\)/);
+  assert.equal((html.match(/id:'demo-/g) || []).length, 1);
+});
+
+test('Watch feed paginates endlessly as the user nears the bottom', () => {
+  assert.match(html, /async function loadMoreFeed\(\)/);
+  assert.match(html, /\.range\(feedPostOffset,feedPostOffset\+49\)/);
+  assert.match(html, /feed\.addEventListener\('scroll'/);
+  assert.match(html, /feed\.insertAdjacentHTML\('beforeend'/);
+  assert.match(html, /feedHasMore/);
+});
+
+test('video search checks public posts and curated titles, descriptions and creators', () => {
+  assert.match(html, /async function searchVideos\(query\)/);
+  assert.match(html, /\.ilike\('body',pattern\)/);
+  assert.match(html, /\.ilike\('title',pattern\)/);
+  assert.match(html, /\.ilike\('description',pattern\)/);
+  assert.match(html, /\.ilike\('creator',pattern\)/);
+  assert.match(html, /searchInput'\)\.addEventListener\('keydown'/);
+  assert.match(html, /data-search-suggest="Music"/);
+});
+
+test('curated video UI does not show provider-source banners or external watch links', () => {
+  assert.doesNotMatch(html, /WATCH FROM THE ORIGINAL SOURCE/);
+  assert.doesNotMatch(html, /Watch video ↗/);
+  assert.match(html, /handle:'@vybora'/);
+  assert.match(html, /username:v\.creator\|\|'VYBORA Picks'/);
 });
