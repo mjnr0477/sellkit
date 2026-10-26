@@ -40,10 +40,15 @@ jobs:
       - name: Prepare web assets and generate Android project
         run: npm run android:sync
 
+      - name: Set up Python for launcher icon generation
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Apply VYBORA launcher icon
         run: |
-          python3 -m pip install --user pillow
-          python3 scripts/prepare-android-icon.py
+          python -m pip install pillow
+          python scripts/prepare-android-icon.py
 
       - name: Configure release signing
         env:
