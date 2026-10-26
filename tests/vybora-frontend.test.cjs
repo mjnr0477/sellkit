@@ -81,6 +81,9 @@ test('Live tab provides in-app live participation and official football coverage
   assert.match(html, /class="live-hub"/);
   assert.match(html, /data-open-live="join"/);
   assert.match(html, /data-open-live="start"/);
+  assert.match(html, /data-live-rooms/);
+  assert.match(html, /data-join-vybora-live/);
+  assert.match(html, /vybora_live_sessions/);
   assert.match(html, /https:\/\/www\.fifa\.com\/en\/watch/);
   assert.match(html, /https:\/\/www\.uefa\.tv\//);
   assert.match(html, /https:\/\/footballkenya\.org\/media\/broadcasters/);
