@@ -51,6 +51,10 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.match(html, /if\(tab==='Watch'\)\{posts=allPosts;render\(allPosts.length\?allPosts:demo\);return\}/);
   assert.match(html, /const list=allPosts\.filter\(p=>p\.following\)/);
   assert.match(html, /sb\.from\('vybora_profiles'\)\.upsert/);
+  assert.match(html, /id="forgotPassword"/);
+  assert.match(html, /resetPasswordForEmail/);
+  assert.match(html, /PASSWORD_RECOVERY/);
+  assert.match(html, /updateUser\(\{password\}\)/);
   assert.doesNotMatch(html, /Profile editing is the next feature/);
 });
 
