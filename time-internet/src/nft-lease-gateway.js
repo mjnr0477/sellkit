@@ -14,10 +14,9 @@ const IDENT = /^[a-zA-Z_][a-zA-Z0-9_]{0,31}$/;
 export function createNftLeaseGateway({
   table = 'timed_access',
   set = 'active_clients',
-  wgInterface = 'wg0',
   run = execFileAsync,
 } = {}) {
-  if (!IDENT.test(table) || !IDENT.test(set) || !/^[a-zA-Z0-9_.-]{1,15}$/.test(wgInterface)) {
+  if (!IDENT.test(table) || !IDENT.test(set)) {
     throw new TypeError('Invalid nftables identifier or interface name');
   }
 
