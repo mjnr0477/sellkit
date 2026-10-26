@@ -1,0 +1,96 @@
+'use strict';
+
+const { getPackage } = require('./packages');
+
+/**
+ * Framework-neutral checkout orchestration.
+ *
+ * store must provide durable, atomic operations in production:
+ * createPendingPayment, findPaymentByCheckoutRequestId, markPaymentSucceeded,
+ * markPaymentFailed, and createEntitlementIfAbsent.
+ * Do not use an in-memory store for real customer payments.
+ */
+function createPurchaseService({ daraja, store, clock = () => Date.now() }) {
+  if (!daraja || typeof daraja.initiateStkPush !== 'function') {
+    throw new TypeError('daraja.initiateStkPush is required');
+  }
+  for (const method of [
+    'createPendingPayment',
+    'findPaymentByCheckoutRequestId',
+    'markPaymentSucceeded',
+    'markPaymentFailed',
+    'createEntitlementIfAbsent',
+  ]) {
+    if (!store || typeof store[method] !== 'function') {
+      throw new TypeError(`store.${method} is required`);
+    }
+  }
+
+  async function startPurchase({ userId, packageId, phone }) {
+    if (typeof userId !== 'string' || !userId.trim()) throw new TypeError('userId is required');
+    const plan = getPackage(packageId);
+    if (!plan) throw new RangeError('Unknown package');
+
+    // Create a durable idempotency record before calling the external provider.
+    const payment = await store.createPendingPayment({
+      userId,
+      packageId: plan.id,
+      amountKes: plan.amountKes,
+      createdAt: clock(),
+      status: 'pending',
+    });
+
+    const stk = await daraja.initiateStkPush({
+      phone,
+      amountKes: plan.amountKes,
+      accountReference: payment.reference,
+      transactionDesc: 'Timed internet',
+    });
+
+    await store.attachCheckoutRequest(payment.id, stk.checkoutRequestId);
+    return { paymentId: payment.id, status: 'pending', customerMessage: stk.customerMessage };
+  }
+
+  // Call only after validating the callback against a stored request and
+  // confirming transaction status with Daraja. Never trust browser redirects.
+  async function confirmVerifiedPayment({ checkoutRequestId, receiptNumber, verifiedAt }) {
+    if (!checkoutRequestId || !receiptNumber) throw new TypeError('Verified transaction identifiers are required');
+    const payment = await store.findPaymentByCheckoutRequestId(checkoutRequestId);
+    if (!payment) throw new Error('No matching pending payment');
+    if (payment.status === 'succeeded') {
+      return store.createEntitlementIfAbsent({
+        paymentId: payment.id,
+        userId: payment.userId,
+        packageId: payment.packageId,
+        startsAt: payment.paidAt,
+      });
+    }
+    if (payment.status !== 'pending') throw new Error('Payment is not pending');
+    const plan = getPackage(payment.packageId);
+    if (!plan || payment.amountKes !== plan.amountKes) throw new Error('Payment amount/package mismatch');
+
+    const paid = await store.markPaymentSucceeded({
+      paymentId: payment.id,
+      receiptNumber,
+      paidAt: verifiedAt || clock(),
+    });
+    return store.createEntitlementIfAbsent({
+      paymentId: paid.id,
+      userId: paid.userId,
+      packageId: paid.packageId,
+      startsAt: paid.paidAt,
+      durationMs: plan.durationMs,
+    });
+  }
+
+  async function failVerifiedPayment({ checkoutRequestId, reason }) {
+    const payment = await store.findPaymentByCheckoutRequestId(checkoutRequestId);
+    if (!payment) throw new Error('No matching pending payment');
+    if (payment.status !== 'pending') return payment;
+    return store.markPaymentFailed({ paymentId: payment.id, reason: String(reason || 'Payment failed') });
+  }
+
+  return { startPurchase, confirmVerifiedPayment, failVerifiedPayment };
+}
+
+module.exports = { createPurchaseService };
