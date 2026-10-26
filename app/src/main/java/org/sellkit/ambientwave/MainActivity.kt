@@ -77,6 +77,8 @@ class MainActivity : Activity() {
         root.addView(actionButton("Test USB, TV connection & charging") { testUsbAndPower() })
         root.addView(actionButton("Test actual internet route") { testInternet() })
         root.addView(actionButton("Discover & test usable internet sources") { discoverInternetSources() })
+        root.addView(actionButton("Full-wave radio discovery (Android-visible survey)") { discoverRadioEnvironment() })
+        root.addView(actionButton("Discover Flutterwave service (no payment)") { discoverFlutterwave() })
         root.addView(actionButton("Measure ambient EM observations") { measureSignals() })
         root.addView(actionButton("Export experiment log") { exportExperimentLog() })
         root.addView(actionButton("Clear results") { output.text = "Results cleared. Choose a test." })
@@ -395,6 +397,55 @@ class MainActivity : Activity() {
             report.append("LIMIT: Without a network connection, a remote registry, or a compatible transmitting source, the phone cannot discover internet sources kilometres away. Built-in radios expose only supported Wi-Fi/Bluetooth/cellular metadata; they are not a general-purpose spectrum analyzer.")
             val result = report.toString()
             recordExperiment("internet_source_discovery", result)
+            runOnUiThread { output.text = result }
+        }
+    }
+
+    // Android cannot inspect the entire electromagnetic spectrum; this surveys only radio metadata exposed by the OS.
+    private fun discoverRadioEnvironment() {
+        if (!permissionsGranted()) return
+        measureSignals()
+        val note = "\\n\\nFULL-WAVE DISCOVERY LIMITS\\n" +
+            "This phone-only survey can observe nearby Wi-Fi access points, cellular cell records, and (using the separate BLE scan) Bluetooth LE advertisements. Android does not expose arbitrary spectrum measurements or decode ambient RF into internet. Frequencies shown are only from radios and records the operating system exposes."
+        output.text = output.text.toString() + note
+        recordExperiment("full_wave_radio_discovery", output.text.toString())
+    }
+
+    // Checks whether Flutterwave's public website/API host responds. It does not authenticate, create a payment, or require secret keys.
+    private fun discoverFlutterwave() {
+        output.text = "Checking public Flutterwave service reachability…"
+        thread {
+            val report = StringBuilder("FLUTTERWAVE SERVICE DISCOVERY (NO PAYMENT)\\n\\n")
+            val endpoints = listOf(
+                "Flutterwave website" to "https://flutterwave.com/",
+                "Flutterwave API host" to "https://api.flutterwave.com/v3/"
+            )
+            for ((name, address) in endpoints) {
+                val line = try {
+                    val started = System.currentTimeMillis()
+                    val conn = (URL(address).openConnection() as HttpURLConnection).apply {
+                        connectTimeout = 6000
+                        readTimeout = 6000
+                        requestMethod = "GET"
+                        instanceFollowRedirects = true
+                        setRequestProperty("Accept", "application/json, text/html")
+                    }
+                    val code = conn.responseCode
+                    val elapsed = System.currentTimeMillis() - started
+                    conn.disconnect()
+                    when {
+                        code in 200..399 -> "$name: reachable (HTTP $code, ${elapsed} ms)"
+                        code in 400..499 -> "$name: host responded (HTTP $code, ${elapsed} ms); this can be normal for an API endpoint that requires authentication"
+                        else -> "$name: server responded with HTTP $code in ${elapsed} ms"
+                    }
+                } catch (e: Exception) {
+                    "$name: connection failed (${e.message ?: e.javaClass.simpleName})"
+                }
+                report.append(line).append("\\n")
+            }
+            report.append("\\nThis is a public-host reachability check only. It does not verify merchant credentials, create transactions, or prove that payments are configured. Never enter or store secret keys in this experiment.")
+            val result = report.toString()
+            recordExperiment("flutterwave_service_discovery", result)
             runOnUiThread { output.text = result }
         }
     }
