@@ -27,7 +27,8 @@ export function createNftLeaseGateway({
     if (!Number.isSafeInteger(expiresAt) || !Number.isSafeInteger(now) || expiresAt <= now) {
       throw new TypeError('A future server-authoritative expiresAt is required');
     }
-    const ttlSeconds = Math.ceil((expiresAt - now) / 1000);
+    const ttlSeconds = Math.floor((expiresAt - now) / 1000);
+    if (ttlSeconds < 1) throw new TypeError('Lease has less than one second remaining; refusing an overlong firewall grant');
     await run('nft', [
       'add', 'element', 'inet', table, set,
       '{', clientIp, 'timeout', String(ttlSeconds) + 's', '}',
