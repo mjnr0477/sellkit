@@ -66,6 +66,10 @@ class MainActivity : Activity() {
             text = "Measure cellular signal and registration"
             setOnClickListener { requestCellularStatus() }
         }
+        val usbRadio = Button(this).apply {
+            text = "Inspect USB radio / SDR hardware"
+            setOnClickListener { inspectUsbRadio() }
+        }
         val refresh = Button(this).apply {
             text = "Refresh connected network status"
             setOnClickListener { report.text = networkReport() }
@@ -121,6 +125,7 @@ class MainActivity : Activity() {
         layout.addView(scan)
         layout.addView(openWifiTest)
         layout.addView(cellular)
+        layout.addView(usbRadio)
         layout.addView(refresh)
         layout.addView(test)
         layout.addView(cellularTest)
@@ -130,6 +135,27 @@ class MainActivity : Activity() {
         layout.addView(offers)
         layout.addView(note)
         setContentView(ScrollView(this).apply { addView(layout) })
+    }
+
+    private fun inspectUsbRadio() {
+        val result = UsbRadioDiscovery.inspect(this)
+        val usbManager = getSystemService(Context.USB_SERVICE) as? android.hardware.usb.UsbManager
+        val details = result.devices.joinToString("\n\n") { device ->
+            val actual = usbManager?.deviceList?.get(device.deviceName)
+            val permission = if (actual == null) "device unavailable" else
+                if (usbManager.hasPermission(actual)) "USB permission granted" else "USB permission not granted"
+            val endpoint = actual?.let { RtlSdrUsbEndpointSelector.findBulkInputCandidate(it) }
+            val endpointText = if (endpoint == null) "bulk-IN endpoint: not found" else
+                "bulk-IN endpoint: interface ${endpoint.interfaceIndex}, address ${endpoint.endpointAddress}, max packet ${endpoint.maxPacketSize} bytes"
+            "Device: ${device.deviceName}\nUSB ID: %04x:%04x\nInterfaces: %d\nLikely RTL-SDR ID: %s\n%s\n%s".format(
+                device.vendorId, device.productId, device.interfaceCount,
+                if (device.likelyRadioDevice) "yes (heuristic only)" else "no",
+                permission, endpointText
+            )
+        }
+        report.text = "USB radio inspection\n${result.message}" +
+            (if (details.isBlank()) "" else "\n\n$details") +
+            "\n\nThis is hardware discovery only. It does not initialize the tuner, tune a frequency, or prove that received bytes are I/Q samples or that internet can be decoded."
     }
 
     private fun requestCellularStatus() {
