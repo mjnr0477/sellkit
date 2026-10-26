@@ -10,13 +10,21 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "POST required" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json", "Allow": "POST" },
+      status: 405, headers: { "Content-Type": "application/json", "Allow": "POST" },
     });
   }
 
-  // Narrowly scoped cleanup: only expired VYBORA posts can be removed.
-  // A database throttle limits this public cron endpoint to one run per five minutes.
+  const token = req.headers.get("x-cleanup-token");
+  const { data: authorized, error: authError } = await supabase.rpc(
+    "vybora_validate_cleanup_token", { p_token: token },
+  );
+  if (authError || authorized !== true) {
+    return new Response(JSON.stringify({ error: "Unauthorized cleanup request" }), {
+      status: 401, headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Only database-expired VYBORA posts can be removed; repeated runs are throttled.
   const { data: claimed, error: claimError } = await supabase.rpc("vybora_claim_cleanup_run");
   if (claimError) {
     console.error("Cleanup throttle check failed", claimError.message);
