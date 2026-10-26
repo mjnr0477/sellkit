@@ -76,6 +76,8 @@ class MainActivity : Activity() {
         root.addView(actionButton("Scan Bluetooth LE broadcasts (10 seconds)") { scanBluetoothLe() })
         root.addView(actionButton("Test USB, TV connection & charging") { testUsbAndPower() })
         root.addView(actionButton("Test actual internet route") { testInternet() })
+        root.addView(actionButton("Discover & test usable internet sources") { discoverInternetSources() })
+        root.addView(actionButton("Measure ambient EM observations") { measureSignals() })
         root.addView(actionButton("Export experiment log") { exportExperimentLog() })
         root.addView(actionButton("Clear results") { output.text = "Results cleared. Choose a test." })
         root.addView(output)
@@ -335,6 +337,65 @@ class MainActivity : Activity() {
         }
         output.text = report
         recordExperiment("usb_power_scan", report)
+    }
+
+
+    private fun discoverInternetSources() {
+        output.text = "Checking Android's active network and testing real HTTPS routes…"
+        thread {
+            val report = StringBuilder("INTERNET SOURCE DISCOVERY & CONNECTIVITY TEST\\n\\n")
+            try {
+                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val network = cm.activeNetwork
+                val caps = if (network != null) cm.getNetworkCapabilities(network) else null
+                if (caps == null) report.append("Active network: none reported by Android.\\n")
+                else {
+                    val transports = mutableListOf<String>()
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) transports.add("Wi-Fi")
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) transports.add("cellular")
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) transports.add("Ethernet")
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH)) transports.add("Bluetooth")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI_AWARE)) transports.add("Wi-Fi Aware")
+                    report.append("Android active transport: ").append(transports.joinToString().ifBlank { "other/unknown" }).append("\\n")
+                    report.append("Network claims internet capability: ").append(caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)).append("\\n")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) report.append("Android validated internet: ").append(caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)).append("\\n")
+                }
+            } catch (e: Exception) {
+                report.append("Network metadata unavailable: ").append(e.message ?: e.javaClass.simpleName).append("\\n")
+            }
+            report.append("\\nREAL HTTPS ENDPOINT TESTS\\n")
+            val endpoints = listOf(
+                "Google connectivity check" to "https://www.google.com/generate_204",
+                "Cloudflare trace" to "https://www.cloudflare.com/cdn-cgi/trace",
+                "Android connectivity check" to "https://connectivitycheck.gstatic.com/generate_204"
+            )
+            var successes = 0
+            for ((name, address) in endpoints) {
+                val result = try {
+                    val started = System.currentTimeMillis()
+                    val conn = (URL(address).openConnection() as HttpURLConnection).apply {
+                        connectTimeout = 5000
+                        readTimeout = 5000
+                        requestMethod = "GET"
+                        instanceFollowRedirects = false
+                    }
+                    val code = conn.responseCode
+                    conn.disconnect()
+                    val ms = System.currentTimeMillis() - started
+                    if (code in 200..399) successes++
+                    "$name: HTTP $code in ${ms} ms"
+                } catch (e: Exception) {
+                    "$name: failed (${e.message ?: e.javaClass.simpleName})"
+                }
+                report.append(result).append("\\n")
+            }
+            report.append("\\nRESULT: ").append(successes).append("/").append(endpoints.size)
+                .append(" endpoints reachable. This tests the phone's current Android network route, not every nearby Wi-Fi network or a distant source. A nearby access point is not proven to have internet until the phone can actually connect to it.\\n")
+            report.append("LIMIT: Without a network connection, a remote registry, or a compatible transmitting source, the phone cannot discover internet sources kilometres away. Built-in radios expose only supported Wi-Fi/Bluetooth/cellular metadata; they are not a general-purpose spectrum analyzer.")
+            val result = report.toString()
+            recordExperiment("internet_source_discovery", result)
+            runOnUiThread { output.text = result }
+        }
     }
 
     private fun testInternet() {
