@@ -41,19 +41,23 @@ function createPurchaseService({ daraja, store, clock = () => Date.now() }) {
       status: 'pending',
     });
 
+    let stk;
     try {
-      const stk = await daraja.initiateStkPush({
+      stk = await daraja.initiateStkPush({
         phone,
         amountKes: plan.amountKes,
         accountReference: payment.reference,
         transactionDesc: 'Timed internet',
       });
-      await store.attachCheckoutRequest(payment.id, stk.checkoutRequestId);
-      return { paymentId: payment.id, status: 'pending', customerMessage: stk.customerMessage };
     } catch (error) {
       await store.markPaymentFailed({ paymentId: payment.id, reason: 'STK initiation failed' });
       throw error;
     }
+
+    // Once Daraja has accepted the prompt, do not mark the payment failed if
+    // our database update fails: the customer may still complete the payment.
+    await store.attachCheckoutRequest(payment.id, stk.checkoutRequestId);
+    return { paymentId: payment.id, status: 'pending', customerMessage: stk.customerMessage };
   }
 
   // Call only after validating the callback against a stored request and
