@@ -11,8 +11,8 @@ import android.hardware.usb.UsbManager
  * starting it; without that initialization the endpoint may not emit I/Q data.
  */
 class RtlSdrLiveSampleProcessor(
-    usbManager: UsbManager,
-    device: UsbDevice,
+    private val usbManager: UsbManager,
+    private val device: UsbDevice,
     private val onAnalysis: (SignalDecoder.Analysis, receivedBytes: Int, analyzedBytes: Int) -> Unit,
     private val onStopped: (String?) -> Unit
 ) {
