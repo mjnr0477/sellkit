@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-android:
@@ -131,3 +131,19 @@ jobs:
             android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish public APK and AAB download links
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: vybora-android-build-${{ github.run_number }}
+          name: VYBORA Android build ${{ github.run_number }}
+          body: |
+            VYBORA Android release candidate.
+            Includes the installable APK and the Android App Bundle (AAB).
+            Please test on a physical Android device before wider distribution.
+            Live links point to official event providers; availability and free access depend on country and broadcast rights.
+          prerelease: true
+          files: |
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/bundle/release/app-release.aab
