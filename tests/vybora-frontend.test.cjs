@@ -39,6 +39,17 @@ test('video upload uses VYBORA storage and database records', () => {
   assert.match(html, /sb\.from\('vybora_follows'\)/);
 });
 
+test('comments, saved videos, and profile editing have working UI handlers', () => {
+  assert.match(html, /id="commentsBackdrop"/);
+  assert.match(html, /async function showComments\(post\)/);
+  assert.match(html, /sb\.from\('vybora_comments'\)\.insert/);
+  assert.match(html, /sb\.from\('vybora_bookmarks'\)\.insert/);
+  assert.match(html, /sb\.from\('vybora_bookmarks'\)\.delete/);
+  assert.match(html, /id="profileForm"/);
+  assert.match(html, /sb\.from\('vybora_profiles'\)\.upsert/);
+  assert.doesNotMatch(html, /Profile editing is the next feature/);
+});
+
 test('inline application JavaScript parses without syntax errors', () => {
   const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
     .map(match => match[1])
