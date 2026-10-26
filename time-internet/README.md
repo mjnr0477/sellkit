@@ -13,6 +13,10 @@ A customer purchases an access entitlement defined by time, not by a fixed numbe
 5. Keep this invention isolated in its own directory and branch. Do not reuse or edit previous Sellkit experiments.
 6. Target Android-phone-first testing, with no desktop computer required by the user.
 
+## B-Live-inspired architecture
+
+See [`BLIVE_INSPIRED_ARCHITECTURE.md`](./BLIVE_INSPIRED_ARCHITECTURE.md) for the public-product model and the independent implementation plan. Safaricom's private source code is not publicly available; this project implements the general time-based access principle, not a copy of its internal code.
+
 ## System boundary
 
 The invention has two separate parts:
