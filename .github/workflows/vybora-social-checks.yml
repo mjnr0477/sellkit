@@ -24,7 +24,7 @@ jobs:
           const fs = require('fs');
           const html = fs.readFileSync('index.html', 'utf8');
           const js = fs.readFileSync('social-features.js', 'utf8');
-          const migration = fs.readFileSync('supabase/migrations/20261026190000_vybora_friends_chat_live_mature_content.sql', 'utf8');
+          const migration = fs.readFileSync('supabase/migrations/20261026172827_vybora_friends_chat_live_mature_content.sql', 'utf8');
           for (const id of ['friendsBackdrop','chatBackdrop','liveBackdrop','reportBackdrop','allowMatureSetting']) {
             if (!html.includes('id="' + id + '"')) throw new Error('Missing UI element: ' + id);
           }
