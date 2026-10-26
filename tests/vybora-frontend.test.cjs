@@ -46,6 +46,8 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.match(html, /sb\.from\('vybora_bookmarks'\)\.insert/);
   assert.match(html, /sb\.from\('vybora_bookmarks'\)\.delete/);
   assert.match(html, /id="profileForm"/);
+  assert.match(html, /id="savedBackdrop"/);
+  assert.match(html, /async function openSavedVideos\(\)/);
   assert.match(html, /sb\.from\('vybora_profiles'\)\.upsert/);
   assert.doesNotMatch(html, /Profile editing is the next feature/);
 });
