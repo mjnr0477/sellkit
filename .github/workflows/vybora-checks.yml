@@ -1,8 +1,9 @@
 name: VYBORA frontend checks
 on:
   push:
-    branches: [feat/vybora-social-universe-mvp]
+    branches: [main, feat/vybora-social-universe-mvp]
   pull_request:
+    branches: [main]
     paths:
       - 'index.html'
       - 'tests/vybora-frontend.test.cjs'
