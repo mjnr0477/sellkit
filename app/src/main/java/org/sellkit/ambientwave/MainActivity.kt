@@ -1,6 +1,14 @@
 package org.sellkit.ambientwave
 
 import android.Manifest
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -26,7 +34,17 @@ import kotlin.concurrent.thread
 class MainActivity : Activity() {
     private lateinit var output: TextView
     private val requestCode = 741
-    private val needed = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_PHONE_STATE)
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var bleScanCallback: ScanCallback? = null
+    private var bleScanner: BluetoothLeScanner? = null
+    private var bleScanRunning = false
+    private val bleObservations = linkedMapOf<String, String>()
+
+    private fun requiredPermissions(): Array<String> {
+        val permissions = mutableListOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_PHONE_STATE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) permissions.add(Manifest.permission.BLUETOOTH_SCAN)
+        return permissions.toTypedArray()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,13 +70,14 @@ class MainActivity : Activity() {
         root.addView(heading)
         root.addView(intro)
         root.addView(actionButton("Measure available radio signals") { measureSignals() })
+        root.addView(actionButton("Scan Bluetooth LE broadcasts (10 seconds)") { scanBluetoothLe() })
         root.addView(actionButton("Test actual internet route") { testInternet() })
         root.addView(actionButton("Export experiment log") { exportExperimentLog() })
         root.addView(actionButton("Clear results") { output.text = "Results cleared. Choose a test." })
         root.addView(output)
         val scroll = ScrollView(this).apply { addView(root) }
         setContentView(scroll)
-        val missing = needed.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        val missing = requiredPermissions().filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
         if (missing.isNotEmpty()) requestPermissions(missing.toTypedArray(), requestCode)
     }
 
@@ -68,12 +87,7 @@ class MainActivity : Activity() {
     }
 
     private fun measureSignals() {
-        val missing = needed.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
-        if (missing.isNotEmpty()) {
-            requestPermissions(missing.toTypedArray(), requestCode)
-            output.text = "Permission required. Grant it, then tap Measure again."
-            return
-        }
+        if (!permissionsGranted()) return
         val report = StringBuilder("RADIO ENVIRONMENT\n\n")
         try {
             val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -118,6 +132,94 @@ class MainActivity : Activity() {
         recordExperiment("radio_scan", result)
     }
 
+
+    private fun permissionsGranted(): Boolean {
+        val missing = requiredPermissions().filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isNotEmpty()) {
+            requestPermissions(missing.toTypedArray(), requestCode)
+            output.text = "Permission required. Grant it, then tap the test again."
+            return false
+        }
+        return true
+    }
+
+    private fun scanBluetoothLe() {
+        if (!permissionsGranted()) return
+        if (bleScanRunning) {
+            output.text = "Bluetooth LE scan is already running. Wait for it to finish."
+            return
+        }
+        val manager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val adapter: BluetoothAdapter? = manager.adapter
+        if (adapter == null || !adapter.isEnabled) {
+            output.text = "Bluetooth is unavailable or switched off. Turn Bluetooth on and retry."
+            return
+        }
+        val scanner = adapter.bluetoothLeScanner
+        if (scanner == null) {
+            output.text = "This device does not expose a Bluetooth LE scanner right now."
+            return
+        }
+        bleScanner = scanner
+        bleObservations.clear()
+        bleScanRunning = true
+        output.text = "Scanning nearby Bluetooth LE advertisements for 10 seconds…"
+        val callback = object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult) {
+                val record = result.scanRecord
+                val name = record?.deviceName?.takeIf { it.isNotBlank() } ?: "(unnamed device)"
+                val address = try { result.device.address ?: "address unavailable" } catch (_: SecurityException) { "address restricted" }
+                val manufacturers = record?.manufacturerSpecificData
+                val manufacturerSummary = if (manufacturers == null || manufacturers.size() == 0) "none"
+                    else (0 until manufacturers.size()).joinToString { index ->
+                        "id=0x%04X:%dB".format(Locale.US, manufacturers.keyAt(index), manufacturers.valueAt(index).size)
+                    }
+                val services = record?.serviceUuids?.joinToString { it.uuid } ?: "none"
+                bleObservations[address] = name + " • " + address + " • RSSI " + result.rssi + " dBm • txPower " + result.txPower + " dBm • manufacturer data " + manufacturerSummary + " • service UUIDs " + services
+                val preview = bleObservations.values.take(25).joinToString("\n")
+                runOnUiThread { output.text = "Bluetooth LE scan running… " + bleObservations.size + " unique devices observed\n\n" + preview }
+            }
+
+            override fun onScanFailed(errorCode: Int) {
+                runOnUiThread {
+                    bleScanRunning = false
+                    output.text = "Bluetooth LE scan failed with Android error code " + errorCode + "."
+                    recordExperiment("ble_scan_error", "Android scan error code " + errorCode)
+                }
+            }
+        }
+        bleScanCallback = callback
+        try {
+            scanner.startScan(callback)
+            mainHandler.postDelayed({ finishBluetoothLeScan() }, 10_000L)
+        } catch (e: Exception) {
+            bleScanRunning = false
+            output.text = "Could not start Bluetooth LE scan: " + (e.message ?: e.javaClass.simpleName)
+            recordExperiment("ble_scan_error", output.text.toString())
+        }
+    }
+
+    private fun finishBluetoothLeScan() {
+        if (!bleScanRunning) return
+        try {
+            val callback = bleScanCallback
+            val scanner = bleScanner
+            if (callback != null && scanner != null) scanner.stopScan(callback)
+        } catch (_: Exception) { }
+        bleScanRunning = false
+        bleScanCallback = null
+        bleScanner = null
+        val report = buildString {
+            append("BLUETOOTH LE BROADCAST SCAN (10 seconds)\n")
+            append("Unique observed devices/broadcast addresses: ").append(bleObservations.size).append("\n\n")
+            if (bleObservations.isEmpty()) append("No advertisements returned. Check Bluetooth, permissions, and nearby BLE activity.\n")
+            else bleObservations.values.forEachIndexed { index, line -> append(index + 1).append(". ").append(line).append("\n") }
+            append("\nThis is advertisement metadata exposed by Android, not arbitrary radio spectrum or guaranteed internet packets.")
+        }
+        output.text = report
+        recordExperiment("ble_scan", report)
+    }
+
     private fun timestamp(): String = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).format(Date())
 
     private fun recordExperiment(kind: String, details: String) {
@@ -145,6 +247,11 @@ class MainActivity : Activity() {
         } catch (e: Exception) {
             output.text = "Could not export log: " + (e.message ?: e.javaClass.simpleName)
         }
+    }
+
+    override fun onDestroy() {
+        finishBluetoothLeScan()
+        super.onDestroy()
     }
 
     private fun testInternet() {
