@@ -16,6 +16,7 @@ function createPurchaseService({ daraja, store, clock = () => Date.now() }) {
   }
   for (const method of [
     'createPendingPayment',
+    'attachCheckoutRequest',
     'findPaymentByCheckoutRequestId',
     'markPaymentSucceeded',
     'markPaymentFailed',
@@ -40,15 +41,19 @@ function createPurchaseService({ daraja, store, clock = () => Date.now() }) {
       status: 'pending',
     });
 
-    const stk = await daraja.initiateStkPush({
-      phone,
-      amountKes: plan.amountKes,
-      accountReference: payment.reference,
-      transactionDesc: 'Timed internet',
-    });
-
-    await store.attachCheckoutRequest(payment.id, stk.checkoutRequestId);
-    return { paymentId: payment.id, status: 'pending', customerMessage: stk.customerMessage };
+    try {
+      const stk = await daraja.initiateStkPush({
+        phone,
+        amountKes: plan.amountKes,
+        accountReference: payment.reference,
+        transactionDesc: 'Timed internet',
+      });
+      await store.attachCheckoutRequest(payment.id, stk.checkoutRequestId);
+      return { paymentId: payment.id, status: 'pending', customerMessage: stk.customerMessage };
+    } catch (error) {
+      await store.markPaymentFailed({ paymentId: payment.id, reason: 'STK initiation failed' });
+      throw error;
+    }
   }
 
   // Call only after validating the callback against a stored request and
@@ -58,11 +63,14 @@ function createPurchaseService({ daraja, store, clock = () => Date.now() }) {
     const payment = await store.findPaymentByCheckoutRequestId(checkoutRequestId);
     if (!payment) throw new Error('No matching pending payment');
     if (payment.status === 'succeeded') {
+      const alreadyPaidPlan = getPackage(payment.packageId);
+      if (!alreadyPaidPlan) throw new Error('Unknown package on paid payment');
       return store.createEntitlementIfAbsent({
         paymentId: payment.id,
         userId: payment.userId,
         packageId: payment.packageId,
         startsAt: payment.paidAt,
+        durationMs: alreadyPaidPlan.durationMs,
       });
     }
     if (payment.status !== 'pending') throw new Error('Payment is not pending');
