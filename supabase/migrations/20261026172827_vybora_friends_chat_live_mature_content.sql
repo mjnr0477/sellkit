@@ -57,6 +57,13 @@ create table if not exists public.vybora_live_signals(
  check(sender_id<>recipient_id)
 );
 create index if not exists vybora_live_signals_recipient_idx on public.vybora_live_signals(session_id,recipient_id,created_at);
+create index if not exists vybora_live_participants_user_idx on public.vybora_live_participants(user_id);
+create index if not exists vybora_live_sessions_host_idx on public.vybora_live_sessions(host_id,created_at desc);
+create index if not exists vybora_live_signals_sender_idx on public.vybora_live_signals(sender_id,created_at desc);
+create index if not exists vybora_live_signals_recipient_only_idx on public.vybora_live_signals(recipient_id,created_at desc);
+create index if not exists vybora_reports_post_idx on public.vybora_reports(post_id,created_at desc);
+create index if not exists vybora_reports_user_idx on public.vybora_reports(reported_user_id,created_at desc);
+create index if not exists vybora_reports_reporter_idx on public.vybora_reports(reporter_id,created_at desc);
 alter table public.vybora_friend_requests enable row level security;
 alter table public.vybora_messages enable row level security;
 alter table public.vybora_reports enable row level security;
