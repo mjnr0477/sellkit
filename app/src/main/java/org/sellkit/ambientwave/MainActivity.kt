@@ -17,6 +17,9 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
 import android.os.Bundle
+import android.os.BatteryManager
+import android.hardware.usb.UsbManager
+import android.net.Network
 import android.telephony.CellInfo
 import android.telephony.TelephonyManager
 import android.view.Gravity
@@ -71,6 +74,7 @@ class MainActivity : Activity() {
         root.addView(intro)
         root.addView(actionButton("Measure available radio signals") { measureSignals() })
         root.addView(actionButton("Scan Bluetooth LE broadcasts (10 seconds)") { scanBluetoothLe() })
+        root.addView(actionButton("Test USB, TV connection & charging") { testUsbAndPower() })
         root.addView(actionButton("Test actual internet route") { testInternet() })
         root.addView(actionButton("Export experiment log") { exportExperimentLog() })
         root.addView(actionButton("Clear results") { output.text = "Results cleared. Choose a test." })
@@ -252,6 +256,85 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         finishBluetoothLeScan()
         super.onDestroy()
+    }
+
+    private fun testUsbAndPower() {
+        val report = buildString {
+            append("USB AND POWER EXPERIMENT\\n\\n")
+            try {
+                val batteryIntent = registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                if (batteryIntent == null) {
+                    append("Battery/charging broadcast unavailable.\\n")
+                } else {
+                    val level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                    val scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+                    val percent = if (level >= 0 && scale > 0) (level * 100) / scale else -1
+                    val status = batteryIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+                    val plugged = batteryIntent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0)
+                    val statusText = when (status) {
+                        BatteryManager.BATTERY_STATUS_CHARGING -> "charging"
+                        BatteryManager.BATTERY_STATUS_FULL -> "full"
+                        BatteryManager.BATTERY_STATUS_DISCHARGING -> "discharging"
+                        BatteryManager.BATTERY_STATUS_NOT_CHARGING -> "not charging"
+                        else -> "unknown"
+                    }
+                    val source = when {
+                        plugged and BatteryManager.BATTERY_PLUGGED_USB != 0 -> "USB power"
+                        plugged and BatteryManager.BATTERY_PLUGGED_AC != 0 -> "AC/wall charger"
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 &&
+                            plugged and BatteryManager.BATTERY_PLUGGED_WIRELESS != 0 -> "wireless charging"
+                        plugged == 0 -> "no external power reported"
+                        else -> "other/unknown power source (code $plugged)"
+                    }
+                    append("Battery level: ").append(if (percent >= 0) "$percent%" else "unavailable").append("\\n")
+                    append("Battery status: ").append(statusText).append("\\n")
+                    append("Power source reported by Android: ").append(source).append("\\n")
+                }
+            } catch (e: Exception) {
+                append("Battery status unavailable: ").append(e.message ?: e.javaClass.simpleName).append("\\n")
+            }
+            try {
+                val usb = getSystemService(Context.USB_SERVICE) as UsbManager
+                val devices = usb.deviceList.values
+                append("\\nUSB host devices visible to Android: ").append(devices.size).append("\\n")
+                if (devices.isEmpty()) {
+                    append("No USB devices exposed in host mode. A TV connected as USB host may not appear here; this alone does not mean the cable is faulty.\\n")
+                } else {
+                    devices.take(20).forEachIndexed { index, device ->
+                        append(index + 1).append(". ").append(device.deviceName)
+                            .append(" • vendorId=").append(device.vendorId)
+                            .append(" • productId=").append(device.productId)
+                            .append(" • interfaces=").append(device.interfaceCount).append("\\n")
+                    }
+                }
+            } catch (e: Exception) {
+                append("USB device listing unavailable: ").append(e.message ?: e.javaClass.simpleName).append("\\n")
+            }
+            try {
+                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val network = cm.activeNetwork
+                val caps = if (network != null) cm.getNetworkCapabilities(network) else null
+                append("\\nACTIVE NETWORK (Android-reported)\\n")
+                if (caps == null) append("No active network capabilities reported.\\n")
+                else {
+                    val transports = mutableListOf<String>()
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) transports.add("Wi-Fi")
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) transports.add("cellular")
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) transports.add("Ethernet")
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH)) transports.add("Bluetooth")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI_AWARE)) transports.add("Wi-Fi Aware")
+                    append("Transport(s): ").append(transports.joinToString().ifBlank { "other/unknown" }).append("\\n")
+                    append("Android reports internet capability: ").append(caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)).append("\\n")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) append("Android reports validated internet: ").append(caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)).append("\\n")
+                }
+            } catch (e: Exception) {
+                append("Network state unavailable: ").append(e.message ?: e.javaClass.simpleName).append("\\n")
+            }
+            append("\\nSAFETY / INTERPRETATION\\n")
+            append("This test reads Android-exposed charging, USB-host and network metadata. It cannot measure mains voltage or decode arbitrary electrical signals. Do not connect exposed wires or modify a charger. A TV USB port or charger does not inherently provide internet.")
+        }
+        output.text = report
+        recordExperiment("usb_power_scan", report)
     }
 
     private fun testInternet() {
