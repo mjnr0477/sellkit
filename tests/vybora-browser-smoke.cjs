@@ -13,6 +13,7 @@ test('hosted VYBORA feed loads and guests can watch but cannot interact without 
     await page.waitForFunction(() =>
       document.querySelector('#commentsBackdrop') &&
       document.querySelector('#profileBackdrop') &&
+      document.querySelector('#savedBackdrop') &&
       document.querySelector('#authBackdrop'),
       { timeout: 30000 }
     );
@@ -21,6 +22,7 @@ test('hosted VYBORA feed loads and guests can watch but cannot interact without 
     assert.equal(await page.locator('.video-card').count() > 0, true, 'guest feed should show a video card');
     assert.equal(await page.locator('[data-tab="Watch"]').count(), 1, 'watch navigation should exist');
     assert.equal(await page.locator('#createBtn').count(), 1, 'create navigation should exist');
+    assert.equal(await page.locator('#savedOpenBtn').count(), 1, 'saved-video library should exist');
     assert.equal(await page.locator('#feed').evaluate(el => getComputedStyle(el).scrollSnapType.includes('y')), true,
       'feed should use vertical scroll snapping');
 
