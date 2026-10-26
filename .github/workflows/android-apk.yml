@@ -11,41 +11,109 @@ permissions:
   contents: read
 
 jobs:
-  build-debug-apk:
+  build-android:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+
       - name: Install Capacitor dependencies
         run: npm install
+
       - name: Prepare web assets and generate Android project
         run: npm run android:sync
-      - name: Build installable debug APK
+
+      - name: Configure release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${ANDROID_KEYSTORE_BASE64}" ]]; then
+            echo "::error::Missing ANDROID_KEYSTORE_BASE64 repository secret."
+            exit 1
+          fi
+          export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/vybora-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+          test -s "$ANDROID_KEYSTORE_PATH"
+          chmod 600 "$ANDROID_KEYSTORE_PATH"
+          echo "ANDROID_KEYSTORE_PATH=$ANDROID_KEYSTORE_PATH" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          if "signingConfigs {" not in s:
+              marker = "    buildTypes {"
+              if marker not in s:
+                  raise SystemExit("Could not find Android buildTypes block; refusing to alter unknown Gradle layout.")
+              signing = """    signingConfigs {
+                  release {
+                      storeFile file(System.getenv("ANDROID_KEYSTORE_PATH"))
+                      storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                      keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+                  }
+              }
+
+          """
+              s = s.replace(marker, signing + marker, 1)
+          release_marker = "        release {"
+          if release_marker not in s:
+              raise SystemExit("Could not find release build type; refusing to alter unknown Gradle layout.")
+          pos = s.index(release_marker) + len(release_marker)
+          following = s[pos:pos + 300]
+          if "signingConfig signingConfigs.release" not in following:
+              s = s[:pos] + "\n            signingConfig signingConfigs.release" + s[pos:]
+          p.write_text(s)
+          PY
+
+      - name: Build release-signed APK
         working-directory: android
-        run: ./gradlew --no-daemon assembleDebug
-      - name: Build debug Android App Bundle
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Build release-signed Android App Bundle
         working-directory: android
-        run: ./gradlew --no-daemon bundleDebug
-      - name: Upload APK and AAB artifacts
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon bundleRelease
+
+      - name: Verify release packages exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s android/app/build/outputs/apk/release/app-release.apk
+          test -s android/app/build/outputs/bundle/release/app-release.aab
+          ls -lh android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Upload signed APK and AAB release candidates
         uses: actions/upload-artifact@v4
         with:
-          name: vybora-android-test-packages
+          name: vybora-android-signed-release-candidates
           path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/app/build/outputs/bundle/debug/app-debug.aab
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 14
