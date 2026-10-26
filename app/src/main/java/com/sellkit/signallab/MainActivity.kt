@@ -11,6 +11,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.net.wifi.WifiManager
+import android.telephony.TelephonyManager
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
@@ -26,6 +27,7 @@ class MainActivity : Activity() {
     private lateinit var report: TextView
     private val executor = Executors.newSingleThreadExecutor()
     private val scanPermissionRequest = 410
+    private val phoneStatePermissionRequest = 411
     private val scanPermissions: Array<String>
         get() = if (Build.VERSION.SDK_INT >= 33)
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.NEARBY_WIFI_DEVICES)
@@ -53,6 +55,10 @@ class MainActivity : Activity() {
         val scan = Button(this).apply {
             text = "Scan nearby Wi-Fi signals"
             setOnClickListener { requestScanPermissionAndScan() }
+        }
+        val cellular = Button(this).apply {
+            text = "Measure cellular signal and registration"
+            setOnClickListener { requestCellularStatus() }
         }
         val refresh = Button(this).apply {
             text = "Refresh connected network status"
@@ -96,6 +102,7 @@ class MainActivity : Activity() {
         layout.addView(intro)
         layout.addView(report)
         layout.addView(scan)
+        layout.addView(cellular)
         layout.addView(refresh)
         layout.addView(test)
         layout.addView(zeroRated)
@@ -106,6 +113,41 @@ class MainActivity : Activity() {
         setContentView(ScrollView(this).apply { addView(layout) })
     }
 
+    private fun requestCellularStatus() {
+        if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), phoneStatePermissionRequest)
+            return
+        }
+        report.text = networkReport() + "\n\n" + cellularReport()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun cellularReport(): String {
+        return try {
+            val tm = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+            val networkType = when (tm.dataNetworkType) {
+                TelephonyManager.NETWORK_TYPE_NR -> "5G NR"
+                TelephonyManager.NETWORK_TYPE_LTE -> "4G LTE"
+                TelephonyManager.NETWORK_TYPE_HSPAP, TelephonyManager.NETWORK_TYPE_HSPA,
+                TelephonyManager.NETWORK_TYPE_HSDPA, TelephonyManager.NETWORK_TYPE_HSUPA -> "3G HSPA"
+                TelephonyManager.NETWORK_TYPE_UMTS -> "3G UMTS"
+                TelephonyManager.NETWORK_TYPE_EDGE -> "2G EDGE"
+                TelephonyManager.NETWORK_TYPE_GPRS -> "2G GPRS"
+                TelephonyManager.NETWORK_TYPE_GSM -> "2G GSM"
+                TelephonyManager.NETWORK_TYPE_UNKNOWN -> "Unknown / not registered for mobile data"
+                else -> "Other (${tm.dataNetworkType})"
+            }
+            val signal = tm.signalStrength
+            val strength = signal?.let { "Signal level: ${it.level}/4; dBm: ${it.cellSignalStrengths.firstOrNull()?.dbm ?: "unavailable"}" }
+                ?: "Signal strength unavailable (SIM, radio state, or Android restriction)."
+            val dataEnabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) tm.isDataEnabled else null
+            "Cellular radio diagnostics\nMobile data network type: $networkType\nMobile data enabled: ${dataEnabled ?: "not exposed on this Android version"}\n$strength\n\nImportant: radio signal bars only measure the phone-to-tower link. They do not create an internet connection or provide carrier authorization. A working path still requires registered cellular service and data access from the operator."
+        } catch (e: SecurityException) {
+            "Android denied phone-state access. Grant Phone state permission and retry."
+        } catch (e: Exception) {
+            "Cellular diagnostics unavailable: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}"
+        }
+    }
     private fun requestScanPermissionAndScan() {
         val missing = scanPermissions.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
         if (missing.isNotEmpty()) {
@@ -117,6 +159,10 @@ class MainActivity : Activity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == phoneStatePermissionRequest) {
+            report.text = if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) networkReport() + "\n\n" + cellularReport() else "Phone state permission was not granted; cellular signal details are unavailable."
+            return
+        }
         if (requestCode == scanPermissionRequest) {
             if (scanPermissions.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) {
                 scanNearbyWifi()
