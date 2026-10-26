@@ -29,7 +29,7 @@ test('account-only interactions prompt guests to authenticate', () => {
 
 test('frontend uses public publishable credentials only', () => {
   assert.match(html, /sb_publishable_[A-Za-z0-9_-]+/);
-  assert.match(html, /emailRedirectTo:location\.origin\+location\.pathname/);
+  assert.match(html, /emailRedirectTo:\(window\.Capacitor\?\.isNativePlatform\?\.\(\)\?'https:\/\/vybora-social-live\.onrender\.com\/'\:location\.origin\+location\.pathname\)/);
   assert.doesNotMatch(html, /service_role|sb_secret_/);
 });
 
