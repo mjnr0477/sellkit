@@ -38,7 +38,7 @@ test('video upload uses VYBORA storage and database records', () => {
   assert.match(html, /sb\.from\('vybora_posts'\)\.insert/);
   assert.match(html, /media_path:path/);
   assert.match(html, /expires_at:new Date\(Date\.now\(\)\+24\*60\*60\*1000\)/);
-  assert.match(html, /file\.size>30\*1024\*1024/);
+  assert.match(html, /file\.size>10\*1024\*1024/);
   assert.match(html, /vybora_record_video_view/);
   assert.match(html, /views_count/);
   assert.match(html, /sb\.from\('vybora_comments'\)\.insert/);
