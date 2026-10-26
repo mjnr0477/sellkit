@@ -46,7 +46,7 @@ object UsbRadioDiscovery {
                 vendorId = device.vendorId,
                 productId = device.productId,
                 interfaceCount = device.interfaceCount,
-                likelyRadioDevice = looksLikeRtlSdr(device)
+                likelyRadioDevice = isLikelyRtlSdr(device.vendorId, device.productId)
             )
         }.sortedWith(compareByDescending<DeviceSummary> { it.likelyRadioDevice }.thenBy { it.deviceName })
 
@@ -61,14 +61,21 @@ object UsbRadioDiscovery {
         return Result(true, devices, message)
     }
 
-    private fun looksLikeRtlSdr(device: UsbDevice): Boolean {
-        // Common RTL2832U-based SDR USB identifiers. Clones may use other IDs.
+    /**
+     * USB-ID heuristic only; a matching ID does not prove SDR capability.
+     * Internal visibility lets JVM tests validate the known-ID policy.
+     */
+    internal fun isLikelyRtlSdr(vendorId: Int, productId: Int): Boolean {
+        // Common RTL2832U-based identifiers. Clones may use other IDs.
         val known = setOf(
             0x0bda to 0x2832,
             0x0bda to 0x2838,
+            0x0bda to 0x2837,
+            0x0bda to 0x2840,
+            0x0bda to 0x2836,
             0x1d19 to 0x1101,
             0x1d19 to 0x1102
         )
-        return (device.vendorId to device.productId) in known
+        return (vendorId to productId) in known
     }
 }
