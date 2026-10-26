@@ -54,6 +54,13 @@ function createPurchaseService({ daraja, store, clock = () => Date.now() }) {
       throw error;
     }
 
+    // A malformed provider response must never be persisted as a usable checkout.
+    // Keep the payment pending for reconciliation: the customer may already have
+    // received a prompt even though our response did not contain its identifier.
+    if (!stk || typeof stk.checkoutRequestId !== 'string' || !stk.checkoutRequestId.trim()) {
+      throw new Error('Daraja returned no usable checkout request ID; payment needs reconciliation');
+    }
+
     // Once Daraja has accepted the prompt, do not mark the payment failed if
     // our database update fails: the customer may still complete the payment.
     await store.attachCheckoutRequest(payment.id, stk.checkoutRequestId);
