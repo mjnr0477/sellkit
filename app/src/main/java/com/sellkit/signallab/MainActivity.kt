@@ -58,6 +58,10 @@ class MainActivity : Activity() {
             text = "Scan nearby Wi-Fi signals"
             setOnClickListener { requestScanPermissionAndScan() }
         }
+        val openWifiTest = Button(this).apply {
+            text = "Test visible open Wi-Fi source"
+            setOnClickListener { requestOpenWifiTest() }
+        }
         val cellular = Button(this).apply {
             text = "Measure cellular signal and registration"
             setOnClickListener { requestCellularStatus() }
@@ -115,6 +119,7 @@ class MainActivity : Activity() {
         layout.addView(intro)
         layout.addView(report)
         layout.addView(scan)
+        layout.addView(openWifiTest)
         layout.addView(cellular)
         layout.addView(refresh)
         layout.addView(test)
@@ -227,6 +232,70 @@ class MainActivity : Activity() {
             } catch (e: Exception) {
                 runOnUiThread { report.text = "Wi-Fi scan failed: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}" }
             }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun requestOpenWifiTest() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            report.text = "This test requires Android 10+. Use Android Wi-Fi settings on older versions."
+            return
+        }
+        val missing = scanPermissions.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isNotEmpty()) {
+            requestPermissions(missing.toTypedArray(), scanPermissionRequest)
+            report.text = "Grant Wi-Fi scan permissions, then tap the test button again."
+            return
+        }
+        val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        if (!wifi.isWifiEnabled) { report.text = "Turn on Wi-Fi in Android settings first."; return }
+        val open = try { wifi.scanResults.filter { it.SSID.isNotBlank() &&
+            !it.capabilities.contains("WPA", true) && !it.capabilities.contains("WEP", true) &&
+            !it.capabilities.contains("SAE", true) && !it.capabilities.contains("EAP", true)
+        }.distinctBy { it.SSID }.sortedByDescending { it.level } } catch (e: Exception) {
+            report.text = "Could not read Wi-Fi scan results: " + (e.message ?: e.javaClass.simpleName); return
+        }
+        if (open.isEmpty()) { report.text = "No visible open Wi-Fi network in current scan results. Scan again or use Android Wi-Fi settings."; return }
+        val labels = open.map { it.SSID + " · " + it.level + " dBm · " + it.frequency + " MHz" }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("Choose an open network")
+            .setMessage("Choose only a network you are authorized to use. Android will ask for approval. This cannot bypass billing or captive portals.")
+            .setItems(labels) { _, index -> connectOpenWifi(open[index].SSID) }
+            .setNegativeButton("Cancel", null).show()
+    }
+
+    private fun connectOpenWifi(ssid: String) {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val specifier = android.net.wifi.WifiNetworkSpecifier.Builder().setSsid(ssid).build()
+        val request = NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+            .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).setNetworkSpecifier(specifier).build()
+        report.text = "Waiting for Android approval to connect to " + ssid + "…"
+        val done = java.util.concurrent.atomic.AtomicBoolean(false)
+        lateinit var callback: ConnectivityManager.NetworkCallback
+        callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                if (!done.compareAndSet(false, true)) return
+                executor.execute {
+                    val result = try {
+                        val conn = network.openConnection(URL("https://connectivitycheck.gstatic.com/generate_204")) as HttpURLConnection
+                        conn.connectTimeout = 7000; conn.readTimeout = 7000; conn.instanceFollowRedirects = false
+                        conn.requestMethod = "GET"; conn.connect(); val code = conn.responseCode; conn.disconnect()
+                        if (code == 204) "HTTPS test succeeded on " + ssid + ". This confirms endpoint reachability only, not free access."
+                        else "Connected to " + ssid + ", but endpoint returned HTTP " + code + "."
+                    } catch (e: Exception) { "Connected to " + ssid + ", but HTTPS test failed: " + (e.message ?: e.javaClass.simpleName) }
+                    runOnUiThread {
+                        report.text = networkReport() + "\n\nOpen Wi-Fi source test\n" + result + "\n\nThis tests an existing network; it does not convert radiation into internet."
+                        try { cm.unregisterNetworkCallback(callback) } catch (_: Exception) { }
+                    }
+                }
+            }
+            override fun onUnavailable() {
+                if (!done.compareAndSet(false, true)) return
+                runOnUiThread { report.text = "Android could not connect to " + ssid + ". It may require a sign-in page or deny the request." }
+                try { cm.unregisterNetworkCallback(callback) } catch (_: Exception) { }
+            }
+        }
+        try { cm.requestNetwork(request, callback, 25000) } catch (e: Exception) {
+            report.text = "Wi-Fi request failed: " + (e.message ?: e.javaClass.simpleName)
         }
     }
 
