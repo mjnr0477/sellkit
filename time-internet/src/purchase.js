@@ -91,6 +91,48 @@ function createPurchaseService({ daraja, store, clock = () => Date.now() }) {
     });
   }
 
+  async function verifyAndProcessStkCallback(callbackBody) {
+    if (!daraja || typeof daraja.queryStkPush !== 'function') {
+      throw new Error('Daraja status-query support is required before processing callbacks');
+    }
+    const callback = callbackBody && callbackBody.Body && callbackBody.Body.stkCallback;
+    if (!callback || typeof callback.CheckoutRequestID !== 'string') {
+      throw new TypeError('Malformed Daraja STK callback');
+    }
+    if (String(callback.ResultCode) !== '0') {
+      // A callback alone must not grant access. Reconcile failures separately
+      // using Daraja's status query and stored transaction state.
+      return { activated: false, status: 'awaiting_reconciliation' };
+    }
+
+    const payment = await store.findPaymentByCheckoutRequestId(callback.CheckoutRequestID);
+    if (!payment) throw new Error('No matching pending payment');
+    const queryResult = await daraja.queryStkPush({ checkoutRequestId: callback.CheckoutRequestID });
+    if (String(queryResult.ResultCode) !== '0') {
+      return { activated: false, status: 'awaiting_reconciliation' };
+    }
+
+    const items = callback.CallbackMetadata && callback.CallbackMetadata.Item;
+    const metadata = Array.isArray(items)
+      ? Object.fromEntries(items.filter((item) => item && typeof item.Name === 'string').map((item) => [item.Name, item.Value]))
+      : {};
+    const amount = Number(metadata.Amount);
+    const receiptNumber = metadata.MpesaReceiptNumber;
+    if (!Number.isFinite(amount) || amount !== payment.amountKes) {
+      throw new Error('M-PESA callback amount does not match the stored package price');
+    }
+    if (typeof receiptNumber !== 'string' || !receiptNumber.trim()) {
+      throw new Error('M-PESA receipt number is missing');
+    }
+
+    const entitlement = await confirmVerifiedPayment({
+      checkoutRequestId: callback.CheckoutRequestID,
+      receiptNumber,
+      verifiedAt: clock(),
+    });
+    return { activated: true, status: 'succeeded', entitlement };
+  }
+
   async function failVerifiedPayment({ checkoutRequestId, reason }) {
     const payment = await store.findPaymentByCheckoutRequestId(checkoutRequestId);
     if (!payment) throw new Error('No matching pending payment');
@@ -98,7 +140,7 @@ function createPurchaseService({ daraja, store, clock = () => Date.now() }) {
     return store.markPaymentFailed({ paymentId: payment.id, reason: String(reason || 'Payment failed') });
   }
 
-  return { startPurchase, confirmVerifiedPayment, failVerifiedPayment };
+  return { startPurchase, confirmVerifiedPayment, verifyAndProcessStkCallback, failVerifiedPayment };
 }
 
 module.exports = { createPurchaseService };
