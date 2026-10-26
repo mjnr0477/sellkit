@@ -20,6 +20,10 @@ import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.BatteryManager
 import android.hardware.usb.UsbManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.net.Network
 import android.location.LocationManager
 import android.telephony.CellInfo
@@ -46,6 +50,7 @@ class MainActivity : Activity() {
     private var bleScanCallback: ScanCallback? = null
     private var bleScanner: BluetoothLeScanner? = null
     private var bleScanRunning = false
+    private var magneticSurveyListener: SensorEventListener? = null
     private val bleObservations = linkedMapOf<String, String>()
 
     private fun requiredPermissions(): Array<String> {
@@ -78,6 +83,7 @@ class MainActivity : Activity() {
         root.addView(heading)
         root.addView(intro)
         root.addView(actionButton("Measure available radio signals") { measureSignals() })
+        root.addView(actionButton("Survey magnetic field near powered wiring (8 seconds)") { surveyMagneticField() })
         root.addView(actionButton("Scan Bluetooth LE broadcasts (10 seconds)") { scanBluetoothLe() })
         root.addView(actionButton("Test USB, TV connection & charging") { testUsbAndPower() })
         root.addView(actionButton("Test actual internet route") { testInternet() })
@@ -266,7 +272,69 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         finishBluetoothLeScan()
+        magneticSurveyListener?.let { (getSystemService(Context.SENSOR_SERVICE) as SensorManager).unregisterListener(it) }
+        magneticSurveyListener = null
         super.onDestroy()
+    }
+
+
+    // Uses only the phone's built-in magnetometer. It is not a PLC receiver or spectrum analyzer.
+    private fun surveyMagneticField() {
+        val manager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val sensor = manager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        if (sensor == null) {
+            output.text = "MAGNETIC-FIELD SURVEY\\n\\nThis phone does not expose a magnetic-field sensor to Android."
+            recordExperiment("magnetic_field_survey", output.text.toString())
+            return
+        }
+        if (magneticSurveyListener != null) {
+            output.text = "A magnetic-field survey is already running. Wait for it to finish."
+            return
+        }
+        val samples = mutableListOf<FloatArray>()
+        val startedAt = System.currentTimeMillis()
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                if (event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD && event.values.size >= 3) {
+                    samples.add(floatArrayOf(event.values[0], event.values[1], event.values[2]))
+                }
+            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) { }
+        }
+        magneticSurveyListener = listener
+        output.text = "Sampling the phone's magnetic-field sensor for 8 seconds. Hold the phone still, then repeat near the cable and away from it for comparison. Do not touch exposed wiring."
+        if (!manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_NORMAL)) {
+            magneticSurveyListener = null
+            output.text = "Could not start the magnetic-field sensor."
+            recordExperiment("magnetic_field_survey", output.text.toString())
+            return
+        }
+        mainHandler.postDelayed({
+            manager.unregisterListener(listener)
+            magneticSurveyListener = null
+            val result = buildString {
+                append("MAGNETIC-FIELD SURVEY\\n\\n")
+                append("Duration: ").append((System.currentTimeMillis() - startedAt) / 1000).append(" seconds\\n")
+                append("Samples: ").append(samples.size).append("\\n")
+                if (samples.isEmpty()) {
+                    append("No readings were returned by the sensor.\\n")
+                } else {
+                    val magnitudes = samples.map { v -> kotlin.math.sqrt((v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).toDouble()).toFloat() }
+                    val avg = magnitudes.average()
+                    val min = magnitudes.minOrNull() ?: 0f
+                    val max = magnitudes.maxOrNull() ?: 0f
+                    append(String.format(Locale.US, "Average field magnitude: %.2f µT\\n", avg))
+                    append(String.format(Locale.US, "Minimum / maximum: %.2f / %.2f µT\\n", min, max))
+                    append(String.format(Locale.US, "Observed range: %.2f µT\\n", max - min))
+                    append(String.format(Locale.US, "Mean axes: X %.2f, Y %.2f, Z %.2f µT\\n",
+                        samples.map { it[0] }.average(), samples.map { it[1] }.average(), samples.map { it[2] }.average()))
+                }
+                append("\\nHOW TO USE: Take a baseline reading away from wiring, then repeat at the same phone orientation near an ordinary, safely enclosed powered cable. Compare readings across repeated trials.")
+                append("\\nLIMIT: This is a broad magnetic-field sensor, not a calibrated AC-field meter. Readings can change due to Earth's field, phone orientation, magnets, motors, speakers and other appliances. It cannot detect or decode power-line internet data, identify a connected router, or establish internet access. Never open outlets or touch exposed conductors.")
+            }
+            recordExperiment("magnetic_field_survey", result)
+            output.text = result
+        }, 8000L)
     }
 
     private fun testUsbAndPower() {
