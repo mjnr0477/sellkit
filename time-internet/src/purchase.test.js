@@ -92,3 +92,55 @@ test('unknown package is rejected before payment provider is called', async () =
   await assert.rejects(service.startPurchase({ userId: 'user-3', packageId: 'unknown', phone: '0712345678' }), /Unknown package/);
   assert.equal(called, false);
 });
+
+test('successful callback requires Daraja status verification and matching amount', async () => {
+  const store = fakeStore();
+  let queried = 0;
+  const service = createPurchaseService({
+    store,
+    clock: () => 5000,
+    daraja: {
+      async initiateStkPush() { return { checkoutRequestId: 'checkout-verified' }; },
+      async queryStkPush() { queried += 1; return { ResultCode: '0' }; },
+    },
+  });
+  await service.startPurchase({ userId: 'user-4', packageId: 'time-12h-kes10', phone: '0712345678' });
+  const result = await service.verifyAndProcessStkCallback({
+    Body: { stkCallback: {
+      CheckoutRequestID: 'checkout-verified',
+      ResultCode: 0,
+      CallbackMetadata: { Item: [
+        { Name: 'Amount', Value: 10 },
+        { Name: 'MpesaReceiptNumber', Value: 'RCP123' },
+      ] },
+    } },
+  });
+  assert.equal(queried, 1);
+  assert.equal(result.activated, true);
+  assert.equal(result.entitlement.durationMs, 12 * 60 * 60 * 1000);
+});
+
+test('does not activate when Daraja cannot confirm the transaction', async () => {
+  const store = fakeStore();
+  const service = createPurchaseService({
+    store,
+    clock: () => 5000,
+    daraja: {
+      async initiateStkPush() { return { checkoutRequestId: 'checkout-pending' }; },
+      async queryStkPush() { return { ResultCode: '1032' }; },
+    },
+  });
+  await service.startPurchase({ userId: 'user-5', packageId: 'time-12h-kes10', phone: '0712345678' });
+  const result = await service.verifyAndProcessStkCallback({
+    Body: { stkCallback: {
+      CheckoutRequestID: 'checkout-pending',
+      ResultCode: 0,
+      CallbackMetadata: { Item: [
+        { Name: 'Amount', Value: 10 },
+        { Name: 'MpesaReceiptNumber', Value: 'FAKE123' },
+      ] },
+    } },
+  });
+  assert.equal(result.activated, false);
+  assert.equal(store.entitlements.size, 0);
+});
