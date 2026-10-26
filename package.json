@@ -1,0 +1,8 @@
+{
+  "name": "ambient-wave-source-registry",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ephemeral registry for opt-in internet-source discovery",
+  "scripts": { "start": "node registry-server/server.js" },
+  "engines": { "node": ">=18" }
+}
