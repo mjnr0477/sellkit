@@ -44,6 +44,33 @@ function createDarajaClient({ env = process.env, fetchImpl = fetch, now = () => 
     return body.access_token;
   }
 
+  async function queryStkPush({ checkoutRequestId }) {
+    if (typeof checkoutRequestId !== 'string' || !checkoutRequestId.trim()) {
+      throw new TypeError('checkoutRequestId is required');
+    }
+    const shortcode = requiredEnv(env, 'DARAJA_SHORTCODE');
+    const passkey = requiredEnv(env, 'DARAJA_PASSKEY');
+    const timestamp = formatDarajaTimestamp(now());
+    const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
+    const token = await getAccessToken();
+    const response = await fetchImpl(`${baseUrl}/mpesa/stkpushquery/v1/query`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        BusinessShortCode: shortcode,
+        Password: password,
+        Timestamp: timestamp,
+        CheckoutRequestID: checkoutRequestId,
+      }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(`Daraja STK query failed (HTTP ${response.status})`);
+    return body;
+  }
+
   async function initiateStkPush({ phone, amountKes, accountReference, transactionDesc }) {
     if (!Number.isSafeInteger(amountKes) || amountKes < 1) {
       throw new TypeError('amountKes must be a positive integer');
@@ -92,7 +119,7 @@ function createDarajaClient({ env = process.env, fetchImpl = fetch, now = () => 
     };
   }
 
-  return { initiateStkPush };
+  return { initiateStkPush, queryStkPush };
 }
 
 module.exports = { createDarajaClient, normalizePhone, formatDarajaTimestamp };
