@@ -40,6 +40,11 @@ jobs:
       - name: Prepare web assets and generate Android project
         run: npm run android:sync
 
+      - name: Apply VYBORA launcher icon
+        run: |
+          python3 -m pip install --user pillow
+          python3 scripts/prepare-android-icon.py
+
       - name: Configure release signing
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
