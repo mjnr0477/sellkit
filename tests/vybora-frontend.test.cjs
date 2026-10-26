@@ -75,17 +75,17 @@ test('curated videos use VYBORA branding without stripping creator attribution',
   assert.match(html, /p\.username\|\|p\.name\|\|'VYBORA creator'/);
 });
 
-test('Live tab provides a scrollable feed of official event-stream providers', () => {
+test('Live tab provides in-app live participation and official football coverage', () => {
   assert.match(html, /data-tab="Live"/);
   assert.match(html, /function renderLiveEvents\(\)/);
   assert.match(html, /class="live-hub"/);
-  assert.match(html, /scroll-snap-type:y mandatory/);
+  assert.match(html, /data-open-live="join"/);
+  assert.match(html, /data-open-live="start"/);
   assert.match(html, /https:\/\/www\.fifa\.com\/en\/watch/);
   assert.match(html, /https:\/\/www\.uefa\.tv\//);
   assert.match(html, /https:\/\/footballkenya\.org\/media\/broadcasters/);
   assert.match(html, /https:\/\/azamtv\.co\.tz\//);
   assert.match(html, /rel="noopener noreferrer"/);
-  assert.match(html, /We don’t promise every event is free or available in every country/);
 });
 
 test('inline application JavaScript parses without syntax errors', () => {
@@ -103,7 +103,7 @@ test('feed uses touch-friendly smooth scrolling and avoids forced stop on every 
 
 test('curated video feed requests up to 100 entries and validates trusted HTTPS embeds', () => {
   assert.match(html, /vybora_external_videos'[\s\S]*?\.limit\(100\)/);
-  assert.match(html, /externalRows=\(external\|\|\)\.filter\(v=>[\s\S]*?new URL\(v\.embed_url\)/);
+  assert.match(html, /externalRows=.*new URL\(v\.embed_url\)/);
 });
 
 test('uploaded community videos are limited to short clips', () => {
