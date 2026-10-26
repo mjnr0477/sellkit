@@ -1,0 +1,24 @@
+name: VYBORA hosted browser smoke
+on:
+  push:
+    branches: [feat/vybora-social-universe-mvp]
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/vybora-browser-smoke.cjs'
+      - '.github/workflows/vybora-browser-smoke.yml'
+  workflow_dispatch:
+jobs:
+  hosted-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      VYBORA_URL: https://vybora-social-preview.onrender.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - run: node --test tests/vybora-browser-smoke.cjs
