@@ -56,6 +56,7 @@ export function admitLease(pool, lease, now = Date.now()) {
   if (!candidates.length) throw new Error('No authorized uplink capacity available');
   const chosen = candidates[0];
   chosen.sessions.add(lease.id);
+  leaseIdExpiry.set(lease.id, lease.expiresAt);
   return Object.freeze({
     leaseId: lease.id,
     uplinkId: chosen.id,
