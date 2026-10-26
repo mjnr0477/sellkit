@@ -1,0 +1,18 @@
+name: VYBORA frontend checks
+on:
+  push:
+    branches: [feat/vybora-social-universe-mvp]
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/vybora-frontend.test.cjs'
+      - '.github/workflows/vybora-checks.yml'
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test tests/vybora-frontend.test.cjs
