@@ -51,3 +51,21 @@ test('disabled or de-authorized uplinks immediately fail traffic checks', () => 
   assert.equal(authorizeTraffic(pool, route, 11_000), false);
   assert.equal(reconcilePool(pool, 11_000), 1);
 });
+
+test('lease expiry is isolated between independent pools with the same lease id', () => {
+  const first = createPool([{ id: 'uplink-a', capacityMbps: 10, authorized: true }]);
+  const second = createPool([{ id: 'uplink-b', capacityMbps: 10, authorized: true }]);
+  const routeA = admitLease(first, { id: 'shared-id', expiresAt: 12_000 }, 10_000);
+  const routeB = admitLease(second, { id: 'shared-id', expiresAt: 30_000 }, 10_000);
+
+  assert.equal(reconcilePool(first, 12_000), 1);
+  assert.equal(authorizeTraffic(first, routeA, 12_000), false);
+  assert.equal(authorizeTraffic(second, routeB, 12_001), true);
+  assert.equal(second.get('uplink-b').sessions.get('shared-id'), 30_000);
+});
+
+test('rejects route expiry tampering instead of trusting caller-supplied expiry', () => {
+  const pool = createPool([{ id: 'uplink', capacityMbps: 10, authorized: true }]);
+  const route = admitLease(pool, { id: 'lease-1', expiresAt: 12_000 }, 10_000);
+  assert.equal(authorizeTraffic(pool, { ...route, expiresAt: 99_000 }, 11_000), false);
+});
