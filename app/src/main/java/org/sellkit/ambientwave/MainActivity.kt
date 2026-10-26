@@ -3,6 +3,7 @@ package org.sellkit.ambientwave
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -17,6 +18,9 @@ import android.widget.ScrollView
 import android.widget.TextView
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.concurrent.thread
 
 class MainActivity : Activity() {
@@ -49,6 +53,7 @@ class MainActivity : Activity() {
         root.addView(intro)
         root.addView(actionButton("Measure available radio signals") { measureSignals() })
         root.addView(actionButton("Test actual internet route") { testInternet() })
+        root.addView(actionButton("Export experiment log") { exportExperimentLog() })
         root.addView(actionButton("Clear results") { output.text = "Results cleared. Choose a test." })
         root.addView(output)
         val scroll = ScrollView(this).apply { addView(root) }
@@ -108,7 +113,38 @@ class MainActivity : Activity() {
             report.append("Cell readings unavailable: ").append(e.message ?: e.javaClass.simpleName).append("\n")
         }
         report.append("\nIMPORTANT: detecting radiation or a signal does not prove it carries internet data or provides a return path.")
-        output.text = report.toString()
+        val result = report.toString()
+        output.text = result
+        recordExperiment("radio_scan", result)
+    }
+
+    private fun timestamp(): String = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).format(Date())
+
+    private fun recordExperiment(kind: String, details: String) {
+        try {
+            val entry = "\n--- " + timestamp() + " | " + kind + " ---\n" + details + "\n"
+            openFileOutput("ambient-wave-experiments.txt", Context.MODE_APPEND).bufferedWriter().use { it.write(entry) }
+        } catch (_: Exception) {
+            runOnUiThread { output.text = output.text.toString() + "\nExperiment log could not be saved." }
+        }
+    }
+
+    private fun exportExperimentLog() {
+        try {
+            val file = getFileStreamPath("ambient-wave-experiments.txt")
+            if (!file.exists() || file.length() == 0L) {
+                output.text = "No experiment records yet. Run a radio measurement or internet-route test first."
+                return
+            }
+            val share = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, "Ambient Wave Lab experiment log")
+                putExtra(Intent.EXTRA_TEXT, file.readText())
+            }
+            startActivity(Intent.createChooser(share, "Export experiment log"))
+        } catch (e: Exception) {
+            output.text = "Could not export log: " + (e.message ?: e.javaClass.simpleName)
+        }
     }
 
     private fun testInternet() {
@@ -130,6 +166,7 @@ class MainActivity : Activity() {
             } catch (e: Exception) {
                 "HTTPS test failed: ${e.message ?: e.javaClass.simpleName}. No successful route to this test endpoint was established."
             }
+            recordExperiment("internet_route", result)
             runOnUiThread { output.text = result }
         }
     }
