@@ -68,9 +68,7 @@ const $=id=>document.getElementById(id);
 const feed=$('feed'),notice=$('notice');
 let user=null,authMode='signup',soundOn=false,posts=[],activeTab='Watch',allPosts=[],profileCache={},busy=false,activeCommentPost=null,savedPosts=[],viewedInSession=new Set();
 const demo=[
-{id:'demo-1',author_id:null,body:'A little reminder: the next chapter starts when you decide to turn the page. 🌱',media_url:DEMO_VIDEO,media_type:'video',created_at:new Date(Date.now()-600000).toISOString(),demo:true,username:'VYBORA Daily',handle:'@vyboradaily',likes:0,liked:false,comments_count:0},
-{id:'demo-2',author_id:null,body:'Take a breath. Look around. There is still so much wonder waiting outside your screen. ✨',media_url:DEMO_VIDEO,media_type:'video',created_at:new Date(Date.now()-1200000).toISOString(),demo:true,username:'Open Horizons',handle:'@openhorizons',likes:0,liked:false,comments_count:0},
-{id:'demo-3',author_id:null,body:'Every big idea starts small. Keep learning, keep creating, keep going.',media_url:DEMO_VIDEO,media_type:'video',created_at:new Date(Date.now()-1800000).toISOString(),demo:true,username:'Future Makers',handle:'@futuremakers',likes:0,liked:false,comments_count:0}
+{id:'demo-1',author_id:null,body:'A little reminder: the next chapter starts when you decide to turn the page. 🌱',media_url:DEMO_VIDEO,media_type:'video',created_at:new Date(Date.now()-600000).toISOString(),demo:true,username:'VYBORA Daily',handle:'@vyboradaily',likes:0,liked:false,comments_count:0}
 ];
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function tell(msg){notice.textContent=msg;notice.classList.add('show');clearTimeout(tell.timer);tell.timer=setTimeout(()=>notice.classList.remove('show'),2800)}
