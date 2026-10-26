@@ -41,12 +41,17 @@ object SignalFrameCodec {
             if (length !in 1..255) continue
             val total = SYNC_BITS + 8 + length * 8 + 16
             if (start + total > bits.size) continue
-            val bytes = ArrayList<Int>(3 + length)
-            for (i in 0 until 3 + length) bytes.add(readBits(bits, start + SYNC_BITS + i * 8, 8))
-            val expectedCrc = (readBits(bits, start + SYNC_BITS + (3 + length) * 8, 8) shl 8) or
-                readBits(bits, start + SYNC_BITS + (4 + length) * 8, 8)
-            if (crc16Ccitt(bytes) != expectedCrc) continue
-            val payload = ByteArray(length) { bytes[3 + it].toByte() }
+
+            // CRC covers the length byte followed by payload, excluding sync and CRC.
+            val protectedBytes = ArrayList<Int>(1 + length)
+            for (i in 0 until 1 + length) {
+                protectedBytes.add(readBits(bits, start + SYNC_BITS + i * 8, 8))
+            }
+            val crcStart = start + SYNC_BITS + (1 + length) * 8
+            val expectedCrc = (readBits(bits, crcStart, 8) shl 8) or
+                readBits(bits, crcStart + 8, 8)
+            if (crc16Ccitt(protectedBytes) != expectedCrc) continue
+            val payload = ByteArray(length) { protectedBytes[1 + it].toByte() }
             return DecodedFrame(payload, start, total)
         }
         return null
