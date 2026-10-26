@@ -1,7 +1,7 @@
 name: VYBORA social feature checks
 on:
   push:
-    branches: [feat/vybora-friends-chat-live-safety]
+    branches: [main, feat/vybora-friends-chat-live-safety]
   pull_request:
     branches: [main]
 jobs:

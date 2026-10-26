@@ -1,8 +1,9 @@
 name: VYBORA hosted browser smoke
 on:
   push:
-    branches: [feat/vybora-social-universe-mvp]
+    branches: [main, feat/vybora-social-universe-mvp]
   pull_request:
+    branches: [main]
     paths:
       - 'index.html'
       - 'tests/vybora-browser-smoke.cjs'
@@ -13,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
-      VYBORA_URL: https://vybora-social-preview.onrender.com
+      VYBORA_URL: ${{ github.ref == 'refs/heads/main' && 'https://vybora-social-live.onrender.com' || 'https://vybora-social-preview.onrender.com' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
