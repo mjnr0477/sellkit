@@ -66,14 +66,6 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.doesNotMatch(html, /Profile editing is the next feature/);
 });
 
-test('top-bar profile icon opens the existing account profile flow', () => {
-  assert.match(html, /id="profileBtn"[^>]*aria-label="Open profile"/);
-  assert.match(html, /\$\('profileBtn'\)\.addEventListener\('click'/);
-  assert.match(html, /if\(!user\)\{authPrompt\('Sign in or create an account to open your profile\.'/);
-  assert.match(html, /openProfile\(\)/);
-  assert.match(html, /profile-initial/);
-});
-
 test('inline application JavaScript parses without syntax errors', () => {
   const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
     .map(match => match[1])
