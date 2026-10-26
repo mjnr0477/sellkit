@@ -263,7 +263,8 @@ class MainActivity : Activity() {
             .build()
         val finished = java.util.concurrent.atomic.AtomicBoolean(false)
         val timeout = android.os.Handler(mainLooper)
-        lateinit var callback: ConnectivityManager.NetworkCallback\n        callback = object : ConnectivityManager.NetworkCallback() {
+        lateinit var callback: ConnectivityManager.NetworkCallback
+        callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 if (!finished.compareAndSet(false, true)) return
                 timeout.removeCallbacksAndMessages(null)
