@@ -68,3 +68,27 @@ test('sends a correctly shaped STK Push request when sandbox credentials are con
   assert.equal(payload.PhoneNumber, '254712345678');
   assert.equal(payload.CallBackURL, env.DARAJA_CALLBACK_URL);
 });
+
+test('queries a stored STK transaction status through Daraja', async () => {
+  const calls = [];
+  const env = {
+    DARAJA_BASE_URL: 'https://sandbox.safaricom.co.ke',
+    DARAJA_CONSUMER_KEY: 'test-key',
+    DARAJA_CONSUMER_SECRET: 'test-secret',
+    DARAJA_SHORTCODE: '174379',
+    DARAJA_PASSKEY: 'test-passkey',
+  };
+  const fetchImpl = async (url, options = {}) => {
+    calls.push({ url, options });
+    if (url.includes('/oauth/v1/generate')) {
+      return { ok: true, status: 200, async json() { return { access_token: 'sandbox-token' }; } };
+    }
+    return { ok: true, status: 200, async json() { return { ResultCode: '0', ResultDesc: 'The service request is processed successfully.' }; } };
+  };
+  const client = createDarajaClient({ env, fetchImpl, now: () => new Date('2026-10-26T09:00:00.000Z') });
+  const result = await client.queryStkPush({ checkoutRequestId: 'ws_CO_TEST' });
+  assert.equal(result.ResultCode, '0');
+  assert.equal(calls.length, 2);
+  assert.ok(calls[1].url.endsWith('/mpesa/stkpushquery/v1/query'));
+  assert.equal(JSON.parse(calls[1].options.body).CheckoutRequestID, 'ws_CO_TEST');
+});
