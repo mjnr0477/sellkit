@@ -26,9 +26,10 @@ class MainActivity : Activity() {
     private lateinit var report: TextView
     private val executor = Executors.newSingleThreadExecutor()
     private val scanPermissionRequest = 410
-    private val scanPermission: String
-        get() = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.NEARBY_WIFI_DEVICES
-                else Manifest.permission.ACCESS_FINE_LOCATION
+    private val scanPermissions: Array<String>
+        get() = if (Build.VERSION.SDK_INT >= 33)
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.NEARBY_WIFI_DEVICES)
+        else arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -106,8 +107,9 @@ class MainActivity : Activity() {
     }
 
     private fun requestScanPermissionAndScan() {
-        if (checkSelfPermission(scanPermission) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(scanPermission), scanPermissionRequest)
+        val missing = scanPermissions.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isNotEmpty()) {
+            requestPermissions(missing.toTypedArray(), scanPermissionRequest)
             return
         }
         scanNearbyWifi()
@@ -116,10 +118,10 @@ class MainActivity : Activity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == scanPermissionRequest) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (scanPermissions.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) {
                 scanNearbyWifi()
             } else {
-                report.text = "Wi-Fi scan permission was denied. Grant Nearby Wi-Fi / Location permission to list nearby networks."
+                report.text = "Wi-Fi scan needs Location permission for scan results and Nearby Wi-Fi permission on Android 13+. Grant both and try again."
             }
         }
     }
@@ -134,7 +136,7 @@ class MainActivity : Activity() {
         report.text = "Scanning nearby Wi-Fi networks… Android may return cached results or limit scan frequency."
         executor.execute {
             try {
-                wifi.startScan()
+                val scanStarted = wifi.startScan()
                 val results = wifi.scanResults
                     .sortedByDescending { it.level }
                     .distinctBy { it.BSSID }
