@@ -66,6 +66,19 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.doesNotMatch(html, /Profile editing is the next feature/);
 });
 
+test('Live tab provides a scrollable feed of official event-stream providers', () => {
+  assert.match(html, /data-tab="Live"/);
+  assert.match(html, /function renderLiveEvents\(\)/);
+  assert.match(html, /class="live-hub"/);
+  assert.match(html, /scroll-snap-type:y mandatory/);
+  assert.match(html, /https:\/\/www\.fifa\.com\/en\/watch/);
+  assert.match(html, /https:\/\/www\.uefa\.tv\//);
+  assert.match(html, /https:\/\/footballkenya\.org\/media\/broadcasters/);
+  assert.match(html, /https:\/\/azamtv\.co\.tz\//);
+  assert.match(html, /rel="noopener noreferrer"/);
+  assert.match(html, /We don’t promise every event is free or available in every country/);
+});
+
 test('inline application JavaScript parses without syntax errors', () => {
   const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
     .map(match => match[1])
