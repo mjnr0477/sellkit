@@ -35,7 +35,7 @@ test('video upload uses VYBORA storage and database records', () => {
   assert.match(html, /sb\.from\('vybora_posts'\)\.insert/);
   assert.match(html, /sb\.from\('vybora_comments'\)\.insert/);
   assert.match(html, /sb\.from\('vybora_reactions'\)/);
-  assert.match(html, /vybora_get_reaction_counts/);
+  assert.match(html, /vybora_post_stats/);
   assert.match(html, /sb\.from\('vybora_follows'\)/);
 });
 
