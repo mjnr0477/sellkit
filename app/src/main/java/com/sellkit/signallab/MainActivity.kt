@@ -258,16 +258,58 @@ class MainActivity : Activity() {
             report.text = "Wi-Fi is turned off. Turn on Wi-Fi in Android settings, then scan again. This app will not enable it silently."
             return
         }
-        report.text = "Scanning nearby Wi-Fi networks… Android may return cached results or limit scan frequency."
+        report.text = "Scanning nearby Wi-Fi networks… waiting for Android's scan-results broadcast."
+        val scanFinishedAction = WifiManager.SCAN_RESULTS_AVAILABLE_ACTION
+        val scanReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action != scanFinishedAction) return
+                finishWifiScan(wifi, this, intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false))
+            }
+        }
+        val scanHandler = android.os.Handler(mainLooper)
+        var receiverRegistered = false
+        try {
+            if (Build.VERSION.SDK_INT >= 33) registerReceiver(scanReceiver, IntentFilter(scanFinishedAction), Context.RECEIVER_NOT_EXPORTED)
+            else @Suppress("DEPRECATION") registerReceiver(scanReceiver, IntentFilter(scanFinishedAction))
+            receiverRegistered = true
+            val scanStarted = wifi.startScan()
+            if (!scanStarted) {
+                // Android can reject a fresh scan because of throttling. Wait briefly for a
+                // broadcast, then show the cached results explicitly rather than claiming freshness.
+                report.text = "Android did not start a fresh Wi-Fi scan (often due to scan throttling). Waiting briefly for results; they may be cached."
+            }
+            scanHandler.postDelayed({
+                if (receiverRegistered) {
+                    try { unregisterReceiver(scanReceiver) } catch (_: IllegalArgumentException) { }
+                    receiverRegistered = false
+                    showWifiScanResults(wifi, fresh = false, note = "Timed out waiting for Android's scan broadcast; showing available results, which may be cached.")
+                }
+            }, 12000)
+        } catch (e: SecurityException) {
+            if (receiverRegistered) try { unregisterReceiver(scanReceiver) } catch (_: IllegalArgumentException) { }
+            report.text = "Wi-Fi scan blocked by Android permission: ${e.message ?: "permission required"}"
+        } catch (e: Exception) {
+            if (receiverRegistered) try { unregisterReceiver(scanReceiver) } catch (_: IllegalArgumentException) { }
+            report.text = "Wi-Fi scan failed: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}"
+        }
+    }
+
+    private fun finishWifiScan(wifi: WifiManager, receiver: BroadcastReceiver, fresh: Boolean) {
+        try { unregisterReceiver(receiver) } catch (_: IllegalArgumentException) { }
+        showWifiScanResults(
+            wifi,
+            fresh = fresh,
+            note = if (fresh) "Android reported updated scan results." else "Android reported that results were not updated; showing cached results."
+        )
+    }
+
+    @Suppress("DEPRECATION")
+    private fun showWifiScanResults(wifi: WifiManager, fresh: Boolean, note: String) {
         executor.execute {
             try {
-                val scanStarted = wifi.startScan()
-                // Do not immediately read scanResults: Android may still be returning an older scan.
-                val results = wifi.scanResults
-                    .sortedByDescending { it.level }
-                    .distinctBy { it.BSSID }
+                val results = wifi.scanResults.sortedByDescending { it.level }.distinctBy { it.BSSID }
                 val text = if (results.isEmpty()) {
-                    "No scan results returned. Fresh scan request accepted: $scanStarted. Enable Android Location services if required, grant scan permission, and try again later."
+                    "No Wi-Fi scan results returned. Check Wi-Fi, Android Location services, and permissions, then retry.\n$note"
                 } else {
                     val lines = results.take(30).mapIndexed { index, ap ->
                         val strength = when {
@@ -283,14 +325,14 @@ class MainActivity : Activity() {
                             ap.capabilities.contains("EAP", ignoreCase = true)
                         "${index + 1}. ${ap.SSID.ifBlank { "(hidden network)" }}\n   Signal: ${ap.level} dBm ($strength) · Frequency: ${ap.frequency} MHz · Security: ${if (protected) "Protected" else "Possibly open"}"
                     }
-                    "Nearby Wi-Fi access points: ${results.size} (showing up to 30)\nFresh scan request accepted: $scanStarted (results may still be cached)\n\n" + lines.joinToString("\n\n") +
-                        "\n\nSignal strength only. This list does not confirm internet access or authorize joining any network."
+                    "Nearby Wi-Fi access points: ${results.size} (showing up to 30)\nResults marked fresh by Android: $fresh\n$note\n\n" + lines.joinToString("\n\n") +
+                        "\n\nSignal strength does not confirm internet access or authorize joining a network."
                 }
                 runOnUiThread { report.text = networkReport() + "\n\n" + text }
             } catch (e: SecurityException) {
-                runOnUiThread { report.text = "Wi-Fi scan blocked by Android permission: ${e.message ?: "permission required"}" }
+                runOnUiThread { report.text = "Wi-Fi results blocked by Android permission: ${e.message ?: "permission required"}" }
             } catch (e: Exception) {
-                runOnUiThread { report.text = "Wi-Fi scan failed: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}" }
+                runOnUiThread { report.text = "Could not read Wi-Fi results: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}" }
             }
         }
     }
