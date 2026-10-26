@@ -52,12 +52,29 @@ class RtlSdrUsbBulkReader(
             var failure: String? = null
             val buffer = ByteArray(16 * 1024)
             try {
+                var consecutiveEmptyReads = 0
                 while (running.get()) {
                     val activeConnection = connection ?: break
                     val count = activeConnection.bulkTransfer(endpoint, buffer, buffer.size, 1000)
-                    if (count > 0) onChunk(buffer.copyOf(count))
-                    // A timeout is expected when no bytes arrive; negative values
-                    // can also indicate disconnect or an endpoint/driver problem.
+                    when {
+                        count > 0 -> {
+                            consecutiveEmptyReads = 0
+                            onChunk(buffer.copyOf(count))
+                        }
+                        count == 0 -> {
+                            consecutiveEmptyReads++
+                        }
+                        else -> {
+                            // Android reports negative results for timeouts and some I/O failures.
+                            // Allow brief timeouts, but stop instead of spinning forever when
+                            // a device is disconnected or the endpoint is unusable.
+                            consecutiveEmptyReads++
+                        }
+                    }
+                    if (consecutiveEmptyReads >= 10 && running.get()) {
+                        failure = "No USB bulk data received after 10 consecutive reads. Check that the SDR is initialized, the endpoint is correct, and the device remains connected."
+                        break
+                    }
                 }
             } catch (e: Exception) {
                 failure = "USB read failed: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}"
