@@ -1,14 +1,18 @@
 package com.sellkit.signallab
 
+import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
-import android.os.Bundle
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Typeface
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.graphics.Typeface
 import android.net.Uri
+import android.net.wifi.WifiManager
+import android.os.Build
+import android.os.Bundle
 import android.view.Gravity
 import android.widget.Button
 import android.widget.LinearLayout
@@ -21,6 +25,10 @@ import java.util.concurrent.Executors
 class MainActivity : Activity() {
     private lateinit var report: TextView
     private val executor = Executors.newSingleThreadExecutor()
+    private val scanPermissionRequest = 410
+    private val scanPermission: String
+        get() = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.NEARBY_WIFI_DEVICES
+                else Manifest.permission.ACCESS_FINE_LOCATION
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,18 +39,22 @@ class MainActivity : Activity() {
             gravity = Gravity.TOP
         }
         val title = TextView(this).apply {
-            text = "SellKit Free Access Lab"
+            text = "SellKit Signal-to-Internet Lab"
             textSize = 26f
             setTypeface(null, Typeface.BOLD)
         }
         val intro = TextView(this).apply {
-            text = "Objective: establish whether a real internet resource is reachable without paid data. Signal bars or a successful HTTP request alone cannot prove that access is free."
+            text = "Scan nearby Wi-Fi signals, compare signal strength, and test whether an internet endpoint is reachable. A strong signal is not proof that a network has internet or that access is free."
             textSize = 16f
             setPadding(0, pad / 2, 0, pad)
         }
         report = TextView(this).apply { textSize = 15f; text = networkReport() }
+        val scan = Button(this).apply {
+            text = "Scan nearby Wi-Fi signals"
+            setOnClickListener { requestScanPermissionAndScan() }
+        }
         val refresh = Button(this).apply {
-            text = "Refresh network status"
+            text = "Refresh connected network status"
             setOnClickListener { report.text = networkReport() }
         }
         val test = Button(this).apply {
@@ -50,29 +62,25 @@ class MainActivity : Activity() {
             setOnClickListener { runProbe() }
         }
         val zeroRated = Button(this).apply {
-            text = "Open Safaricom zero-rated learning resource"
+            text = "Open Safaricom learning resource"
             setOnClickListener {
-                report.text = "Opening Internet of Good Things. Safaricom has described this resource as zero-rated, but current availability and charging must be verified on your SIM. Check balances before and after."
+                report.text = "Opening Internet of Good Things. Whether it is zero-rated now depends on Safaricom's current service and your SIM. Verify balances before and after."
                 openPage("https://ke.goodinternet.org/")
             }
         }
         val testIoGt = Button(this).apply {
-            text = "Test IoGT endpoint (may use data)"
+            text = "Test learning endpoint (may use data)"
             setOnClickListener {
                 AlertDialog.Builder(this@MainActivity)
                     .setTitle("Small internet test")
-                    .setMessage("A small request will be sent to ke.goodinternet.org. If Safaricom does not zero-rate it on your SIM, it may consume paid data. Continue only if you accept this risk.")
+                    .setMessage("A small request will be sent to ke.goodinternet.org. It may consume paid data. Continue only if you accept this risk.")
                     .setNegativeButton("Cancel", null)
                     .setPositiveButton("Test") { _, _ -> runIoGtProbe() }
                     .show()
             }
         }
-        val opera = Button(this).apply {
-            text = "Open Opera free-data information"
-            setOnClickListener { openPage("https://help.opera.com/en/mini/android/") }
-        }
         val wifi = Button(this).apply {
-            text = "Find government public Wi-Fi"
+            text = "Find public Wi-Fi information"
             setOnClickListener { openPage("https://bilawaya.go.ke/") }
         }
         val offers = Button(this).apply {
@@ -80,21 +88,79 @@ class MainActivity : Activity() {
             setOnClickListener { openPage("https://myaccount.safaricom.co.ke/bundles?activeTab=1&monthlyBundles=true") }
         }
         val note = TextView(this).apply {
-            text = "\nProof protocol:\n1. Check and record paid data and airtime balances through Safaricom.\n2. Open the zero-rated resource on the Safaricom SIM with Wi-Fi off.\n3. Navigate to a fresh page and confirm it actually loads.\n4. Recheck balances.\n5. Only claim free access if the resource loaded and no paid data or airtime was consumed.\n\nThis app cannot read Safaricom's billing records directly. A normal HTTPS success is not proof of zero-rating. Do not use video or download tests; they may consume paid data."
+            text = "\nSignal scan notes:\n• Android may require location services to be enabled for Wi-Fi scan results.\n• Android limits how frequently apps can scan; results may be cached or incomplete.\n• This scan only lists visible Wi-Fi access points. It does not connect to protected networks, bypass passwords, or convert radio signal into internet service.\n• Internet access must come from an authorized Wi-Fi network, mobile-data service, or a provider that grants access.\n\nA successful HTTPS request proves endpoint reachability only, not free access. Verify billing with your network provider."
             textSize = 14f
         }
         layout.addView(title)
         layout.addView(intro)
         layout.addView(report)
+        layout.addView(scan)
         layout.addView(refresh)
         layout.addView(test)
         layout.addView(zeroRated)
         layout.addView(testIoGt)
-        layout.addView(opera)
         layout.addView(wifi)
         layout.addView(offers)
         layout.addView(note)
         setContentView(ScrollView(this).apply { addView(layout) })
+    }
+
+    private fun requestScanPermissionAndScan() {
+        if (checkSelfPermission(scanPermission) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(scanPermission), scanPermissionRequest)
+            return
+        }
+        scanNearbyWifi()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == scanPermissionRequest) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                scanNearbyWifi()
+            } else {
+                report.text = "Wi-Fi scan permission was denied. Grant Nearby Wi-Fi / Location permission to list nearby networks."
+            }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun scanNearbyWifi() {
+        val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        if (!wifi.isWifiEnabled) {
+            report.text = "Wi-Fi is turned off. Turn on Wi-Fi in Android settings, then scan again. This app will not enable it silently."
+            return
+        }
+        report.text = "Scanning nearby Wi-Fi networks… Android may return cached results or limit scan frequency."
+        executor.execute {
+            try {
+                wifi.startScan()
+                val results = wifi.scanResults
+                    .sortedByDescending { it.level }
+                    .distinctBy { it.BSSID }
+                val text = if (results.isEmpty()) {
+                    "No scan results returned. Enable Android Location services if required, grant scan permission, and try again later."
+                } else {
+                    val lines = results.take(30).mapIndexed { index, ap ->
+                        val strength = when {
+                            ap.level >= -50 -> "Excellent"
+                            ap.level >= -60 -> "Strong"
+                            ap.level >= -70 -> "Fair"
+                            ap.level >= -80 -> "Weak"
+                            else -> "Very weak"
+                        }
+                        "${index + 1}. ${ap.SSID.ifBlank { "(hidden network)" }}\n   Signal: ${ap.level} dBm ($strength) · Frequency: ${ap.frequency} MHz · Security: ${if (ap.capabilities.contains("WPA") || ap.capabilities.contains("WEP")) "Protected" else "Possibly open"}"
+                    }
+                    "Nearby Wi-Fi access points: ${results.size} (showing up to 30)\n\n" + lines.joinToString("\n\n") +
+                        "\n\nSignal strength only. This list does not confirm internet access or authorize joining any network."
+                }
+                runOnUiThread { report.text = networkReport() + "\n\n" + text }
+            } catch (e: SecurityException) {
+                runOnUiThread { report.text = "Wi-Fi scan blocked by Android permission: ${e.message ?: "permission required"}" }
+            } catch (e: Exception) {
+                runOnUiThread { report.text = "Wi-Fi scan failed: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}" }
+            }
+        }
     }
 
     private fun openPage(url: String) {
@@ -121,9 +187,8 @@ class MainActivity : Activity() {
             "\n\nThese Android flags do not establish whether Safaricom charges for access."
     }
 
-
     private fun runIoGtProbe() {
-        report.text = networkReport() + "\n\nTesting IoGT endpoint…"
+        report.text = networkReport() + "\n\nTesting learning endpoint…"
         executor.execute {
             val result = try {
                 val connection = URL("https://ke.goodinternet.org/").openConnection() as HttpURLConnection
@@ -132,7 +197,7 @@ class MainActivity : Activity() {
                 connection.instanceFollowRedirects = false
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Range", "bytes=0-1023")
-                connection.setRequestProperty("User-Agent", "SellKit-Free-Access-Lab/1.0")
+                connection.setRequestProperty("User-Agent", "SellKit-Signal-Lab/1.0")
                 connection.connect()
                 val code = connection.responseCode
                 val location = connection.getHeaderField("Location")
@@ -149,12 +214,12 @@ class MainActivity : Activity() {
                 }
                 connection.disconnect()
                 when {
-                    code in 200..299 -> "IoGT ENDPOINT REACHED: HTTP $code; read at most $bytes bytes. This proves endpoint reachability only, NOT free access. Check Safaricom data/airtime balances before and after."
-                    code in 300..399 -> "IoGT returned redirect HTTP $code. Redirect not followed. Location: ${location ?: "not provided"}. Page access is not yet proven."
-                    else -> "IoGT endpoint responded HTTP $code. Access not confirmed."
+                    code in 200..299 -> "Endpoint reached: HTTP $code; read at most $bytes bytes. This proves reachability only, NOT free access. Check provider balances."
+                    code in 300..399 -> "Endpoint returned redirect HTTP $code. Redirect not followed. Location: ${location ?: "not provided"}."
+                    else -> "Endpoint responded HTTP $code. Access not confirmed."
                 }
             } catch (e: Exception) {
-                "IoGT test FAILED: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}. This does not by itself prove that all internet access is unavailable."
+                "Endpoint test failed: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}."
             }
             runOnUiThread { report.text = networkReport() + "\n\n" + result }
         }
@@ -179,11 +244,11 @@ class MainActivity : Activity() {
                     connection.connect()
                     val code = connection.responseCode
                     connection.disconnect()
-                    if (code == 204) "HTTPS probe SUCCESS (HTTP 204). Internet endpoint reached. This does NOT prove free access; verify balances and the exact offer."
-                    else "Endpoint returned HTTP $code. Check with a fresh page and verify whether paid data was used."
+                    if (code == 204) "HTTPS probe succeeded (HTTP 204). Endpoint reached; this does NOT prove free access."
+                    else "Endpoint returned HTTP $code. Check on a fresh page and verify whether paid data was used."
                 }
             } catch (e: Exception) {
-                "HTTPS probe FAILED: " + e.javaClass.simpleName + ": " + (e.message ?: "no detail") + ". This may indicate no data access, DNS failure, coverage, or endpoint blocking."
+                "HTTPS probe failed: ${e.javaClass.simpleName}: ${e.message ?: "no detail"}."
             }
             runOnUiThread { report.text = networkReport() + "\n\n" + result }
         }
