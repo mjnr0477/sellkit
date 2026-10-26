@@ -1,9 +1,10 @@
 /**
  * Time-lease uplink pool scheduler (prototype).
  *
- * This module does not create internet connectivity. It selects among explicitly
- * enrolled, authorized uplinks and keeps access policy time-based, not byte-based.
- * A production gateway must enforce the returned route and expiry on real packets.
+ * Selects only enrolled, explicitly authorized uplinks. It does not create
+ * connectivity or alter an upstream carrier's quota. A production gateway must
+ * enforce the route and expiry on real packets and use an upstream plan that
+ * permits the intended traffic.
  */
 
 export function createPool(uplinks = []) {
@@ -23,16 +24,15 @@ export function createPool(uplinks = []) {
       authorized: uplink.authorized === true,
       maxSessions: Number.isInteger(uplink.maxSessions) && uplink.maxSessions > 0
         ? uplink.maxSessions : Infinity,
-      sessions: new Set(),
+      // Store expiry with the session, scoped to this pool/uplink. Avoids a
+      // process-global registry that can collide between independent pools.
+      sessions: new Map(),
     });
   }
   return state;
 }
 
-/**
- * Enrolls a paid time lease onto the least-loaded eligible uplink.
- * No byte counter is consulted or created. Each lease expires at expiresAt.
- */
+/** Enrolls a paid time lease onto the least-loaded eligible uplink. */
 export function admitLease(pool, lease, now = Date.now()) {
   if (!(pool instanceof Map)) throw new TypeError('pool must be a pool Map');
   if (!lease || typeof lease.id !== 'string' || !lease.id.trim()) {
@@ -55,8 +55,7 @@ export function admitLease(pool, lease, now = Date.now()) {
 
   if (!candidates.length) throw new Error('No authorized uplink capacity available');
   const chosen = candidates[0];
-  chosen.sessions.add(lease.id);
-  leaseIdExpiry.set(lease.id, lease.expiresAt);
+  chosen.sessions.set(lease.id, lease.expiresAt);
   return Object.freeze({
     leaseId: lease.id,
     uplinkId: chosen.id,
@@ -67,31 +66,27 @@ export function admitLease(pool, lease, now = Date.now()) {
 
 /** Returns active route only while its time lease remains valid. */
 export function authorizeTraffic(pool, route, now = Date.now()) {
-  if (!route || typeof route.leaseId !== 'string' ||
-      typeof route.uplinkId !== 'string' || !Number.isFinite(route.expiresAt)) {
-    return false;
-  }
+  if (!(pool instanceof Map) || !route ||
+      typeof route.leaseId !== 'string' ||
+      typeof route.uplinkId !== 'string' ||
+      !Number.isFinite(route.expiresAt)) return false;
   if (now >= route.expiresAt) return false;
   const uplink = pool.get(route.uplinkId);
   return Boolean(uplink && uplink.active && uplink.authorized &&
-    uplink.sessions.has(route.leaseId));
+    uplink.sessions.get(route.leaseId) === route.expiresAt);
 }
 
 /** Remove expired/invalid sessions; call from gateway reconciliation. */
 export function reconcilePool(pool, now = Date.now()) {
+  if (!(pool instanceof Map)) throw new TypeError('pool must be a pool Map');
   let removed = 0;
   for (const uplink of pool.values()) {
-    for (const leaseId of [...uplink.sessions]) {
-      const expiry = leaseIdExpiry.get(leaseId);
-      if (!uplink.active || !uplink.authorized || (expiry !== undefined && now >= expiry)) {
+    for (const [leaseId, expiry] of uplink.sessions) {
+      if (!uplink.active || !uplink.authorized || now >= expiry) {
         uplink.sessions.delete(leaseId);
-        leaseIdExpiry.delete(leaseId);
         removed++;
       }
     }
   }
   return removed;
 }
-
-// Internal expiry registry is populated by admitLease and intentionally not exposed.
-const leaseIdExpiry = new Map();
