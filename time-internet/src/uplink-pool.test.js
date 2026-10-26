@@ -69,3 +69,27 @@ test('rejects route expiry tampering instead of trusting caller-supplied expiry'
   const route = admitLease(pool, { id: 'lease-1', expiresAt: 12_000 }, 10_000);
   assert.equal(authorizeTraffic(pool, { ...route, expiresAt: 99_000 }, 11_000), false);
 });
+
+test('capacity limits and least-loaded selection are respected', () => {
+  const pool = createPool([
+    { id: 'fast', capacityMbps: 100, authorized: true, maxSessions: 1 },
+    { id: 'slow', capacityMbps: 10, authorized: true, maxSessions: 2 },
+  ]);
+  const first = admitLease(pool, { id: 'lease-a', expiresAt: 50_000 }, 1_000);
+  assert.equal(first.uplinkId, 'fast');
+
+  // The fast uplink has reached maxSessions, so admission uses the eligible slow one.
+  const second = admitLease(pool, { id: 'lease-b', expiresAt: 50_000 }, 1_000);
+  assert.equal(second.uplinkId, 'slow');
+  assert.equal(pool.get('fast').sessions.size, 1);
+  assert.equal(pool.get('slow').sessions.size, 1);
+});
+
+test('rejects duplicate uplink identifiers and invalid capacities', () => {
+  assert.throws(() => createPool([
+    { id: 'same', capacityMbps: 10, authorized: true },
+    { id: 'same', capacityMbps: 20, authorized: true },
+  ]), /Duplicate uplink id/);
+  assert.throws(() => createPool([{ id: 'bad', capacityMbps: 0, authorized: true }]),
+    /positive capacityMbps/);
+});
