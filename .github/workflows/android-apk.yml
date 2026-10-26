@@ -74,10 +74,14 @@ jobs:
 
           """
               s = s.replace(marker, signing + marker, 1)
+          build_types_marker = "    buildTypes {"
+          if build_types_marker not in s:
+              raise SystemExit("Could not find Android buildTypes block; refusing to alter unknown Gradle layout.")
           release_marker = "        release {"
-          if release_marker not in s:
-              raise SystemExit("Could not find release build type; refusing to alter unknown Gradle layout.")
-          pos = s.index(release_marker) + len(release_marker)
+          release_start = s.find(release_marker, s.index(build_types_marker))
+          if release_start < 0:
+              raise SystemExit("Could not find release build type inside buildTypes; refusing to alter unknown Gradle layout.")
+          pos = release_start + len(release_marker)
           following = s[pos:pos + 300]
           if "signingConfig signingConfigs.release" not in following:
               s = s[:pos] + "\n            signingConfig signingConfigs.release" + s[pos:]
