@@ -137,11 +137,12 @@ class MainActivity : Activity() {
         executor.execute {
             try {
                 val scanStarted = wifi.startScan()
+                // Do not immediately read scanResults: Android may still be returning an older scan.
                 val results = wifi.scanResults
                     .sortedByDescending { it.level }
                     .distinctBy { it.BSSID }
                 val text = if (results.isEmpty()) {
-                    "No scan results returned. Enable Android Location services if required, grant scan permission, and try again later."
+                    "No scan results returned. Fresh scan request accepted: $scanStarted. Enable Android Location services if required, grant scan permission, and try again later."
                 } else {
                     val lines = results.take(30).mapIndexed { index, ap ->
                         val strength = when {
@@ -151,9 +152,13 @@ class MainActivity : Activity() {
                             ap.level >= -80 -> "Weak"
                             else -> "Very weak"
                         }
-                        "${index + 1}. ${ap.SSID.ifBlank { "(hidden network)" }}\n   Signal: ${ap.level} dBm ($strength) · Frequency: ${ap.frequency} MHz · Security: ${if (ap.capabilities.contains("WPA") || ap.capabilities.contains("WEP")) "Protected" else "Possibly open"}"
+                        val protected = ap.capabilities.contains("WPA", ignoreCase = true) ||
+                            ap.capabilities.contains("WEP", ignoreCase = true) ||
+                            ap.capabilities.contains("SAE", ignoreCase = true) ||
+                            ap.capabilities.contains("EAP", ignoreCase = true)
+                        "${index + 1}. ${ap.SSID.ifBlank { "(hidden network)" }}\n   Signal: ${ap.level} dBm ($strength) · Frequency: ${ap.frequency} MHz · Security: ${if (protected) "Protected" else "Possibly open"}"
                     }
-                    "Nearby Wi-Fi access points: ${results.size} (showing up to 30)\n\n" + lines.joinToString("\n\n") +
+                    "Nearby Wi-Fi access points: ${results.size} (showing up to 30)\nFresh scan request accepted: $scanStarted (results may still be cached)\n\n" + lines.joinToString("\n\n") +
                         "\n\nSignal strength only. This list does not confirm internet access or authorize joining any network."
                 }
                 runOnUiThread { report.text = networkReport() + "\n\n" + text }
