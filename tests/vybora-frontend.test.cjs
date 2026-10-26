@@ -121,3 +121,9 @@ test('Live tab offers in-app live room participation and keeps official sports l
   assert.match(html, /Join a live room/);
   assert.match(html, /Go live/);
 });
+
+test('video feed avoids downloading every clip at once and does not fake variety with duplicate demo clips', () => {
+  assert.match(html, /index===0\?'auto':'none'/);
+  assert.match(html, /v\.preload='auto';v\.load\(\)/);
+  assert.equal((html.match(/id:'demo-/g) || []).length, 1);
+});
