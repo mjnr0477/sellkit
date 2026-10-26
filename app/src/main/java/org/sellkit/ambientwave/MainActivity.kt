@@ -283,7 +283,7 @@ class MainActivity : Activity() {
         val manager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val sensor = manager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
         if (sensor == null) {
-            output.text = "MAGNETIC-FIELD SURVEY\\n\\nThis phone does not expose a magnetic-field sensor to Android."
+            output.text = "MAGNETIC-FIELD SURVEY\n\nThis phone does not expose a magnetic-field sensor to Android."
             recordExperiment("magnetic_field_survey", output.text.toString())
             return
         }
@@ -313,24 +313,24 @@ class MainActivity : Activity() {
             manager.unregisterListener(listener)
             magneticSurveyListener = null
             val result = buildString {
-                append("MAGNETIC-FIELD SURVEY\\n\\n")
-                append("Duration: ").append((System.currentTimeMillis() - startedAt) / 1000).append(" seconds\\n")
-                append("Samples: ").append(samples.size).append("\\n")
+                append("MAGNETIC-FIELD SURVEY\n\n")
+                append("Duration: ").append((System.currentTimeMillis() - startedAt) / 1000).append(" seconds\n")
+                append("Samples: ").append(samples.size).append("\n")
                 if (samples.isEmpty()) {
-                    append("No readings were returned by the sensor.\\n")
+                    append("No readings were returned by the sensor.\n")
                 } else {
                     val magnitudes = samples.map { v -> kotlin.math.sqrt((v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).toDouble()).toFloat() }
                     val avg = magnitudes.average()
                     val min = magnitudes.minOrNull() ?: 0f
                     val max = magnitudes.maxOrNull() ?: 0f
-                    append(String.format(Locale.US, "Average field magnitude: %.2f µT\\n", avg))
-                    append(String.format(Locale.US, "Minimum / maximum: %.2f / %.2f µT\\n", min, max))
-                    append(String.format(Locale.US, "Observed range: %.2f µT\\n", max - min))
-                    append(String.format(Locale.US, "Mean axes: X %.2f, Y %.2f, Z %.2f µT\\n",
+                    append(String.format(Locale.US, "Average field magnitude: %.2f µT\n", avg))
+                    append(String.format(Locale.US, "Minimum / maximum: %.2f / %.2f µT\n", min, max))
+                    append(String.format(Locale.US, "Observed range: %.2f µT\n", max - min))
+                    append(String.format(Locale.US, "Mean axes: X %.2f, Y %.2f, Z %.2f µT\n",
                         samples.map { it[0] }.average(), samples.map { it[1] }.average(), samples.map { it[2] }.average()))
                 }
-                append("\\nHOW TO USE: Take a baseline reading away from wiring, then repeat at the same phone orientation near an ordinary, safely enclosed powered cable. Compare readings across repeated trials.")
-                append("\\nLIMIT: This is a broad magnetic-field sensor, not a calibrated AC-field meter. Readings can change due to Earth's field, phone orientation, magnets, motors, speakers and other appliances. It cannot detect or decode power-line internet data, identify a connected router, or establish internet access. Never open outlets or touch exposed conductors.")
+                append("\nHOW TO USE: Take a baseline reading away from wiring, then repeat at the same phone orientation near an ordinary, safely enclosed powered cable. Compare readings across repeated trials.")
+                append("\nLIMIT: This is a broad magnetic-field sensor, not a calibrated AC-field meter. Readings can change due to Earth's field, phone orientation, magnets, motors, speakers and other appliances. It cannot detect or decode power-line internet data, identify a connected router, or establish internet access. Never open outlets or touch exposed conductors.")
             }
             recordExperiment("magnetic_field_survey", result)
             output.text = result
