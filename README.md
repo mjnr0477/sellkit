@@ -9,6 +9,20 @@ SellKit Signal Lab is an Android diagnostic prototype for testing network connec
 - Includes experimental DSP/frame-codec components and USB-host discovery/control/bulk-read plumbing intended for compatible RTL-SDR hardware.
 - Unit tests cover synthetic signal processing, frame integrity, I/Q conversion/chunk assembly, USB-device discovery helpers, and USB transfer result handling.
 
+## Phone-only route toward the goal
+
+The current target setup is **Android phone only**, with no external SDR or desktop computer. The phone's built-in Wi-Fi and cellular radios are controlled by Android and the carrier; ordinary Android apps cannot generally read raw cellular radio samples from the modem or turn arbitrary radio energy into internet access.
+
+The practical phone-only path is therefore to establish what connectivity is already available and make it easier to find and verify legitimate access:
+
+1. Scan visible Wi-Fi networks and show signal level/security accurately, while respecting Android scan limits.
+2. Test a selected, authorized open Wi-Fi network without silently switching the user's default network.
+3. Test Wi-Fi and cellular HTTPS reachability on the specific network being measured, and clearly label failures/timeouts.
+4. Separate signal detection, internet reachability, and billing status. Only the carrier or a trustworthy balance record can establish whether usage was charged.
+5. Explore supported, authorized connectivity-sharing methods only where Android and the source network explicitly permit them.
+
+A phone-only build cannot promise a connection to any router at arbitrary distance, bypass Wi-Fi passwords, or obtain mobile data without an authorized service. Wi-Fi Direct, Bluetooth, and hotspot features can relay a connection only when a nearby device is already connected and configured to share it; they do not create an independent upstream internet connection.
+
 ## Important SDR limitations
 
 USB enumeration or a successful USB transfer does not prove that an SDR has been initialized, tuned, or is delivering valid I/Q samples. The current USB bulk reader does not by itself configure the RTL2832U demodulator or identify and initialize every possible tuner. Hardware support still requires a documented, chipset/tuner-specific initialization sequence and testing with a real compatible receiver connected to an Android phone using USB OTG.
