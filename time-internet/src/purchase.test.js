@@ -82,6 +82,21 @@ test('repeated verified callback does not create a second entitlement', async ()
   assert.equal(store.entitlements.size, 1);
 });
 
+test('malformed Daraja response is not stored as a usable checkout request', async () => {
+  const store = fakeStore();
+  const service = createPurchaseService({
+    store,
+    daraja: { async initiateStkPush() { return { customerMessage: 'Check phone' }; } },
+  });
+  await assert.rejects(
+    service.startPurchase({ userId: 'user-malformed', packageId: 'time-12h-kes10', phone: '0712345678' }),
+    /no usable checkout request ID/,
+  );
+  assert.equal(store.payments.size, 1);
+  assert.equal([...store.payments.values()][0].status, 'pending');
+  assert.equal([...store.payments.values()][0].checkoutRequestId, undefined);
+});
+
 test('unknown package is rejected before payment provider is called', async () => {
   const store = fakeStore();
   let called = false;
