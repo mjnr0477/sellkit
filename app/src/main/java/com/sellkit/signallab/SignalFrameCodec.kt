@@ -5,6 +5,7 @@ package com.sellkit.signallab
  *
  * Frame layout: 16-bit sync word 0xDDAA, 8-bit payload length (1..255),
  * payload bytes, then CRC-16/CCITT-FALSE (big-endian). Bits are MSB-first.
+ * CRC covers the length byte and payload, excluding sync and CRC.
  * This is a private lab format for controlled experiments, not a public radio
  * standard and not a way to access encrypted/protected transmissions.
  */
@@ -25,7 +26,8 @@ object SignalFrameCodec {
         bytes.add(SYNC and 0xff)
         bytes.add(payload.size)
         payload.forEach { bytes.add(it.toInt() and 0xff) }
-        val crc = crc16Ccitt(bytes)
+        // Match the decoder: CRC covers length + payload, not the sync word.
+        val crc = crc16Ccitt(bytes.subList(2, bytes.size))
         bytes.add((crc ushr 8) and 0xff)
         bytes.add(crc and 0xff)
         return bytes.flatMap { byte -> (7 downTo 0).map { (byte ushr it) and 1 } }.toIntArray()
@@ -42,7 +44,6 @@ object SignalFrameCodec {
             val total = SYNC_BITS + 8 + length * 8 + 16
             if (start + total > bits.size) continue
 
-            // CRC covers the length byte followed by payload, excluding sync and CRC.
             val protectedBytes = ArrayList<Int>(1 + length)
             for (i in 0 until 1 + length) {
                 protectedBytes.add(readBits(bits, start + SYNC_BITS + i * 8, 8))
