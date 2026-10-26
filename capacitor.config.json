@@ -1,0 +1,9 @@
+{
+  "appId": "com.vybora.social",
+  "appName": "VYBORA",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  }
+}
