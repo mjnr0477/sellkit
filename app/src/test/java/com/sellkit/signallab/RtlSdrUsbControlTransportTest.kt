@@ -7,20 +7,24 @@ import org.junit.Test
 
 class RtlSdrUsbControlTransportTest {
     @Test
-    fun successfulWriteReturnsByteCount() {
+    fun successfulWriteReturnsByteCountAndForwardsRequestFields() {
         var seenPayload = byteArrayOf()
+        var seenFields = listOf<Int>()
         val transport = RtlSdrUsbControlTransport(
-            transferForTest = { _, _, _, _, buffer, length, _ ->
+            transferForTest = { type, request, value, index, buffer, length, timeout ->
                 seenPayload = buffer.copyOf(length)
+                seenFields = listOf(type, request, value, index, length, timeout)
                 length
-            }
+            },
+            timeoutMs = 250
         )
         val result = transport.execute(
-            RtlSdrControlRequest(0x40, 0, 0x1234, 0x20, byteArrayOf(0x12, 0x34))
+            RtlSdrControlRequest(0x40, 5, 0x1234, 0x20, byteArrayOf(0x12, 0x34))
         )
 
         assertEquals(RtlSdrUsbControlTransport.Result.WriteComplete(2), result)
         assertArrayEquals(byteArrayOf(0x12, 0x34), seenPayload)
+        assertEquals(listOf(0x40, 5, 0x1234, 0x20, 2, 250), seenFields)
     }
 
     @Test
