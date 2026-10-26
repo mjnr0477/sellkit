@@ -7,24 +7,26 @@ VYBORA is a guest-first short-video social experience. Its design direction is *
 - Full-screen vertical video feed with scroll snapping and automatic play/pause as cards enter/leave view.
 - Guest browsing of public videos without registration.
 - Supabase Auth email sign-up and sign-in.
-- Authenticated video upload to the `vybora-media` Storage bucket.
+- Authenticated video uploads to the `vybora-media` Storage bucket.
 - Online public-feed reads from `public.vybora_posts`.
-- Registered-user comments, reactions/likes, and creator follows using VYBORA database tables.
-- Responsive mobile navigation, discovery search, sound toggle, and account prompts when guests attempt restricted actions.
-- Row Level Security on all VYBORA tables; Storage rules limit uploads/updates/deletes to the signed-in user's own folder.
+- Registered-user comments, likes/reactions, bookmarks, profile editing, and creator follows.
+- Responsive mobile navigation, discovery search, sound toggle, and sign-in prompts for guest-only restrictions.
+- Row Level Security on VYBORA tables; media writes are restricted to the signed-in user's own storage folder.
+- Aggregate like counts stored separately from reaction identities; users cannot write aggregate totals directly.
 
 ## Backend
 
-VYBORA currently uses the existing **Mariona** Supabase project in a dedicated `vybora_*` table namespace and the `vybora-media` Storage bucket. Dream Wi-Fi tables are retained separately and were not modified by the VYBORA frontend work. Dream Education uses a different project and is not part of this repository change.
+VYBORA uses the existing **Mariona** Supabase project in a dedicated `vybora_*` table namespace and the `vybora-media` Storage bucket. Dream Wi-Fi tables remain separate and were not modified by the VYBORA frontend work. Dream Education uses a different project and is not part of this repository change.
 
-The frontend uses the public Supabase publishable key only. Do not put a service-role key or secret key in browser code.
+The frontend uses the public Supabase publishable key only. Never put a service-role key or secret key in browser code.
 
-## Important release limitations
+## Release checks still required
 
-- The current featured demo videos are illustrative fallback content. The feed switches to uploaded community videos when available.
-- This branch has had source-level checks, including JavaScript syntax parsing, but has **not** had a real-device/browser end-to-end run for registration, video playback, upload, and RLS behavior.
-- Confirm email-verification settings, file-upload behavior on Android, moderation/reporting, abuse/rate limits, and production video delivery before launch.
-- Do not merge or publish this branch as production-ready until those release checks pass.
+- Featured fallback videos are illustrative demo content; the feed switches to real community uploads when available.
+- Automated source regression checks and JavaScript syntax checks are configured in GitHub Actions.
+- Browser/device end-to-end testing is still needed for email confirmation, sign-in, actual video playback and upload, and guest/registered access behavior.
+- Configure email confirmation and password recovery, content reporting/moderation, abuse/rate limits, and a production-grade video delivery/transcoding path before broad launch.
+- Keep this branch isolated until runtime checks pass. Dream Education and Dream Wi-Fi must not be merged into or modified by VYBORA changes.
 
 ## Preview
 
