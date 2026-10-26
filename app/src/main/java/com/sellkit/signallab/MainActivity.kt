@@ -533,7 +533,7 @@ class MainActivity : Activity() {
                         !caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))) {
                     "Test not run: active network is not cellular or Wi-Fi."
                 } else {
-                    val connection = URL("https://connectivitycheck.gstatic.com/generate_204").openConnection() as HttpURLConnection
+                    val connection = network!!.openConnection(URL("https://connectivitycheck.gstatic.com/generate_204")) as HttpURLConnection
                     connection.connectTimeout = 8000
                     connection.readTimeout = 8000
                     connection.instanceFollowRedirects = false
