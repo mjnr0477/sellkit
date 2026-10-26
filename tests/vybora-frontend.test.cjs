@@ -118,7 +118,7 @@ test('uploaded community videos are limited to short clips', () => {
 test('Live tab offers in-app live room participation and keeps official sports links as secondary options', () => {
   assert.match(html, /data-open-live="join"/);
   assert.match(html, /data-open-live="start"/);
-  assert.match(html, /Join a live room/);
+  assert.match(html, /Open live rooms/);
   assert.match(html, /Go live/);
 });
 
