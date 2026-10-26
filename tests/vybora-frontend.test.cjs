@@ -153,3 +153,38 @@ test('curated video UI does not show provider-source banners or external watch l
   assert.match(html, /handle:'@vybora'/);
   assert.match(html, /username:v\.creator\|\|'VYBORA Picks'/);
 });
+
+test('curated feed accepts direct streams from the official Blender video host', () => {
+  assert.match(html, /'video\.blender\.org'/);
+});
+
+test('open-video seed migration adds distinct official videos idempotently', () => {
+  const seed = fs.readFileSync(new URL('../supabase/migrations/20261026203000_seed_open_video_catalog.sql', 'file://' + __filename), 'utf8');
+  assert.match(seed, /where not exists/i);
+  assert.match(seed, /WING IT!/);
+  assert.match(seed, /Caminandes 2: Gran Dillama/);
+  assert.match(seed, /Sprite Fright/);
+  assert.match(seed, /Sintel/);
+  assert.match(seed, /Glass Half/);
+  assert.equal((seed.match(/\('(?:[^']|'')+', '(?:[^']|'')+', '(?:[^']|'')+'/g) || []).length, 14);
+});
+
+
+test('official live-event feed only labels recently verified events as live and keeps HTTPS provider links', () => {
+  assert.match(html, /async function loadOfficialEvents\(\)/);
+  assert.match(html, /vybora_live_events/);
+  assert.match(html, /now-Date\.parse\(e\.last_verified_at\)<6\*60\*60\*1000/);
+  assert.match(html, /LIVE STATUS UNVERIFIED/);
+  assert.match(html, /new URL\(u\)/);
+  assert.match(html, /Watch on official service/);
+  assert.match(html, /official-live-player/);
+});
+
+test('live-event registry migration restricts public clients to reading active events', () => {
+  const migration = fs.readFileSync(new URL('../supabase/migrations/20261026213000_vybora_live_event_registry.sql', 'file://' + __filename), 'utf8');
+  assert.match(migration, /enable row level security/i);
+  assert.match(migration, /for select to anon, authenticated/i);
+  assert.match(migration, /active = true/i);
+  assert.match(migration, /status in \('upcoming','live','ended','cancelled'\)/);
+  assert.match(migration, /embed_url is null or embed_url ~ '\^https:\/\//i);
+});
