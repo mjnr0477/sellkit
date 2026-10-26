@@ -153,3 +153,18 @@ test('curated video UI does not show provider-source banners or external watch l
   assert.match(html, /handle:'@vybora'/);
   assert.match(html, /username:v\.creator\|\|'VYBORA Picks'/);
 });
+
+test('curated feed accepts direct streams from the official Blender video host', () => {
+  assert.match(html, /'video\.blender\.org'/);
+});
+
+test('open-video seed migration adds distinct official videos idempotently', () => {
+  const seed = fs.readFileSync(new URL('../supabase/migrations/20261026203000_seed_open_video_catalog.sql', 'file://' + __filename), 'utf8');
+  assert.match(seed, /where not exists/i);
+  assert.match(seed, /WING IT!/);
+  assert.match(seed, /Caminandes 2: Gran Dillama/);
+  assert.match(seed, /Sprite Fright/);
+  assert.match(seed, /Sintel/);
+  assert.match(seed, /Glass Half/);
+  assert.equal((seed.match(/\('(?:[^']|'')+', '(?:[^']|'')+', '(?:[^']|'')+'/g) || []).length, 14);
+});
