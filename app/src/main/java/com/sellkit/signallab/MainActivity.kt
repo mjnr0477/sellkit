@@ -262,11 +262,14 @@ class MainActivity : Activity() {
         val scanFinishedAction = WifiManager.SCAN_RESULTS_AVAILABLE_ACTION
         val scanReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                if (intent.action != scanFinishedAction) return
+                if (intent.action != scanFinishedAction || !scanCompleted.compareAndSet(false, true)) return
+                scanHandler.removeCallbacksAndMessages(null)
+                receiverRegistered = false
                 finishWifiScan(wifi, this, intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false))
             }
         }
         val scanHandler = android.os.Handler(mainLooper)
+        val scanCompleted = java.util.concurrent.atomic.AtomicBoolean(false)
         var receiverRegistered = false
         try {
             if (Build.VERSION.SDK_INT >= 33) registerReceiver(scanReceiver, IntentFilter(scanFinishedAction), Context.RECEIVER_NOT_EXPORTED)
@@ -279,9 +282,11 @@ class MainActivity : Activity() {
                 report.text = "Android did not start a fresh Wi-Fi scan (often due to scan throttling). Waiting briefly for results; they may be cached."
             }
             scanHandler.postDelayed({
-                if (receiverRegistered) {
-                    try { unregisterReceiver(scanReceiver) } catch (_: IllegalArgumentException) { }
-                    receiverRegistered = false
+                if (scanCompleted.compareAndSet(false, true)) {
+                    if (receiverRegistered) {
+                        try { unregisterReceiver(scanReceiver) } catch (_: IllegalArgumentException) { }
+                        receiverRegistered = false
+                    }
                     showWifiScanResults(wifi, fresh = false, note = "Timed out waiting for Android's scan broadcast; showing available results, which may be cached.")
                 }
             }, 12000)
