@@ -260,6 +260,9 @@ class MainActivity : Activity() {
         }
         report.text = "Scanning nearby Wi-Fi networks… waiting for Android's scan-results broadcast."
         val scanFinishedAction = WifiManager.SCAN_RESULTS_AVAILABLE_ACTION
+        val scanHandler = android.os.Handler(mainLooper)
+        val scanCompleted = java.util.concurrent.atomic.AtomicBoolean(false)
+        var receiverRegistered = false
         val scanReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action != scanFinishedAction || !scanCompleted.compareAndSet(false, true)) return
@@ -268,9 +271,6 @@ class MainActivity : Activity() {
                 finishWifiScan(wifi, this, intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false))
             }
         }
-        val scanHandler = android.os.Handler(mainLooper)
-        val scanCompleted = java.util.concurrent.atomic.AtomicBoolean(false)
-        var receiverRegistered = false
         try {
             if (Build.VERSION.SDK_INT >= 33) registerReceiver(scanReceiver, IntentFilter(scanFinishedAction), Context.RECEIVER_NOT_EXPORTED)
             else @Suppress("DEPRECATION") registerReceiver(scanReceiver, IntentFilter(scanFinishedAction))
