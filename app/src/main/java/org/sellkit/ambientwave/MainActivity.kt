@@ -340,7 +340,8 @@ class MainActivity : Activity() {
     }
 
 
-    // Internet source discovery checks Android's active route; it does not claim RF-to-internet conversion.\n    private fun discoverInternetSources() {
+    // Internet source discovery checks Android's active route; it does not claim RF-to-internet conversion.
+    private fun discoverInternetSources() {
         output.text = "Checking Android's active network and testing real HTTPS routes…"
         thread {
             val report = StringBuilder("INTERNET SOURCE DISCOVERY & CONNECTIVITY TEST\\n\\n")
