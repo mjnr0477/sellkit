@@ -8,9 +8,9 @@ test('grants a client only for the remaining server-authoritative lease time', a
   const result = await gateway.grant('10.8.0.2', 12_500, 10_000);
   assert.deepEqual(calls, [[
     'nft', ['add', 'element', 'inet', 'timed_access', 'active_clients',
-      '{', '10.8.0.2', 'timeout', '3s', '}'],
+      '{', '10.8.0.2', 'timeout', '2s', '}'],
   ]]);
-  assert.equal(result.ttlSeconds, 3);
+  assert.equal(result.ttlSeconds, 2);
   assert.equal(result.enforcement, 'nftables-timeout');
 });
 
@@ -19,6 +19,13 @@ test('rejects expired or invalid leases without running nft', async () => {
   const gateway = createNftLeaseGateway({ run: async () => { called = true; } });
   await assert.rejects(gateway.grant('10.8.0.2', 10_000, 10_000), /future server-authoritative/);
   await assert.rejects(gateway.grant('10.8.0.999', 20_000, 10_000), /valid IPv4/);
+  assert.equal(called, false);
+});
+
+test('refuses sub-second grants rather than extending access beyond expiry', async () => {
+  let called = false;
+  const gateway = createNftLeaseGateway({ run: async () => { called = true; } });
+  await assert.rejects(gateway.grant('10.8.0.2', 10_500, 10_000), /less than one second remaining/);
   assert.equal(called, false);
 });
 
