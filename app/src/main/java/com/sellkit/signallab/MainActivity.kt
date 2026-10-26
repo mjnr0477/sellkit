@@ -291,6 +291,7 @@ class MainActivity : Activity() {
             override fun onUnavailable() {
                 if (!finished.compareAndSet(false, true)) return
                 timeout.removeCallbacksAndMessages(null)
+                try { cm.unregisterNetworkCallback(callback) } catch (_: Exception) { }
                 runOnUiThread { report.text = networkReport() + "\n\nAndroid could not provide a cellular network for this test. Check SIM registration, mobile data, coverage, and carrier restrictions." }
             }
         }
