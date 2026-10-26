@@ -106,7 +106,7 @@ $('searchBtn').addEventListener('click',()=>openModal('searchBackdrop'));documen
 $('searchSubmit').addEventListener('click',()=>{const q=$('searchInput').value.trim().toLowerCase();closeModal('searchBackdrop');if(!q){render(posts.length?posts:demo);return}const result=(posts.length?posts:demo).filter(p=>(p.body+' '+(p.username||'')).toLowerCase().includes(q));render(result);tell(result.length?result.length+' matching videos.':'No matching videos yet. Try another search.')});
 document.querySelectorAll('[data-topic]').forEach(b=>b.addEventListener('click',()=>{ $('searchInput').value=b.dataset.topic;openModal('searchBackdrop')}));
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));feed.addEventListener('click',handleAction);
-if(sb){sb.auth.onAuthStateChange((_event,session)=>{user=session?.user||null;updateAccount();if(_event==='PASSWORD_RECOVERY')openModal('resetBackdrop');if(_event==='SIGNED_IN'||_event==='SIGNED_OUT')setTimeout(()=>loadFeed(),0)})}
+window.addEventListener('vybora-mature-preference-changed',()=>loadFeed());if(sb){sb.auth.onAuthStateChange((_event,session)=>{user=session?.user||null;updateAccount();if(_event==='PASSWORD_RECOVERY')openModal('resetBackdrop');if(_event==='SIGNED_IN'||_event==='SIGNED_OUT')setTimeout(()=>loadFeed(),0)})}
 (async()=>{await refreshSession();updateAccount();await loadFeed()})();
 })();
 </script>
