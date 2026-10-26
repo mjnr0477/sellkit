@@ -9,37 +9,39 @@ import android.hardware.usb.UsbDeviceConnection
  * RTL-SDR initialization must use a documented sequence for the detected
  * chipset/tuner; a successful USB transfer alone does not prove RF is initialized.
  */
-class RtlSdrUsbControlTransport(
-    private val connection: UsbDeviceConnection,
-    private val timeoutMs: Int = DEFAULT_TIMEOUT_MS
+class RtlSdrUsbControlTransport private constructor(
+    private val transfer: (requestType: Int, request: Int, value: Int, index: Int,
+                           buffer: ByteArray, length: Int, timeoutMs: Int) -> Int,
+    private val timeoutMs: Int
 ) {
+    constructor(connection: UsbDeviceConnection, timeoutMs: Int = DEFAULT_TIMEOUT_MS) : this(
+        transfer = { type, request, value, index, buffer, length, timeout ->
+            connection.controlTransfer(type, request, value, index, buffer, length, timeout)
+        },
+        timeoutMs = timeoutMs
+    )
+
+    /** Test seam for exercising transfer result handling without physical USB hardware. */
+    internal constructor(
+        transferForTest: (Int, Int, Int, Int, ByteArray, Int, Int) -> Int,
+        timeoutMs: Int = DEFAULT_TIMEOUT_MS,
+        testOnly: Boolean = true
+    ) : this(transfer = transferForTest, timeoutMs = timeoutMs)
+
     init {
         require(timeoutMs > 0) { "timeoutMs must be positive" }
     }
 
-    /**
-     * Returns read bytes for read requests, null for a successful write, or a
-     * descriptive failure. USB controlTransfer returns a byte count or a
-     * negative value on failure; partial transfers are rejected.
-     */
+    /** Read data is returned only for a complete transfer; partial and failed transfers are rejected. */
     fun execute(request: RtlSdrControlRequest): Result {
         val read = request.isRead
-        val transferBuffer = if (read) {
-            ByteArray(request.expectedReadLength)
-        } else {
-            request.payload.copyOf()
-        }
+        val buffer = if (read) ByteArray(request.expectedReadLength) else request.payload.copyOf()
         val length = if (read) request.expectedReadLength else request.payload.size
 
         val transferred = try {
-            connection.controlTransfer(
-                request.requestType,
-                request.request,
-                request.value,
-                request.index,
-                transferBuffer,
-                length,
-                timeoutMs
+            transfer(
+                request.requestType, request.request, request.value, request.index,
+                buffer, length, timeoutMs
             )
         } catch (e: Exception) {
             return Result.Failure("USB control transfer threw ${e.javaClass.simpleName}: ${e.message ?: "no detail"}")
@@ -51,11 +53,7 @@ class RtlSdrUsbControlTransport(
         if (transferred != length) {
             return Result.Failure("USB control transfer was partial: expected $length bytes, received $transferred.")
         }
-        return if (read) {
-            Result.ReadData(transferBuffer)
-        } else {
-            Result.WriteComplete(transferred)
-        }
+        return if (read) Result.ReadData(buffer) else Result.WriteComplete(transferred)
     }
 
     sealed class Result {
