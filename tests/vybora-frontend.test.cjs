@@ -68,9 +68,9 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.doesNotMatch(html, /Profile editing is the next feature/);
 });
 
-test('curated videos use VYBORA branding without stripping creator attribution', () => {
-  assert.match(html, /isCurated\?'VYBORA PICKS'/);
-  assert.match(html, /aria-label="Curated for VYBORA">VYBORA PICKS/);
+test('curated videos keep creator attribution without a source badge', () => {
+  assert.match(html, /isCurated\?'':'<button class="follow"/);
+  assert.doesNotMatch(html, /aria-label="Curated for VYBORA">VYBORA PICKS/);
   assert.doesNotMatch(html, /Watch video ↗/);
   assert.doesNotMatch(html, /esc\(p\.source_name\|\|'ONLINE'\)/);
   assert.match(html, /p\.username\|\|p\.name\|\|'VYBORA creator'/);
