@@ -68,14 +68,13 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.doesNotMatch(html, /Profile editing is the next feature/);
 });
 
-test('curated videos use VYBORA branding without stripping creator attribution', () => {
-  assert.match(html, /isCurated\?'VYBORA PICKS'/);
-  assert.match(html, /aria-label="Curated for VYBORA">VYBORA PICKS/);
+test('curated videos keep creator attribution without source badges', () => {
+  assert.doesNotMatch(html, /VYBORA PICKS/);
+  assert.doesNotMatch(html, /COMMUNITY SHARE/);
   assert.doesNotMatch(html, /Watch video ↗/);
   assert.doesNotMatch(html, /esc\(p\.source_name\|\|'ONLINE'\)/);
   assert.match(html, /p\.username\|\|p\.name\|\|'VYBORA creator'/);
 });
-
 test('Live tab provides in-app live participation and official football coverage', () => {
   assert.match(html, /data-tab="Live"/);
   assert.match(html, /function renderLiveEvents\(\)/);
