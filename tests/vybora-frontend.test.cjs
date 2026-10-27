@@ -68,14 +68,13 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.doesNotMatch(html, /Profile editing is the next feature/);
 });
 
-test('curated videos use VYBORA branding without stripping creator attribution', () => {
-  assert.match(html, /isCurated\?'VYBORA PICKS'/);
-  assert.match(html, /aria-label="Curated for VYBORA">VYBORA PICKS/);
+test('curated videos keep creator attribution without source badges', () => {
+  assert.doesNotMatch(html, /VYBORA PICKS/);
+  assert.doesNotMatch(html, /COMMUNITY SHARE/);
   assert.doesNotMatch(html, /Watch video ↗/);
   assert.doesNotMatch(html, /esc\(p\.source_name\|\|'ONLINE'\)/);
   assert.match(html, /p\.username\|\|p\.name\|\|'VYBORA creator'/);
 });
-
 test('Live tab provides in-app live participation and official football coverage', () => {
   assert.match(html, /data-tab="Live"/);
   assert.match(html, /function renderLiveEvents\(\)/);
@@ -187,4 +186,63 @@ test('live-event registry migration restricts public clients to reading active e
   assert.match(migration, /active = true/i);
   assert.match(migration, /status in \('upcoming','live','ended','cancelled'\)/);
   assert.match(migration, /embed_url is null or embed_url ~ '\^https:\/\//i);
+});
+
+
+test('Watch feed discovers recent open-licensed archive videos without API keys or media uploads', () => {
+  assert.match(html, /async function loadOpenArchiveVideos\(page=1\)/);
+  assert.match(html, /mediatype:movies AND licenseurl:\*/);
+  assert.match(html, /isReusableArchiveLicense/);
+  assert.match(html, /creativecommons/);
+  assert.match(html, /licenses/);
+  assert.match(html, /publicdomain/);
+  assert.match(html, /publicdomain/);
+  assert.match(html, /https:\/\/archive\.org\/metadata\//);
+  assert.match(html, /https:\/\/archive\.org\/download\//);
+  assert.match(html, /archiveLicense:licenseUrl/);
+  assert.match(html, /async function loadMoreArchiveOnly\(\)/);
+  assert.match(html, /loadMoreArchiveOnly\(\)/);
+  assert.match(html, /archivePage\+1/);
+  assert.match(html, /feedHasMore=feedHasMore\|\|archiveHasMore/);
+  assert.match(html, /if\(!sb\)\{try\{posts=await loadOpenArchiveVideos\(1\)/);
+  assert.match(html, /Community feed is temporarily unavailable\. Showing open-licensed videos/);
+  assert.match(html, /archive-credit/);
+  assert.match(html, /Reuse terms/);
+  assert.doesNotMatch(html, /archive\.org[\s\S]{0,1500}sb\.storage\.from\('vybora-media'\)\.upload/);
+});
+
+test('Discover feed mixes Internet Archive and Wikimedia Commons without importing media into Supabase', () => {
+  assert.match(html, /async function loadWikimediaVideos\(page=1\)/);
+  assert.match(html, /https:\/\/commons\.wikimedia\.org\/w\/api\.php/);
+  assert.match(html, /gsrsearch:'filetype:video'/);
+  assert.match(html, /iiprop:'url\|mime\|size\|extmetadata'/);
+  assert.match(html, /meta\.LicenseUrl/);
+  assert.match(html, /meta\.LicenseShortName/);
+  assert.match(html, /commonsHasMore/);
+  assert.match(html, /commonsPage=page/);
+  assert.match(html, /return \[\.\.\.entries\.filter\(Boolean\),\.\.\.commonsPromise,\.\.\.openversePromise,\.\.\.nasaPromise\]/);
+  assert.match(html, /handle:'@openfeed'/);
+  assert.doesNotMatch(html, /commons\.wikimedia\.org[\s\S]{0,1800}sb\.storage\.from\('vybora-media'\)\.upload/);
+});
+
+test('Discover adds Openverse and NASA sources with clean-content filtering and no media imports', () => {
+  assert.match(html, /async function loadOpenverseVideos\(page=1\)/);
+  assert.match(html, /https:\/\/api\.openverse\.org\/v1\/videos\//);
+  assert.match(html, /license:'by,by-sa,cc0,pdm'/);
+  assert.match(html, /mature:'false'/);
+  assert.match(html, /async function loadNasaVideos\(page=1\)/);
+  assert.match(html, /https:\/\/images-api\.nasa\.gov\/search/);
+  assert.match(html, /https:\/\/images-api\.nasa\.gov\/asset\//);
+  assert.match(html, /function isCleanVideoMetadata/);
+  assert.match(html, /\.\.\.openversePromise,\.\.\.nasaPromise/);
+  assert.match(html, /openverseHasMore/);
+  assert.match(html, /nasaHasMore/);
+  assert.doesNotMatch(html, /api\.openverse\.org[\s\S]{0,2200}sb\.storage\.from\('vybora-media'\)\.upload/);
+  assert.doesNotMatch(html, /images-api\.nasa\.gov[\s\S]{0,2200}sb\.storage\.from\('vybora-media'\)\.upload/);
+});
+
+test('feed cards remove platform-source badges while preserving mature-content warnings', () => {
+  assert.doesNotMatch(html, /COMMUNITY SHARE/);
+  assert.doesNotMatch(html, /VYBORA PICKS/);
+  assert.match(html, /p\.mature_content\?'<div class="muted-badge">18\+ · MATURE<\/div>'/);
 });
