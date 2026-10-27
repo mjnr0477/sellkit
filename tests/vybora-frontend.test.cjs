@@ -188,3 +188,30 @@ test('live-event registry migration restricts public clients to reading active e
   assert.match(migration, /status in \('upcoming','live','ended','cancelled'\)/);
   assert.match(migration, /embed_url is null or embed_url ~ '\^https:\/\//i);
 });
+
+
+test('Watch feed discovers recent open-licensed archive videos without API keys or media uploads', () => {
+  assert.match(html, /async function loadOpenArchiveVideos\(page=1\)/);
+  assert.match(html, /mediatype:movies AND licenseurl:\*/);
+  assert.match(html, /isReusableArchiveLicense/);
+  assert.match(html, /creativecommons\\.org\\/licenses\\\/(by\|by-sa)/);
+  assert.match(html, /creativecommons\\.org\\/publicdomain\\\/(zero\|mark)/);
+  assert.match(html, /https:\/\/archive\.org\/metadata\//);
+  assert.match(html, /https:\/\/archive\.org\/download\//);
+  assert.match(html, /archiveLicense:licenseUrl/);
+  assert.match(html, /async function loadMoreArchiveOnly\(\)/);
+  assert.match(html, /loadMoreArchiveOnly\(\)/);
+  assert.match(html, /archivePage\+1/);
+  assert.match(html, /feedHasMore=feedHasMore\|\|archiveHasMore/);
+  assert.match(html, /if\(!sb\)\{try\{posts=await loadOpenArchiveVideos\(1\)/);
+  assert.match(html, /Community feed is temporarily unavailable\. Showing open-licensed videos/);
+  assert.match(html, /archive-credit/);
+  assert.match(html, /Reuse license/);
+  assert.doesNotMatch(html, /archive\.org[\s\S]{0,1500}sb\.storage\.from\('vybora-media'\)\.upload/);
+});
+
+test('feed cards remove platform-source badges while preserving mature-content warnings', () => {
+  assert.doesNotMatch(html, /COMMUNITY SHARE/);
+  assert.doesNotMatch(html, /VYBORA PICKS/);
+  assert.match(html, /p\.mature_content\?'<div class="muted-badge">18\+ · MATURE<\/div>'/);
+});
