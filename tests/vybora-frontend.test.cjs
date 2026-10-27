@@ -128,7 +128,7 @@ test('Data Saver prevents automatic video and embed loading until the viewer req
   assert.match(html, /vybora:data-saver:v1/);
   assert.match(html, /dataSaver\?'':'autoplay '/);
   assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
-  assert.match(html, /dataSaver&&isExternal/);
+  assert.match(html, /dataSaver&&isExternal&&!isDirectExternal/);
   assert.match(html, /data-action="load-external"/);
   assert.match(html, /if\(!dataSaver&&entry\.isIntersecting/);
   assert.match(html, /if\(!dataSaver\)\{const playback=v\.play\(\)/);
