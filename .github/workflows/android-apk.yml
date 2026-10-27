@@ -40,6 +40,19 @@ jobs:
       - name: Prepare web assets and generate Android project
         run: npm run android:sync
 
+      - name: Verify Android wrapper points to live VYBORA website
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s www/index.html
+          grep -Fq 'https://vybora-social-live.onrender.com/' www/index.html
+          grep -Fq 'window.location.replace(target)' www/index.html
+          grep -Fq "await fetch(target, { mode: 'no-cors'" www/index.html
+          if grep -Fq 'social-features.js' www/index.html; then
+            echo "::error::Android launcher must not bundle the frozen frontend."
+            exit 1
+          fi
+
       - name: Set up Python for launcher icon generation
         uses: actions/setup-python@v5
         with:
