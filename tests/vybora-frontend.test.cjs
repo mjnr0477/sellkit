@@ -207,7 +207,7 @@ test('Watch feed discovers recent open-licensed archive videos without API keys 
   assert.match(html, /if\(!sb\)\{try\{posts=await loadOpenArchiveVideos\(1\)/);
   assert.match(html, /Community feed is temporarily unavailable\. Showing open-licensed videos/);
   assert.match(html, /archive-credit/);
-  assert.match(html, /Reuse license/);
+  assert.match(html, /Reuse terms/);
   assert.doesNotMatch(html, /archive\.org[\s\S]{0,1500}sb\.storage\.from\('vybora-media'\)\.upload/);
 });
 
@@ -223,6 +223,22 @@ test('Discover feed mixes Internet Archive and Wikimedia Commons without importi
   assert.match(html, /return \[\.\.\.entries\.filter\(Boolean\),\.\.\.commonsPromise\]/);
   assert.match(html, /handle:'@openfeed'/);
   assert.doesNotMatch(html, /commons\.wikimedia\.org[\s\S]{0,1800}sb\.storage\.from\('vybora-media'\)\.upload/);
+});
+
+test('Discover adds Openverse and NASA sources with clean-content filtering and no media imports', () => {
+  assert.match(html, /async function loadOpenverseVideos\(page=1\)/);
+  assert.match(html, /https:\/\/api\.openverse\.org\/v1\/videos\//);
+  assert.match(html, /license:'by,by-sa,cc0,pdm'/);
+  assert.match(html, /mature:'false'/);
+  assert.match(html, /async function loadNasaVideos\(page=1\)/);
+  assert.match(html, /https:\/\/images-api\.nasa\.gov\/search/);
+  assert.match(html, /https:\/\/images-api\.nasa\.gov\/asset\//);
+  assert.match(html, /function isCleanVideoMetadata/);
+  assert.match(html, /\.\.\.openversePromise,\.\.\.nasaPromise/);
+  assert.match(html, /openverseHasMore/);
+  assert.match(html, /nasaHasMore/);
+  assert.doesNotMatch(html, /api\.openverse\.org[\s\S]{0,2200}sb\.storage\.from\('vybora-media'\)\.upload/);
+  assert.doesNotMatch(html, /images-api\.nasa\.gov[\s\S]{0,2200}sb\.storage\.from\('vybora-media'\)\.upload/);
 });
 
 test('feed cards remove platform-source badges while preserving mature-content warnings', () => {
