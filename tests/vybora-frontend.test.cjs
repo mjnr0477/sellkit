@@ -297,3 +297,16 @@ test('feed ranking prioritizes followed creators and combines freshness with eng
   assert.match(html, /const likes=Math\.log2\(Number\(p\.likes\|\|0\)\+1\)\*0\.22/);
   assert.match(html, /posts=rankFeedItems\(\[\.\.\.remote,\.\.\.featured,\.\.\.archive\]\)/);
 });
+
+test('watch-time personalization is local, bounded, and integrated into feed ranking', () => {
+  assert.match(html, /const WATCH_INTEREST_KEY='vybora:watch-interests:v1'/);
+  assert.match(html, /function recordWatchInterest\(card,seconds\)/);
+  assert.match(html, /if\(!card\|\|seconds<4\)return/);
+  assert.match(html, /localStorage\.setItem\(WATCH_INTEREST_KEY,JSON\.stringify\(profile\)\)/);
+  assert.match(html, /const personal=interestScore\(p,interests\)/);
+  assert.match(html, /affinity\+freshness\+quality\+savedSignal\+personal/);
+  assert.match(html, /data-title=/);
+  assert.match(html, /finishWatchSession\(card\)/);
+  assert.match(html, /window\.addEventListener\('pagehide'/);
+  assert.doesNotMatch(html, /fetch\([^)]*watch-interests|sb\.from\(['"]vybora_watch_interests/);
+});
