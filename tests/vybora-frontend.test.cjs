@@ -288,3 +288,12 @@ test('offline worker caches only the public app shell and never caches API mutat
   assert.match(worker, /Never cache authenticated API responses or private user data/);
   assert.doesNotMatch(worker, /supabase\.co\/rest\/v1/);
 });
+
+
+test('feed ranking prioritizes followed creators and combines freshness with engagement', () => {
+  assert.match(html, /function rankFeedItems\(items\)/);
+  assert.match(html, /const affinity=p\.following\?4\.5:0/);
+  assert.match(html, /const freshness=Math\.max\(0,2\.5-Math\.log2\(ageHours\+1\)\*0\.45\)/);
+  assert.match(html, /const likes=Math\.log2\(Number\(p\.likes\|\|0\)\+1\)\*0\.22/);
+  assert.match(html, /posts=rankFeedItems\(\[\.\.\.remote,\.\.\.featured,\.\.\.archive\]\)/);
+});
