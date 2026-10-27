@@ -246,3 +246,18 @@ test('feed cards remove platform-source badges while preserving mature-content w
   assert.doesNotMatch(html, /VYBORA PICKS/);
   assert.match(html, /p\.mature_content\?'<div class="muted-badge">18\+ · MATURE<\/div>'/);
 });
+
+
+test('scrolling videos autoplay muted and pause offscreen to protect playback performance', () => {
+  assert.match(html, /<video src="'\+esc\(media\)\+'" autoplay muted playsinline loop/);
+  assert.match(html, /if\(v\)\{v\.muted=true;const playback=v\.play\(\)/);
+  assert.match(html, /else if\(v\)v\.pause\(\)/);
+});
+
+test('official live embeds request muted autoplay and keep source branding out of the viewing card', () => {
+  assert.match(html, /u\.searchParams\.set\('autoplay','1'\)/);
+  assert.match(html, /u\.searchParams\.set\('mute','1'\)/);
+  assert.match(html, /allow="autoplay; encrypted-media; picture-in-picture; fullscreen"/);
+  assert.doesNotMatch(html, /esc\(e\.source_name\|\|'Official broadcaster'\)/);
+  assert.match(html, /Watch on official service/);
+});
