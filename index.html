@@ -112,13 +112,13 @@ async function loadOpenArchiveVideos(page=1){
   params.set('q','mediatype:movies AND licenseurl:*');
   ['identifier','title','creator','publicdate','date','licenseurl','downloads'].forEach(field=>params.append('fl[]',field));
   params.set('rows','8');params.set('page',String(page));params.set('output','json');params.append('sort[]','publicdate desc');
-  const [response,commonsPromise]=await Promise.all([
-   fetch('https://archive.org/advancedsearch.php?'+params.toString(),{headers:{Accept:'application/json'}}),
+  const [archiveResult,commonsPromise]=await Promise.all([
+   fetch('https://archive.org/advancedsearch.php?'+params.toString(),{headers:{Accept:'application/json'}}).then(async response=>{if(!response.ok)throw new Error('Open-video catalogue returned HTTP '+response.status);return response.json()}).then(payload=>({payload})).catch(error=>({error})),
    loadWikimediaVideos(page).catch(error=>{console.warn('Wikimedia video discovery unavailable',error);return []})
   ]);
-  if(!response.ok)throw new Error('Open-video catalogue returned HTTP '+response.status);
-  const payload=await response.json(),docs=payload?.response?.docs||[];
-  archiveHasMore=page*8<Number(payload?.response?.numFound||0);archivePage=page;
+  const payload=archiveResult.payload,docs=payload?.response?.docs||[];
+  if(archiveResult.error)console.warn('Internet Archive discovery unavailable',archiveResult.error);
+  archiveHasMore=!!payload&&page*8<Number(payload?.response?.numFound||0);archivePage=page;
   const entries=await Promise.all(docs.map(async doc=>{
    try{
     if(!doc.identifier||!isReusableArchiveLicense(doc.licenseurl))return null;
