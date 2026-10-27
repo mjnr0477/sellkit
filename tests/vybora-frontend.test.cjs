@@ -307,6 +307,7 @@ test('watch-time personalization is local, bounded, and integrated into feed ran
   assert.match(html, /affinity\+freshness\+quality\+savedSignal\+personal/);
   assert.match(html, /data-title=/);
   assert.match(html, /finishWatchSession\(card\)/);
+  assert.match(html, /function render\(list=posts\)\{feed\.querySelectorAll\('\.video-card'\)\.forEach\(finishWatchSession\)/);
   assert.match(html, /window\.addEventListener\('pagehide'/);
   assert.doesNotMatch(html, /fetch\([^)]*watch-interests|sb\.from\(['"]vybora_watch_interests/);
 });
