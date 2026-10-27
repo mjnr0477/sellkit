@@ -261,3 +261,12 @@ test('official live embeds request muted autoplay and keep source branding out o
   assert.doesNotMatch(html, /esc\(e\.source_name\|\|'Official broadcaster'\)/);
   assert.match(html, /Watch on official service/);
 });
+
+
+test('database advisor hardening keeps VYBORA internal state private and indexes viewer history', () => {
+  const migration = fs.readFileSync(new URL('../supabase/migrations/20261027104000_vybora_database_advisor_hardening.sql', 'file://' + __filename), 'utf8');
+  assert.match(migration, /on public\.vybora_cleanup_state[\s\S]*?using \(false\)[\s\S]*?with check \(false\)/i);
+  assert.match(migration, /create index if not exists vybora_video_views_viewer_created_idx/i);
+  assert.match(migration, /on public\.vybora_video_views \(viewer_id, created_at desc\)/i);
+  assert.doesNotMatch(migration, /dream_wifi/i);
+});
