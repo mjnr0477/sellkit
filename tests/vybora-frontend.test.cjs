@@ -262,8 +262,8 @@ test('feed cards remove platform-source badges while preserving mature-content w
 
 
 test('scrolling videos autoplay muted and pause offscreen to protect playback performance', () => {
-  assert.match(html, /<video src="'\+esc\(media\)\+'" autoplay muted playsinline loop/);
-  assert.match(html, /if\(v\)\{v\.muted=true;const playback=v\.play\(\)/);
+  assert.match(html, /<video src="'\+esc\(media\)\+'" '\+\(dataSaver\?'':'autoplay '\)\+'muted playsinline loop/);
+  assert.match(html, /if\(v\)\{v\.muted=true;if\(!dataSaver\)\{const playback=v\.play\(\)/);
   assert.match(html, /finishWatchSession\(card\);if\(v\)v\.pause\(\)/);
 });
 
