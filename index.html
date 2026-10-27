@@ -218,5 +218,43 @@ window.addEventListener('vybora-mature-preference-changed',()=>loadFeed());if(sb
 <div class="modal-backdrop" id="liveBackdrop" role="dialog" aria-modal="true"><section class="modal"><div class="modal-top"><h2>VYBORA Live</h2><button class="close" data-close="liveBackdrop">×</button></div><p>Start a camera-and-microphone live or join a live room. Allow camera/microphone access when prompted.</p><div class="safety-note">Live streaming is beta and uses browser WebRTC peer connections; viewer capacity and network compatibility are limited. Do not share private information.</div><div id="liveControls"><div class="field"><label for="liveTitleInput">Live title</label><input id="liveTitleInput" maxlength="120" value="Live on VYBORA"></div><label class="checkline"><input id="liveMature" type="checkbox"><span>Flag this live as mature (18+)</span></label><button class="btn primary full" id="startLiveBtn">🔴 Start live</button><h3>Live now</h3><div id="liveList" class="social-list"></div></div><div id="liveRoom" hidden><video id="liveRemote" class="live-video" autoplay playsinline></video><video id="livePreview" class="live-video" autoplay playsinline muted hidden></video><p id="liveStatus" class="hint"></p><button class="btn primary full" id="leaveLiveBtn">Leave live</button></div></section></div>
 <div class="modal-backdrop" id="reportBackdrop" role="dialog" aria-modal="true"><section class="modal"><div class="modal-top"><h2>Report content</h2><button class="close" data-close="reportBackdrop">×</button></div><p>Help keep VYBORA safe by reporting content that violates the rules.</p><form id="reportForm"><div class="field"><label for="reportReason">Reason</label><select id="reportReason" class="searchbar"><option value="mature_content">Mature/sensitive content</option><option value="harassment">Harassment</option><option value="spam">Spam/scam</option><option value="violence">Violence</option><option value="hate">Hate</option><option value="sexual_content">Sexual content</option><option value="other">Other</option></select></div><div class="field"><label for="reportDetails">Details</label><textarea id="reportDetails" rows="3" maxlength="1000"></textarea></div><button class="btn primary full" type="submit">Submit report</button></form></section></div>
 <script src="social-features.js"></script>
+
+<style>
+#vyboraNetworkStatus{position:fixed;z-index:1000;left:50%;bottom:calc(78px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100vw - 24px);padding:8px 13px;border:1px solid #ffffff24;border-radius:999px;background:#11111cf2;color:#f8f7ff;font:12px/1.3 system-ui,sans-serif;box-shadow:0 8px 30px #0007;display:none;align-items:center;gap:8px;white-space:nowrap}
+#vyboraNetworkStatus[data-state="offline"]{display:flex;border-color:#ffb86b80}
+#vyboraNetworkStatus[data-state="online"]{display:flex;border-color:#50f0d080}
+#vyboraNetworkStatus .dot{width:7px;height:7px;border-radius:50%;background:#ffb86b;flex:0 0 auto}
+#vyboraNetworkStatus[data-state="online"] .dot{background:#50f0d0}
+@media(prefers-reduced-motion:no-preference){#vyboraNetworkStatus{animation:vybora-status-in .18s ease-out}@keyframes vybora-status-in{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}}
+</style>
+<div id="vyboraNetworkStatus" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="vyboraNetworkStatusText">Offline mode · cached screen available</span></div>
+<script>
+(() => {
+  const badge = document.getElementById('vyboraNetworkStatus');
+  const label = document.getElementById('vyboraNetworkStatusText');
+  let hideTimer;
+  const show = (state, text, autoHide = false) => {
+    badge.dataset.state = state;
+    label.textContent = text;
+    clearTimeout(hideTimer);
+    if (autoHide) hideTimer = setTimeout(() => { badge.style.display = 'none'; }, 3200);
+    else badge.style.display = 'flex';
+  };
+  const update = () => {
+    if (!navigator.onLine) show('offline', 'Offline mode · cached screen available');
+    else if (badge.dataset.state === 'offline') show('online', 'Connection restored · refreshing VYBORA', true);
+    else if (badge.dataset.state !== 'online') badge.style.display = 'none';
+  };
+  window.addEventListener('online', update);
+  window.addEventListener('offline', update);
+  update();
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(error => console.warn('VYBORA offline support unavailable', error));
+    }, { once: true });
+  }
+})();
+</script>
+
 </body>
 </html>
