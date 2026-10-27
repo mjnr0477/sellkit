@@ -136,7 +136,7 @@ test('Data Saver prevents automatic video and embed loading until the viewer req
 });
 
 test('video feed avoids downloading every clip at once and does not fake variety with duplicate demo clips', () => {
-  assert.match(html, /index===0\?'auto':'none'/);
+  assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
   assert.match(html, /v\.preload='auto';v\.load\(\)/);
   assert.equal((html.match(/id:'demo-/g) || []).length, 1);
 });
