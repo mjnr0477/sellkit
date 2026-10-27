@@ -220,7 +220,7 @@ test('Discover feed mixes Internet Archive and Wikimedia Commons without importi
   assert.match(html, /meta\.LicenseShortName/);
   assert.match(html, /commonsHasMore/);
   assert.match(html, /commonsPage=page/);
-  assert.match(html, /return \[\.\.\.entries\.filter\(Boolean\),\.\.\.commonsPromise\]/);
+  assert.match(html, /return \[\.\.\.entries\.filter\(Boolean\),\.\.\.commonsPromise,\.\.\.openversePromise,\.\.\.nasaPromise\]/);
   assert.match(html, /handle:'@openfeed'/);
   assert.doesNotMatch(html, /commons\.wikimedia\.org[\s\S]{0,1800}sb\.storage\.from\('vybora-media'\)\.upload/);
 });
