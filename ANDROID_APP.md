@@ -2,6 +2,12 @@
 
 VYBORA's Android package is a Capacitor wrapper around the existing hosted VYBORA frontend. The hosted website remains a separate deployment; changing the Android package does not by itself change the website.
 
+## Live website updates
+
+The Android package is configured to open `https://vybora-social-live.onrender.com/` through a small local launcher instead of bundling a frozen copy of the frontend. After this launcher is installed, normal frontend changes deployed to the hosted website should appear in the app without a new APK upload. Backend/content changes can also appear without reinstalling when served by the updated backend.
+
+This is a hybrid WebView approach and requires internet access to load the live interface. Keep the launch destination fixed to the official HTTPS site; do not accept a URL from user input. Changes to native Android code, permissions, app identity, or other bundled native resources still require a new app release. Test login/session persistence, video playback/autoplay, live camera/microphone permissions, navigation, and offline recovery on a physical device before distributing the updated package.
+
 ## Current release workflow
 
 The GitHub Actions workflow `.github/workflows/android-apk.yml` builds **release-signed candidate packages**, not debug packages. On a successful push to `main`, it builds:
