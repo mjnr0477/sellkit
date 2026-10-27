@@ -270,3 +270,21 @@ test('database advisor hardening keeps VYBORA internal state private and indexes
   assert.match(migration, /on public\.vybora_video_views \(viewer_id, created_at desc\)/i);
   assert.doesNotMatch(migration, /dream_wifi/i);
 });
+
+
+test('VYBORA registers a visible offline/online status and service worker', () => {
+  assert.match(html, /id="vyboraNetworkStatus"/);
+  assert.match(html, /addEventListener\('offline'/);
+  assert.match(html, /addEventListener\('online'/);
+  assert.match(html, /navigator\.serviceWorker\.register\('\/service-worker\.js'\)/);
+});
+
+test('offline worker caches only the public app shell and never caches API mutations', () => {
+  const worker = fs.readFileSync(new URL('../service-worker.js', 'file://' + __filename), 'utf8');
+  assert.match(worker, /const SHELL = \['\/', '\/index\.html', '\/social-features\.js'\]/);
+  assert.match(worker, /request\.method !== 'GET'/);
+  assert.match(worker, /request\.mode === 'navigate'/);
+  assert.match(worker, /url\.pathname === '\/social-features\.js'/);
+  assert.match(worker, /Never cache authenticated API responses or private user data/);
+  assert.doesNotMatch(worker, /supabase\.co\/rest\/v1/);
+});
