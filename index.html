@@ -99,7 +99,7 @@ async function loadOpenverseVideos(page=1){
  return results.map(item=>{
   const url=String(item.url||''),license=String(item.license||'').toLowerCase(),licenseUrl=String(item.license_url||'');
   const allowed=['by','by-sa','cc0','pdm'].includes(license);
-  if(!allowed||!/^https:\/\//i.test(url)||!(/\.(mp4|webm)(?:[?#].*)?$/i.test(url))||item.mature===true||!isCleanVideoMetadata(item.title,item.description,item.tags?.map(t=>typeof t==='string'?t:t.name).join(' ')))return null;
+  if(!allowed||!/^https:\/\//i.test(url)||!(/\.(mp4|webm)(?:[?#].*)?$/i.test(url))||String(item.mature).toLowerCase()==='true'||!isCleanVideoMetadata(item.title,item.description,item.tags?.map(t=>typeof t==='string'?t:t.name).join(' ')))return null;
   return {id:'openverse-'+String(item.id||url),external_video_id:'openverse:'+String(item.id||url),body:String(item.title||'Open video').replace(/<[^>]*>/g,' ').slice(0,220),media_url:url,media_type:'external',source_url:String(item.foreign_landing_url||item.detail_url||url),source_name:'Openverse',username:String(item.creator||'Open video creator').slice(0,90),handle:'@openfeed',created_at:item.created_on||new Date().toISOString(),views_count:0,likes:0,comments_count:0,archiveLicense:licenseUrl||'https://creativecommons.org/licenses/'+license+'/4.0/'};
  }).filter(Boolean);
 }
@@ -117,7 +117,7 @@ async function loadNasaVideos(page=1){
    const manifest=await fetch('https://images-api.nasa.gov/asset/'+encodeURIComponent(id),{headers:{Accept:'application/json'}});
    if(!manifest.ok)return null;
    const files=(await manifest.json())?.collection?.items||[];
-   const stream=files.map(f=>typeof f==='string'?f:f.href).find(u=>/^https:\/\//i.test(String(u||''))&&/\.mp4(?:[?#].*)?$/i.test(String(u)));
+   const videoFiles=files.map(f=>typeof f==='string'?f:f.href).filter(u=>/^https:\/\//i.test(String(u||''))&&/\.mp4(?:[?#].*)?$/i.test(String(u)));videoFiles.sort((a,b)=>((/medium/i.test(b)?3:/large/i.test(b)?2:/orig/i.test(b)?1:0)-(/medium/i.test(a)?3:/large/i.test(a)?2:/orig/i.test(a)?1:0)));const stream=videoFiles[0];
    if(!stream)return null;
    return {id:'nasa-'+id,external_video_id:'nasa:'+id,body:title,media_url:stream,media_type:'external',source_url:'https://images.nasa.gov/details/'+encodeURIComponent(id),source_name:'NASA',username:'NASA',handle:'@openfeed',created_at:meta.date_created||new Date().toISOString(),views_count:0,likes:0,comments_count:0,archiveLicense:'https://www.nasa.gov/nasa-brand-center/images-and-media/'};
   }catch(error){console.warn('Skipping unavailable NASA video',error);return null}
