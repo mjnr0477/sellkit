@@ -122,6 +122,19 @@ test('Live tab offers in-app live room participation and keeps official sports l
   assert.match(html, /Go live/);
 });
 
+
+test('Data Saver prevents automatic video and embed loading until the viewer requests it', () => {
+  assert.match(html, /id="dataSaverBtn" aria-pressed="false"/);
+  assert.match(html, /vybora:data-saver:v1/);
+  assert.match(html, /dataSaver\?'':'autoplay '/);
+  assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
+  assert.match(html, /dataSaver&&isExternal/);
+  assert.match(html, /data-action="load-external"/);
+  assert.match(html, /if\(!dataSaver&&entry\.isIntersecting/);
+  assert.match(html, /if\(!dataSaver\)\{const playback=v\.play\(\)/);
+  assert.match(html, /action==='load-external'/);
+});
+
 test('video feed avoids downloading every clip at once and does not fake variety with duplicate demo clips', () => {
   assert.match(html, /index===0\?'auto':'none'/);
   assert.match(html, /v\.preload='auto';v\.load\(\)/);
