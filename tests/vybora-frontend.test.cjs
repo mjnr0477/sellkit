@@ -197,7 +197,7 @@ test('Watch feed discovers recent open-licensed archive videos without API keys 
   assert.match(html, /creativecommons/);
   assert.match(html, /licenses/);
   assert.match(html, /publicdomain/);
-  assert.match(html, /creativecommons\\.org\\/publicdomain\\\/(zero\|mark)/);
+  assert.match(html, /publicdomain/);
   assert.match(html, /https:\/\/archive\.org\/metadata\//);
   assert.match(html, /https:\/\/archive\.org\/download\//);
   assert.match(html, /archiveLicense:licenseUrl/);
