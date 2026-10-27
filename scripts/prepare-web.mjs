@@ -44,19 +44,24 @@ const launcher = `<!doctype html>
       var target = ${JSON.stringify(liveSite)};
       var status = document.getElementById('status');
       var retry = document.getElementById('retry');
-      function connect() {
+      async function connect() {
         status.textContent = 'Connecting to VYBORA…';
         retry.style.display = 'none';
-        window.location.replace(target);
+        var controller = new AbortController();
+        var timeout = window.setTimeout(function () { controller.abort(); }, 20000);
+        try {
+          // A no-cors probe checks basic reachability without exposing response
+          // contents; the actual page is then loaded by normal WebView navigation.
+          await fetch(target, { mode: 'no-cors', cache: 'no-store', signal: controller.signal });
+          window.location.replace(target);
+        } catch (_) {
+          status.textContent = 'VYBORA could not connect. Check your internet connection and try again.';
+          retry.style.display = 'inline-block';
+        } finally {
+          window.clearTimeout(timeout);
+        }
       }
       retry.addEventListener('click', connect);
-      window.setTimeout(function () {
-        if (window.location.protocol === 'capacitor:' ||
-            window.location.hostname === 'localhost') {
-          status.textContent = 'If VYBORA does not open, check your internet connection and try again.';
-          retry.style.display = 'inline-block';
-        }
-      }, 8000);
       connect();
     }());
   </script>
