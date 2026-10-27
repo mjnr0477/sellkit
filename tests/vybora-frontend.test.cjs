@@ -211,6 +211,20 @@ test('Watch feed discovers recent open-licensed archive videos without API keys 
   assert.doesNotMatch(html, /archive\.org[\s\S]{0,1500}sb\.storage\.from\('vybora-media'\)\.upload/);
 });
 
+test('Discover feed mixes Internet Archive and Wikimedia Commons without importing media into Supabase', () => {
+  assert.match(html, /async function loadWikimediaVideos\(page=1\)/);
+  assert.match(html, /https:\/\/commons\.wikimedia\.org\/w\/api\.php/);
+  assert.match(html, /gsrsearch:'filetype:video'/);
+  assert.match(html, /iiprop:'url\|mime\|size\|extmetadata'/);
+  assert.match(html, /meta\.LicenseUrl/);
+  assert.match(html, /meta\.LicenseShortName/);
+  assert.match(html, /commonsHasMore/);
+  assert.match(html, /commonsPage=page/);
+  assert.match(html, /return \[\.\.\.entries\.filter\(Boolean\),\.\.\.commonsPromise\]/);
+  assert.match(html, /handle:'@openfeed'/);
+  assert.doesNotMatch(html, /commons\.wikimedia\.org[\s\S]{0,1800}sb\.storage\.from\('vybora-media'\)\.upload/);
+});
+
 test('feed cards remove platform-source badges while preserving mature-content warnings', () => {
   assert.doesNotMatch(html, /COMMUNITY SHARE/);
   assert.doesNotMatch(html, /VYBORA PICKS/);
