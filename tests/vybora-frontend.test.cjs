@@ -75,7 +75,7 @@ test('curated videos keep creator attribution without source badges', () => {
   assert.doesNotMatch(html, /esc\(p\.source_name\|\|'ONLINE'\)/);
   assert.match(html, /p\.username\|\|p\.name\|\|'VYBORA creator'/);
 });
-test('Live tab provides in-app live participation and official football coverage', () => {
+test('Live tab is in-app first and embeds only verified active authorized streams', () => {
   assert.match(html, /data-tab="Live"/);
   assert.match(html, /function renderLiveEvents\(\)/);
   assert.match(html, /class="live-hub"/);
@@ -84,11 +84,12 @@ test('Live tab provides in-app live participation and official football coverage
   assert.match(html, /data-live-rooms/);
   assert.match(html, /data-join-vybora-live/);
   assert.match(html, /vybora_live_sessions/);
-  assert.match(html, /https:\/\/www\.fifa\.com\/en\/watch/);
-  assert.match(html, /https:\/\/www\.uefa\.tv\//);
-  assert.match(html, /https:\/\/footballkenya\.org\/media\/broadcasters/);
-  assert.match(html, /https:\/\/azamtv\.co\.tz\//);
-  assert.match(html, /rel="noopener noreferrer"/);
+  assert.match(html, /\.eq\('status','live'\)/);
+  assert.match(html, /last_verified_at&&now-Date\.parse\(e\.last_verified_at\)<60\*60\*1000/);
+  assert.match(html, /class="official-live-player"/);
+  assert.doesNotMatch(html, /Watch on official service ↗/);
+  assert.doesNotMatch(html, /href="https:\/\/www\.fifa\.com\/en\/watch"/);
+  assert.doesNotMatch(html, /href="https:\/\/www\.uefa\.tv\//);
 });
 
 test('inline application JavaScript parses without syntax errors', () => {
@@ -113,13 +114,6 @@ test('uploaded community videos are limited to short clips', () => {
   assert.match(html, /async function getVideoDuration\(file\)/);
   assert.match(html, /duration>60/);
   assert.match(html, /short videos must be 60 seconds or less/i);
-});
-
-test('Live tab offers in-app live room participation and keeps official sports links as secondary options', () => {
-  assert.match(html, /data-open-live="join"/);
-  assert.match(html, /data-open-live="start"/);
-  assert.match(html, /Open live rooms/);
-  assert.match(html, /Go live/);
 });
 
 
