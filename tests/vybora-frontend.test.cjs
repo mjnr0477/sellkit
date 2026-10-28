@@ -220,6 +220,8 @@ test('Watch feed discovers recent open-licensed archive videos without API keys 
   assert.match(html, /if\(!sb\)\{try\{posts=await loadOpenArchiveVideos\(1\)/);
   assert.match(html, /Community feed is temporarily unavailable\. Showing open-licensed videos/);
   assert.match(html, /archive-credit/);
+  assert.match(html, /Internet Archive is a public discovery source: VYBORA keeps only transient metadata in memory/);
+  assert.match(html, /Video bytes stay hosted by the archive; no imported video is written to Supabase/);
   assert.match(html, /Reuse terms/);
   assert.doesNotMatch(html, /archive\.org[\s\S]{0,1500}sb\.storage\.from\('vybora-media'\)\.upload/);
 });
@@ -242,6 +244,7 @@ test('Discover adds Openverse and NASA sources with clean-content filtering and 
   assert.match(html, /async function loadOpenverseVideos\(page=1\)/);
   assert.match(html, /https:\/\/api\.openverse\.org\/v1\/videos\//);
   assert.match(html, /license:'by,by-sa,cc0,pdm'/);
+  assert.match(html, /unstable__sort_by:'indexed_on',unstable__sort_dir:'desc'/, 'prefer newly indexed open-license videos');
   assert.match(html, /mature:'false'/);
   assert.match(html, /async function loadNasaVideos\(page=1\)/);
   assert.match(html, /https:\/\/images-api\.nasa\.gov\/search/);
