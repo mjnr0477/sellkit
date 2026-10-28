@@ -176,14 +176,15 @@ test('open-video seed migration adds distinct official videos idempotently', () 
 });
 
 
-test('official live-event feed only labels recently verified events as live and keeps HTTPS provider links', () => {
+test('official live-event feed embeds only recently verified active events and hides source links', () => {
   assert.match(html, /async function loadOfficialEvents\(\)/);
   assert.match(html, /vybora_live_events/);
-  assert.match(html, /now-Date\.parse\(e\.last_verified_at\)<6\*60\*60\*1000/);
-  assert.match(html, /LIVE STATUS UNVERIFIED/);
-  assert.match(html, /new URL\(u\)/);
-  assert.match(html, /Watch on official service/);
-  assert.match(html, /official-live-player/);
+  assert.match(html, /\.eq\('status','live'\)/);
+  assert.match(html, /last_verified_at&&now-Date\.parse\(e\.last_verified_at\)<60\*60\*1000/);
+  assert.match(html, /class="official-live-player"/);
+  assert.match(html, /const allowed=\['youtube\.com','www\.youtube\.com','www\.youtube-nocookie\.com','player\.vimeo\.com','vimeo\.com','www\.twitch\.tv','player\.twitch\.tv'\]/);
+  assert.doesNotMatch(html, /Watch on official service/);
+  assert.doesNotMatch(html, /LIVE STATUS UNVERIFIED/);
 });
 
 test('live-event registry migration restricts public clients to reading active events', () => {
