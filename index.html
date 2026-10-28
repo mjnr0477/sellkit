@@ -94,7 +94,7 @@ function isReusableArchiveLicense(value){const license=String(value||'').trim();
 function isCleanVideoMetadata(...values){const text=values.map(v=>String(v||'')).join(' ').replace(/<[^>]*>/g,' ').toLowerCase();return !/(\b|_)(porn|pornographic|explicit sex|sexual intercourse|erotic|xxx|hentai|fetish|nude|nudity|genital|gore|graphic violence|beheading|snuff|self[- ]?harm|suicide method|drug abuse)(\b|_)/i.test(text)}
 async function loadOpenverseVideos(page=1){
  if(!openverseHasMore&&page>openversePage)return [];
- const params=new URLSearchParams({q:'nature OR science OR animals OR travel OR sports OR animation OR cooking OR education',page:String(page),page_size:'20',license:'by,by-sa,cc0,pdm',mature:'false',filter_dead:'true'});
+ const params=new URLSearchParams({q:'nature OR science OR animals OR travel OR sports OR animation OR cooking OR education',page:String(page),page_size:'20',license:'by,by-sa,cc0,pdm',mature:'false',filter_dead:'true',unstable__sort_by:'indexed_on',unstable__sort_dir:'desc'});
  const response=await fetch('https://api.openverse.org/v1/videos/?'+params.toString(),{headers:{Accept:'application/json'}});
  if(!response.ok)throw new Error('Openverse video search returned HTTP '+response.status);
  const payload=await response.json(),results=payload?.results||[];
