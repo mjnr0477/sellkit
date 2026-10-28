@@ -265,12 +265,11 @@ test('scrolling videos autoplay muted and pause offscreen to protect playback pe
   assert.match(html, /finishWatchSession\(card\);if\(v\)v\.pause\(\)/);
 });
 
-test('official live embeds request muted autoplay and keep source branding out of the viewing card', () => {
-  assert.match(html, /u\.searchParams\.set\('autoplay','1'\)/);
-  assert.match(html, /u\.searchParams\.set\('mute','1'\)/);
+test('official live embeds remain in-app and do not display provider attribution or outbound watch links', () => {
   assert.match(html, /allow="autoplay; encrypted-media; picture-in-picture; fullscreen"/);
   assert.doesNotMatch(html, /esc\(e\.source_name\|\|'Official broadcaster'\)/);
-  assert.match(html, /Watch on official service/);
+  assert.doesNotMatch(html, /Watch on official service/);
+  assert.doesNotMatch(html, /LIVE STATUS UNVERIFIED/);
 });
 
 
