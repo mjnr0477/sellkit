@@ -122,8 +122,21 @@ test('Live tab offers in-app live room participation and keeps official sports l
   assert.match(html, /Go live/);
 });
 
+
+test('Data Saver prevents automatic video and embed loading until the viewer requests it', () => {
+  assert.match(html, /id="dataSaverBtn" aria-pressed="false"/);
+  assert.match(html, /vybora:data-saver:v1/);
+  assert.match(html, /dataSaver\?'':'autoplay '/);
+  assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
+  assert.match(html, /dataSaver&&isExternal&&!isDirectExternal/);
+  assert.match(html, /data-action="load-external"/);
+  assert.match(html, /if\(!dataSaver&&entry\.isIntersecting/);
+  assert.match(html, /if\(!dataSaver\)\{const playback=v\.play\(\)/);
+  assert.match(html, /action==='load-external'/);
+});
+
 test('video feed avoids downloading every clip at once and does not fake variety with duplicate demo clips', () => {
-  assert.match(html, /index===0\?'auto':'none'/);
+  assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
   assert.match(html, /v\.preload='auto';v\.load\(\)/);
   assert.equal((html.match(/id:'demo-/g) || []).length, 1);
 });
@@ -249,8 +262,8 @@ test('feed cards remove platform-source badges while preserving mature-content w
 
 
 test('scrolling videos autoplay muted and pause offscreen to protect playback performance', () => {
-  assert.match(html, /<video src="'\+esc\(media\)\+'" autoplay muted playsinline loop/);
-  assert.match(html, /if\(v\)\{v\.muted=true;const playback=v\.play\(\)/);
+  assert.match(html, /<video src="'\+esc\(media\)\+'" '\+\(dataSaver\?'':'autoplay '\)\+'muted playsinline loop/);
+  assert.match(html, /if\(v\)\{v\.muted=true;if\(!dataSaver\)\{const playback=v\.play\(\)/);
   assert.match(html, /finishWatchSession\(card\);if\(v\)v\.pause\(\)/);
 });
 
