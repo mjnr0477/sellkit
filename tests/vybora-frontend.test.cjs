@@ -311,6 +311,16 @@ test('feed ranking prioritizes followed creators and combines freshness with eng
   assert.match(html, /posts=rankFeedItems\(\[\.\.\.remote,\.\.\.featured,\.\.\.archive\]\)/);
 });
 
+test('current intent boosts matching topics in the current session without persisting a separate profile', () => {
+  assert.match(html, /let currentIntentTokens=\[\]/);
+  assert.match(html, /function setCurrentIntent\(value\)/);
+  assert.match(html, /function intentScore\(post\)/);
+  assert.match(html, /const intent=intentScore\(p\)/);
+  assert.match(html, /savedSignal\+personal\+intent/);
+  assert.match(html, /setCurrentIntent\(q\)/);
+  assert.match(html, /setCurrentIntent\(b\.dataset\.topic\)/);
+});
+
 test('watch-time personalization is local, bounded, and integrated into feed ranking', () => {
   assert.match(html, /const WATCH_INTEREST_KEY='vybora:watch-interests:v1'/);
   assert.match(html, /function recordWatchInterest\(card,seconds\)/);
