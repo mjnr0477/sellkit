@@ -334,3 +334,15 @@ test('watch-time personalization is local, bounded, and integrated into feed ran
   assert.match(html, /window\.addEventListener\('pagehide'/);
   assert.doesNotMatch(html, /fetch\([^)]*watch-interests|sb\.from\(['"]vybora_watch_interests/);
 });
+
+
+test('content reports prevent duplicate submissions, validate state, recover from network errors, and reset after success', () => {
+  const social = fs.readFileSync(new URL('../social-features.js', 'file://' + __filename), 'utf8');
+  assert.match(social, /reportSubmitting=false/);
+  assert.match(social, /if\(reportSubmitting\)return/);
+  assert.match(social, /button\.disabled=true/);
+  assert.match(social, /details\.slice\(0,1000\)/);
+  assert.match(social, /catch\(error\)\{console\.warn\('VYBORA report submission failed:'/);
+  assert.match(social, /reportPost=null;form\?\.reset\(\);close\('reportBackdrop'\)/);
+  assert.match(social, /finally\{reportSubmitting=false/);
+});
