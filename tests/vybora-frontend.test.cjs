@@ -79,6 +79,10 @@ test('Live tab is in-app first and embeds only verified active authorized stream
   assert.match(html, /data-tab="Live"/);
   assert.match(html, /function renderLiveEvents\(\)/);
   assert.match(html, /class="live-hub"/);
+  assert.match(html, /data-live-event-search/);
+  assert.match(html, /Search ongoing events, teams or competitions/);
+  assert.match(html, /hub\.querySelectorAll\('\.official-tracked-event'\)/);
+  assert.match(html, /No currently listed live event matches that search/);
   assert.match(html, /data-open-live="join"/);
   assert.match(html, /data-open-live="start"/);
   assert.match(html, /data-live-rooms/);
