@@ -75,7 +75,7 @@ test('curated videos keep creator attribution without source badges', () => {
   assert.doesNotMatch(html, /esc\(p\.source_name\|\|'ONLINE'\)/);
   assert.match(html, /p\.username\|\|p\.name\|\|'VYBORA creator'/);
 });
-test('Live tab provides in-app live participation and official football coverage', () => {
+test('Live tab is in-app first and embeds only verified active authorized streams', () => {
   assert.match(html, /data-tab="Live"/);
   assert.match(html, /function renderLiveEvents\(\)/);
   assert.match(html, /class="live-hub"/);
@@ -84,11 +84,12 @@ test('Live tab provides in-app live participation and official football coverage
   assert.match(html, /data-live-rooms/);
   assert.match(html, /data-join-vybora-live/);
   assert.match(html, /vybora_live_sessions/);
-  assert.match(html, /https:\/\/www\.fifa\.com\/en\/watch/);
-  assert.match(html, /https:\/\/www\.uefa\.tv\//);
-  assert.match(html, /https:\/\/footballkenya\.org\/media\/broadcasters/);
-  assert.match(html, /https:\/\/azamtv\.co\.tz\//);
-  assert.match(html, /rel="noopener noreferrer"/);
+  assert.match(html, /\.eq\('status','live'\)/);
+  assert.match(html, /last_verified_at&&now-Date\.parse\(e\.last_verified_at\)<60\*60\*1000/);
+  assert.match(html, /class="official-live-player"/);
+  assert.doesNotMatch(html, /Watch on official service ↗/);
+  assert.doesNotMatch(html, /href="https:\/\/www\.fifa\.com\/en\/watch"/);
+  assert.doesNotMatch(html, /href="https:\/\/www\.uefa\.tv\//);
 });
 
 test('inline application JavaScript parses without syntax errors', () => {
@@ -113,13 +114,6 @@ test('uploaded community videos are limited to short clips', () => {
   assert.match(html, /async function getVideoDuration\(file\)/);
   assert.match(html, /duration>60/);
   assert.match(html, /short videos must be 60 seconds or less/i);
-});
-
-test('Live tab offers in-app live room participation and keeps official sports links as secondary options', () => {
-  assert.match(html, /data-open-live="join"/);
-  assert.match(html, /data-open-live="start"/);
-  assert.match(html, /Open live rooms/);
-  assert.match(html, /Go live/);
 });
 
 
@@ -182,14 +176,15 @@ test('open-video seed migration adds distinct official videos idempotently', () 
 });
 
 
-test('official live-event feed only labels recently verified events as live and keeps HTTPS provider links', () => {
+test('official live-event feed embeds only recently verified active events and hides source links', () => {
   assert.match(html, /async function loadOfficialEvents\(\)/);
   assert.match(html, /vybora_live_events/);
-  assert.match(html, /now-Date\.parse\(e\.last_verified_at\)<6\*60\*60\*1000/);
-  assert.match(html, /LIVE STATUS UNVERIFIED/);
-  assert.match(html, /new URL\(u\)/);
-  assert.match(html, /Watch on official service/);
-  assert.match(html, /official-live-player/);
+  assert.match(html, /\.eq\('status','live'\)/);
+  assert.match(html, /last_verified_at&&now-Date\.parse\(e\.last_verified_at\)<60\*60\*1000/);
+  assert.match(html, /class="official-live-player"/);
+  assert.match(html, /const allowed=\['youtube\.com','www\.youtube\.com','www\.youtube-nocookie\.com','player\.vimeo\.com','vimeo\.com','www\.twitch\.tv','player\.twitch\.tv'\]/);
+  assert.doesNotMatch(html, /Watch on official service/);
+  assert.doesNotMatch(html, /LIVE STATUS UNVERIFIED/);
 });
 
 test('live-event registry migration restricts public clients to reading active events', () => {
@@ -270,12 +265,11 @@ test('scrolling videos autoplay muted and pause offscreen to protect playback pe
   assert.match(html, /finishWatchSession\(card\);if\(v\)v\.pause\(\)/);
 });
 
-test('official live embeds request muted autoplay and keep source branding out of the viewing card', () => {
-  assert.match(html, /u\.searchParams\.set\('autoplay','1'\)/);
-  assert.match(html, /u\.searchParams\.set\('mute','1'\)/);
+test('official live embeds remain in-app and do not display provider attribution or outbound watch links', () => {
   assert.match(html, /allow="autoplay; encrypted-media; picture-in-picture; fullscreen"/);
   assert.doesNotMatch(html, /esc\(e\.source_name\|\|'Official broadcaster'\)/);
-  assert.match(html, /Watch on official service/);
+  assert.doesNotMatch(html, /Watch on official service/);
+  assert.doesNotMatch(html, /LIVE STATUS UNVERIFIED/);
 });
 
 
