@@ -87,6 +87,9 @@ test('Live tab is in-app first and embeds only verified active authorized stream
   assert.match(html, /\.eq\('status','live'\)/);
   assert.match(html, /last_verified_at&&now-Date\.parse\(e\.last_verified_at\)<60\*60\*1000/);
   assert.match(html, /class="official-live-player"/);
+  const liveRenderer = html.slice(html.indexOf('function renderLiveEvents()'), html.indexOf('async function loadOfficialEvents()'));
+  assert.ok(liveRenderer.length > 0, 'Live renderer must be present');
+  assert.doesNotMatch(liveRenderer, /events\.map/);
   assert.doesNotMatch(html, /Watch on official service ↗/);
   assert.doesNotMatch(html, /href="https:\/\/www\.fifa\.com\/en\/watch"/);
   assert.doesNotMatch(html, /href="https:\/\/www\.uefa\.tv\//);
