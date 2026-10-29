@@ -35,6 +35,22 @@ test('frontend uses public publishable credentials only', () => {
   assert.doesNotMatch(html, /service_role|sb_secret_/);
 });
 
+test('signed-in sessions persist across reloads using local storage', () => {
+  assert.match(html, /persistSession:true/);
+  assert.match(html, /autoRefreshToken:true/);
+  assert.match(html, /storage:window\.localStorage/);
+  assert.match(html, /onAuthStateChange/);
+});
+
+test('video sharing uses the public VYBORA domain and preserves the selected post ID', () => {
+  assert.match(html, /new URL\('https:\/\/vybora-social-live\.onrender\.com\/'\)/);
+  assert.match(html, /shareUrl\.searchParams\.set\('video',String\(post\.id\)\)/);
+  assert.match(html, /navigator\.share\(shareData\)/);
+  assert.match(html, /Online VYBORA video link copied/);
+  assert.match(html, /function focusSharedVideo\(\)/);
+  assert.doesNotMatch(html, /navigator\.share\(\{title:'VYBORA',text:'VYBORA video',url:location\.href\}\)/);
+});
+
 test('video upload uses VYBORA storage and database records', () => {
   assert.match(html, /sb\.storage\.from\('vybora-media'\)\.upload/);
   assert.match(html, /sb\.from\('vybora_posts'\)\.insert/);
