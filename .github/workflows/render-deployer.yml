@@ -1,0 +1,77 @@
+name: VYBORA Render deployer
+
+on:
+  push:
+    branches:
+      - main
+      - feat/vybora-social-universe-mvp
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vybora-render-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify frontend tests
+        run: node --test tests/vybora-frontend.test.cjs
+      - name: Verify social feature syntax
+        run: node --check social-features.js
+      - name: Verify inline application script syntax
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const match = html.match(/<script>([\\s\\S]*?)<\\/script>/);
+          if (!match) throw new Error('Main inline script not found');
+          fs.writeFileSync('/tmp/vybora-inline.js', match[1]);
+          NODE
+          node --check /tmp/vybora-inline.js
+      - name: Verify deployable site files
+        run: |
+          test -s index.html
+          test -s service-worker.js
+          test -s social-features.js
+
+  deploy-live:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render live deployment
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_LIVE }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::error::Add the Render live deploy-hook URL as GitHub Actions secret RENDER_DEPLOY_HOOK_LIVE."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$RENDER_DEPLOY_HOOK"
+          echo "Render live deploy hook accepted the request."
+
+  deploy-preview:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/vybora-social-universe-mvp'
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render preview deployment
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_PREVIEW }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::error::Add the Render preview deploy-hook URL as GitHub Actions secret RENDER_DEPLOY_HOOK_PREVIEW."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$RENDER_DEPLOY_HOOK"
+          echo "Render preview deploy hook accepted the request."
