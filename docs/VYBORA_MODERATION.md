@@ -9,7 +9,7 @@ Only the Supabase project owner should do this:
 1. Open the VYBORA Supabase project.
 2. Go to **Authentication → Users**.
 3. Open the intended owner account.
-4. Set its trusted **app_metadata** JSON to:
+4. Add this property to the account's trusted **app_metadata** JSON, preserving any existing metadata keys:
 
 ```json
 {
