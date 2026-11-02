@@ -429,7 +429,7 @@ test('report moderation queue is app-metadata gated with a private audit trail',
   assert.match(moderationHardening, /revoke all on private\.vybora_report_reviews from public, anon, authenticated/);
   assert.match(moderationHardening, /private\.vybora_review_report_impl/);
   assert.match(moderationHardening, /security definer set search_path = ''/);
-  assert.match(moderationHardening, /revoke all on private\\.vybora_report_reviews from public, anon, authenticated/);
+  assert.match(moderationHardening, /revoke all on private\.vybora_report_reviews from public, anon, authenticated/);
   assert.match(moderationHardening, /revoke all on function private\.vybora_review_report_impl/);
   assert.match(moderationHardening, /grant execute on function public\.vybora_review_report/);
   assert.match(socialSource, /user\.app_metadata\?\.vybora_role/);
@@ -437,6 +437,8 @@ test('report moderation queue is app-metadata gated with a private audit trail',
   assert.match(socialSource, /data-review-action/);
   assert.match(html, /id="moderationBackdrop"/);
   assert.match(html, /id="moderationOpenBtn"[^>]*hidden/);
+  assert.match(moderationHardening, /returns void language sql security invoker set search_path = ''/);
+  assert.doesNotMatch(socialSource, /user_metadata/);
 });
 
   assert.match(moderationHardening, /returns void language sql security invoker set search_path = ''/);
