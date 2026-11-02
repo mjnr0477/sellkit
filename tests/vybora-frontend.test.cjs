@@ -43,7 +43,7 @@ test('frontend uses the canonical production host for auth callbacks and public 
   assert.doesNotMatch(html, /service_role|sb_secret_/);
 });
 
-test('video upload uses VYBORA storage and database records', () => {
+test('post sharing uses a canonical public permalink and opens the exact shared community post', () => {\n  assert.match(html, /function canonicalPostUrl\\(post\\)/);\n  assert.match(html, /https:\\\/\\\/vybora-social-live-8yyn\\.onrender\\.com\\/\\?post=/);\n  assert.match(html, /navigator\\.share\\(\\{title:'VYBORA',text:post\\.body\\|\\|'Watch this on VYBORA',url\\}\\)/);\n  assert.match(html, /navigator\\.clipboard\\.writeText\\(url\\)/);\n  assert.match(html, /new URLSearchParams\\(location\\.search\\)\\.get\\('post'\\)/);\n  assert.match(html, /eq\\('id',sharedPostId\\)\\.eq\\('visibility','public'\\)/);\n  assert.match(html, /rows\\.unshift\\(sharedPost\\)/);\n  assert.doesNotMatch(html, /navigator\\.share\\(\\{title:'VYBORA',text:post\\.body,url:location\\.href\\}/);\n});\n\ntest('video upload uses VYBORA storage and database records', () => {
   assert.match(html, /sb\.storage\.from\('vybora-media'\)\.upload/);
   assert.match(html, /sb\.from\('vybora_posts'\)\.insert/);
   assert.match(html, /media_path:path/);
