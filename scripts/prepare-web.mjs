@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 const root = process.cwd();
 const output = resolve(root, 'www');
-const liveSite = 'https://vybora-social-live.onrender.com/';
+const liveSite = 'https://vybora-social-live-8yyn.onrender.com/';
 
 await mkdir(output, { recursive: true });
 
