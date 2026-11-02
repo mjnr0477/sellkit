@@ -1,6 +1,6 @@
 /* VYBORA offline shell. Never cache authenticated API responses or private user data. */
 'use strict';
-const CACHE_NAME = 'vybora-shell-v1';
+const CACHE_NAME = 'vybora-shell-v2';
 const SHELL = ['/', '/index.html', '/social-features.js'];
 const SUPABASE_SCRIPT = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 
@@ -47,7 +47,7 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
       try {
-        const response = await fetch(request);
+        const response = await fetch(request, { cache: 'no-store' });
         if (response.ok) {
           await cache.put('/', response.clone());
           await cache.put('/index.html', response.clone());
@@ -63,16 +63,18 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Network-first: online users receive the newest application logic immediately;
+  // retain the last successful public script only as an offline fallback.
   if (url.pathname === '/social-features.js') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
-      const cached = await cache.match(request);
-      const update = fetch(request).then(response => {
-        if (response.ok) cache.put(request, response.clone());
+      try {
+        const response = await fetch(request, { cache: 'no-store' });
+        if (response.ok) await cache.put(request, response.clone());
         return response;
-      });
-      if (cached) { event.waitUntil(update.catch(() => {})); return cached; }
-      try { return await update; } catch (_) { return Response.error(); }
+      } catch (_) {
+        return (await cache.match(request)) || Response.error();
+      }
     })());
   }
 });
