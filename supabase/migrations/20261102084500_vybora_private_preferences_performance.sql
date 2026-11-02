@@ -50,7 +50,7 @@ $function$;
 create or replace function public.vybora_set_mature_preference(p_enabled boolean)
 returns void
 language plpgsql
-security invoker
+security definer
 set search_path = ''
 as $function$
 begin
