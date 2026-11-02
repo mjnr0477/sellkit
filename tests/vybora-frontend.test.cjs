@@ -367,6 +367,8 @@ test('mobile auth modal close control stays inside the tappable header layout', 
   assert.match(html, /<div class="modal-top"><h2 id="authTitle">Join your universe\.<\/h2><button class="close" id="authClose" type="button"/);
   assert.match(html, /design-refresh\.css/);
   assert.match(designCss, /\.modal-top \.close\{position:static;z-index:2;flex:0 0 34px/);
+  assert.match(designCss, /\.modal-top\{[^}]*pointer-events:none/);
+  assert.match(designCss, /\.modal-top \.close\{[^}]*pointer-events:auto/);
   assert.match(designCss, /\.modal-top h2\{flex:1;min-width:0;padding:0;pointer-events:none/);
   assert.doesNotMatch(html, /<div class="modal-top">[^<]*<button class="close"/);
 });
