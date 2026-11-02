@@ -150,6 +150,14 @@ test('video feed avoids downloading every clip at once and does not fake variety
   assert.equal((html.match(/id:'demo-/g) || []).length, 1);
 });
 
+test('community post sharing uses canonical post-specific links and restores the shared post first', () => {
+  assert.match(html, /new URLSearchParams\(location\.search\)\.get\('post'\)/);
+  assert.match(html, /shareUrl=new URL\('\/',\s*'https:\/\/vybora-social-live-8yyn\.onrender\.com'\)/);
+  assert.match(html, /shareUrl\.searchParams\.set\('post',String\(post\.id\)\)/);
+  assert.match(html, /\.eq\('id',requestedPostId\)\.eq\('visibility','public'\)/);
+  assert.match(html, /if\(requestedPostId\)\{const index=items\.findIndex\(p=>String\(p\.id\)===requestedPostId\)/);
+});
+
 test('Watch feed paginates endlessly as the user nears the bottom', () => {
   assert.match(html, /async function loadMoreFeed\(\)/);
   assert.match(html, /\.range\(feedPostOffset,feedPostOffset\+49\)/);
