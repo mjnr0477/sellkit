@@ -478,3 +478,11 @@ test('Data Saver avoids background catalogue downloads and respects device data-
   assert.match(html, /async function loadMoreArchiveOnly\(\)\{\s*if\(dataSaver\)return/);
   assert.match(html, /if\(!dataSaver\)loadFeed\(\)/);
 });
+
+test('personalized feed ranking diversifies creators without discarding relevance scores', () => {
+  assert.match(html, /function feedCreatorKey\(post\)/);
+  assert.match(html, /function diversifyFeedItems\(ranked\)/);
+  assert.match(html, /output\.slice\(-2\)/);
+  assert.match(html, /remaining\.findIndex\(post=>!recent\.has\(feedCreatorKey\(post\)\)\)/);
+  assert.match(html, /return diversifyFeedItems\(ranked\)/);
+});
