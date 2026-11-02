@@ -423,16 +423,16 @@ test('account blocking is enforced by private RLS helper across social interacti
 
 
 test('report moderation queue is app-metadata gated with a private audit trail', () => {
-  assert.match(moderationMigration, /auth\\.jwt\\(\\) -> 'app_metadata'/);
+  assert.match(moderationMigration, /auth\.jwt\(\) -> 'app_metadata'/);
   assert.match(moderationMigration, /vybora_role/);
-  assert.match(moderationMigration, /private\\.vybora_report_reviews/);
-  assert.match(moderationHardening, /revoke all on private\\.vybora_report_reviews from public, anon, authenticated/);
-  assert.match(moderationHardening, /private\\.vybora_review_report_impl/);
+  assert.match(moderationMigration, /private\.vybora_report_reviews/);
+  assert.match(moderationHardening, /revoke all on private\.vybora_report_reviews from public, anon, authenticated/);
+  assert.match(moderationHardening, /private\.vybora_review_report_impl/);
   assert.match(moderationHardening, /security definer set search_path = ''/);
-  assert.match(moderationHardening, /revoke all on function private\\.vybora_review_report_impl/);
-  assert.match(moderationHardening, /grant execute on function public\\.vybora_review_report/);
-  assert.match(socialSource, /user\\.app_metadata\\?\\.vybora_role/);
-  assert.match(socialSource, /sb\\.rpc\\('vybora_review_report'/);
+  assert.match(moderationHardening, /revoke all on function private\.vybora_review_report_impl/);
+  assert.match(moderationHardening, /grant execute on function public\.vybora_review_report/);
+  assert.match(socialSource, /user\.app_metadata\?\.vybora_role/);
+  assert.match(socialSource, /sb\.rpc\('vybora_review_report'/);
   assert.match(socialSource, /data-review-action/);
   assert.match(html, /id="moderationBackdrop"/);
   assert.match(html, /id="moderationOpenBtn"[^>]*hidden/);
