@@ -1,0 +1,47 @@
+/* VYBORA — Midnight Neon
+   A visual-only skin over the existing feed, account, creator and social workflows. */
+:root{--bg:#05050c;--panel:#10101c;--panel2:#171629;--line:#34304e;--text:#fbfaff;--muted:#b4b0ca;--violet:#9b55ff;--aqua:#50f0d0;--pink:#ff4fc8}
+.app{background:radial-gradient(ellipse at 50% -25%,#452078 0,transparent 48%),radial-gradient(ellipse at 100% 60%,#25104a44,transparent 45%),#05050c}
+.top{padding-inline:clamp(13px,3vw,42px);background:#070710ed;border-bottom:1px solid #8c53ff40}
+.brand{font-size:clamp(18px,2vw,23px);letter-spacing:.18em}
+.logo{width:39px;height:39px;border-radius:13px;background:linear-gradient(135deg,#48f0d0 0%,#7d4dff 54%,#ff4fc8 100%);box-shadow:0 0 28px #9b55ff66}
+.top-actions .btn{border-radius:13px;border-color:#4b3b70;background:#121020;color:#e8e2ff}
+.top-actions .btn.primary{background:linear-gradient(110deg,#8d43ff,#f04fc8);color:#fff;border:0;box-shadow:0 7px 24px #9b55ff45}
+.stage{grid-template-columns:minmax(0,1fr) minmax(245px,300px);gap:18px;padding:16px clamp(10px,2vw,28px) 9px}
+.feed{width:min(100%,560px);border:1px solid #794bba88;border-radius:24px;box-shadow:0 0 42px #7b39ff1a}
+.video-card{background:radial-gradient(ellipse at 70% 25%,#492078,#12101f 65%,#05050c)}
+.video-card:after{background:linear-gradient(180deg,#05050a9c 0%,transparent 22%,transparent 48%,#05050a4d 62%,#05050af2 100%)}
+.video-cover{background:radial-gradient(ellipse at 70% 20%,#7e35cc,#1c1934 52%,#090912)}
+.cover-orb{background:radial-gradient(circle at 30% 25%,#a7fff0,#8b4dff 36%,#f36ac9 65%,#161126 73%);filter:drop-shadow(0 0 65px #9b55ff75)}
+.side{gap:12px;scrollbar-color:#65418f #0b0b14}
+.panel{border:1px solid #4a326d;border-radius:19px;padding:17px;background:linear-gradient(145deg,#19132b,#0d0d18);box-shadow:0 12px 30px #0005}
+.side-brand em{color:#55f1d2}
+.panel .btn.primary{background:linear-gradient(110deg,#8d43ff,#f04fc8);color:#fff}
+.topic{border-color:#5a3d83;background:#211733;color:#e6d8ff}
+.avatar{background:linear-gradient(135deg,#50f0d0,#8a52ff 58%,#ff59ca);box-shadow:0 0 17px #8a52ff40}
+.bottom{gap:clamp(12px,4.2vw,56px);background:#080811f5;border-top:1px solid #8e4dff55}
+.nav-btn{color:#aaa4c5}
+.nav-btn.active{color:#54f1d4}
+.nav-btn.create .ico{background:linear-gradient(135deg,#8d43ff,#f04fc8);box-shadow:0 0 22px #a34fff66;color:white}
+.action .bubble{border-color:#c1a4ff66;background:#111020aa}
+.action.active .bubble{color:#ff66d1;border-color:#ff66d1;background:#ff66d126}
+.follow{border-color:#b78bff99;background:#321b54;color:#fff}
+.notice{background:#1c1530;border-color:#8b55ce}
+.modal{background:#11101d;border-color:#61418b}
+.field input,.field textarea,.searchbar{background:#090912;border-color:#4a3a67}
+.field input:focus,.field textarea:focus{border-color:#a66bff}
+@media(max-width:850px){
+ .app{grid-template-rows:58px minmax(0,1fr) 68px}
+ .top{padding:0 12px}
+ .stage{padding:7px 7px 4px}
+ .feed{width:100%;border-radius:17px;border-color:#7146a8}
+ .side{display:none}
+ .bottom{gap:clamp(7px,4vw,26px);padding-bottom:calc(7px + var(--safe-bottom))}
+ .nav-btn{min-width:43px}
+ .nav-btn .ico{font-size:22px}
+ .video-info{left:14px;right:67px;bottom:18px}
+ .video-actions{right:8px;bottom:20px;gap:14px}
+ .action .bubble{width:41px;height:41px}
+}
+@media(min-width:851px){.stage{grid-template-columns:minmax(0,1fr) 300px}.feed-wrap{align-items:stretch}.feed{height:100%}}
+@media(prefers-reduced-motion:reduce){.cover-orb{animation:none!important}*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important}}
