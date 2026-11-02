@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 
-const baseURL = process.env.VYBORA_URL || 'https://vybora-social-preview.onrender.com';
+const baseURL = process.env.VYBORA_URL || 'https://vybora-social-preview-yb6x.onrender.com';
 
 test('hosted VYBORA feed loads and guest account gates work for available feed content', async () => {
   const browser = await chromium.launch({ headless: true });
