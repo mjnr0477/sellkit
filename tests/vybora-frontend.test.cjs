@@ -8,6 +8,8 @@ const designCss = fs.readFileSync(new URL('../design-refresh.css', 'file://' + _
 const muteMigration = fs.readFileSync(new URL('../supabase/migrations/20261102072105_vybora_creator_mutes.sql', 'file://' + __filename), 'utf8');
 const blockMigration = fs.readFileSync(new URL('../supabase/migrations/20261102073022_vybora_account_blocking.sql', 'file://' + __filename), 'utf8');
 const socialSource = fs.readFileSync(new URL('../social-features.js', 'file://' + __filename), 'utf8');
+const moderationMigration = fs.readFileSync(new URL('../supabase/migrations/20261102073722_vybora_moderation_queue.sql', 'file://' + __filename), 'utf8');
+const moderationHardening = fs.readFileSync(new URL('../supabase/migrations/20261102073755_harden_vybora_moderation_audit.sql', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
   assert.match(html, /name="viewport"[^>]*width=device-width/);
@@ -417,4 +419,21 @@ test('account blocking is enforced by private RLS helper across social interacti
   assert.match(html, /data-unblock-creator/);
   assert.match(html, /Manage blocked accounts/);
   assert.match(socialSource, /The account may have blocked you or the friend connection is no longer active/);
+});
+
+
+test('report moderation queue is app-metadata gated with a private audit trail', () => {
+  assert.match(moderationMigration, /auth\\.jwt\\(\\) -> 'app_metadata'/);
+  assert.match(moderationMigration, /vybora_role/);
+  assert.match(moderationMigration, /private\\.vybora_report_reviews/);
+  assert.match(moderationHardening, /revoke all on private\\.vybora_report_reviews from public, anon, authenticated/);
+  assert.match(moderationHardening, /private\\.vybora_review_report_impl/);
+  assert.match(moderationHardening, /security definer set search_path = ''/);
+  assert.match(moderationHardening, /revoke all on function private\\.vybora_review_report_impl/);
+  assert.match(moderationHardening, /grant execute on function public\\.vybora_review_report/);
+  assert.match(socialSource, /user\\.app_metadata\\?\\.vybora_role/);
+  assert.match(socialSource, /sb\\.rpc\\('vybora_review_report'/);
+  assert.match(socialSource, /data-review-action/);
+  assert.match(html, /id="moderationBackdrop"/);
+  assert.match(html, /id="moderationOpenBtn"[^>]*hidden/);
 });
