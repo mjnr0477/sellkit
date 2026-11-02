@@ -152,7 +152,7 @@ test('video feed avoids downloading every clip at once and does not fake variety
 
 test('community post sharing uses canonical post-specific links and restores the shared post first', () => {
   assert.match(html, /new URLSearchParams\(location\.search\)\.get\('post'\)/);
-  assert.match(html, /shareUrl=new URL\('\/','https:\/\/vybora-social-live-8yyn\.onrender\.com'\)/);
+  assert.match(html, /shareUrl=new URL\('\/',\s*'https:\/\/vybora-social-live-8yyn\.onrender\.com'\)/);
   assert.match(html, /shareUrl\.searchParams\.set\('post',String\(post\.id\)\)/);
   assert.match(html, /\.eq\('id',requestedPostId\)\.eq\('visibility','public'\)/);
   assert.match(html, /if\(requestedPostId\)\{const index=items\.findIndex\(p=>String\(p\.id\)===requestedPostId\)/);
