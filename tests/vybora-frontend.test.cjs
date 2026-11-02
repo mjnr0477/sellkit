@@ -377,3 +377,17 @@ test('mobile header action controls have non-overlapping hit targets', () => {
   assert.match(designCss, /\.top-actions #friendsBtn,\.top-actions #liveBtn,\.top-actions #dataSaverBtn,\.top-actions #soundBtn\{width:32px;min-width:32px;max-width:32px;height:32px/);
   assert.match(designCss, /\.top-actions #accountBtn\{min-width:58px;padding:8px 10px;font-size:12px/);
 });
+
+
+test('creator muting is private, persisted, manageable, and applied to feed pagination', () => {
+  assert.match(html, /create table if not exists public\\.vybora_mutes/);
+  assert.match(html, /async function syncMutedAuthors\\(\\)/);
+  assert.match(html, /sb\\.from\\('vybora_mutes'\\)\\.select\\('muted_user_id'\\)/);
+  assert.match(html, /async function muteCreator\\(author\\)/);
+  assert.match(html, /async function unmuteCreator\\(author\\)/);
+  assert.match(html, /async function openMutedCreators\\(\\)/);
+  assert.match(html, /data-action="mute"/);
+  assert.match(html, /data-unmute-creator/);
+  assert.match(html, /!mutedAuthors\\.has\\(p\\.author_id\\)/);
+  assert.match(html, /Manage muted creators/);
+});
