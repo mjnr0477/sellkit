@@ -427,6 +427,7 @@ test('report moderation queue is app-metadata gated with a private audit trail',
   assert.match(moderationMigration, /vybora_role/);
   assert.match(moderationMigration, /private\.vybora_report_reviews/);
   assert.match(moderationHardening, /revoke all on private\.vybora_report_reviews from public, anon, authenticated/);
+  assert.match(moderationHardening, /VYBORA audit log is not directly accessible/);
   assert.match(moderationHardening, /private\.vybora_review_report_impl/);
   assert.match(moderationHardening, /security definer set search_path = ''/);
   assert.match(moderationHardening, /revoke all on function private\.vybora_review_report_impl/);
