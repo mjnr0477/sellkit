@@ -61,7 +61,7 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.match(html, /id="savedBackdrop"/);
   assert.match(html, /async function openSavedVideos\(\)/);
   assert.match(html, /if\(tab==='Watch'\)\{posts=allPosts;render\(allPosts.length\?allPosts:demo\);return\}/);
-  assert.match(html, /const list=allPosts\.filter\(p=>p\.following\)/);
+  assert.match(html, /const list=allPosts\.filter\(p=>p\.following&&!mutedAuthors\.has\(p\.author_id\)\)/);
   assert.match(html, /sb\.from\('vybora_profiles'\)\.upsert/);
   assert.match(html, /id="forgotPassword"/);
   assert.match(html, /resetPasswordForEmail/);
@@ -381,10 +381,10 @@ test('mobile header action controls have non-overlapping hit targets', () => {
 
 
 test('creator muting is private, persisted, manageable, and applied to feed pagination', () => {
-  assert.match(muteMigration, /create table if not exists public\\.vybora_mutes/);
+  assert.match(muteMigration, /create table if not exists public\.vybora_mutes/);
   assert.match(muteMigration, /enable row level security/);
-  assert.match(muteMigration, /revoke all on public\\.vybora_mutes from anon, authenticated/);
-  assert.match(muteMigration, /using \\(\\(select auth\\.uid\\(\\)\\) = user_id\\)/);
+  assert.match(muteMigration, /revoke all on public\.vybora_mutes from anon, authenticated/);
+  assert.match(muteMigration, /using \(\(select auth\.uid\(\)\) = user_id\)/);
   assert.match(html, /async function syncMutedAuthors\\(\\)/);
   assert.match(html, /sb\\.from\\('vybora_mutes'\\)\\.select\\('muted_user_id'\\)/);
   assert.match(html, /async function muteCreator\\(author\\)/);
