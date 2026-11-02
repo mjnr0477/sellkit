@@ -14,12 +14,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
-      VYBORA_URL: ${{ github.ref == 'refs/heads/main' && 'https://vybora-social-live-8yyn.onrender.com' || 'https://vybora-social-preview-yb6x.onrender.com' }}
+      VYBORA_URL: ${{ github.ref == 'refs/heads/main' && 'https://vybora-social-live-8yyn.onrender.com' || 'http://127.0.0.1:4173' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --no-save playwright
+      - run: npm install --no-save playwright http-server
       - run: npx playwright install --with-deps chromium
+      - name: Serve the pull-request frontend for browser acceptance
+        if: github.ref != 'refs/heads/main'
+        run: |
+          npx http-server . -p 4173 -c-1 > /tmp/vybora-http-server.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/vybora-http-server.log
+          exit 1
       - run: node --test tests/vybora-browser-smoke.cjs
