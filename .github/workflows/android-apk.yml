@@ -45,7 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           test -s www/index.html
-          grep -Fq 'https://vybora-social-live.onrender.com/' www/index.html
+          grep -Fq 'https://vybora-social-live-8yyn.onrender.com/' www/index.html
           grep -Fq 'window.location.replace(target)' www/index.html
           grep -Fq "await fetch(target, { mode: 'no-cors'" www/index.html
           if grep -Fq 'social-features.js' www/index.html; then
