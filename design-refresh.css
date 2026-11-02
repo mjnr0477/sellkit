@@ -56,3 +56,6 @@
 .modal > .modal-close{position:absolute;top:22px;right:22px;z-index:100;width:34px;height:34px;display:grid;place-items:center;pointer-events:auto;touch-action:manipulation}
 .modal-top{padding-right:48px;pointer-events:none}
 .modal-top h2{pointer-events:none}
+
+/* Prevent modal min-content sizing from pushing controls beyond narrow mobile viewports. */
+.modal{width:min(calc(100vw - 36px),420px);max-width:calc(100vw - 36px);min-width:0}
