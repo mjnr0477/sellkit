@@ -489,14 +489,14 @@ test('personalized feed ranking diversifies creators without discarding relevanc
 
 test('recommendations explain ranking and let viewers privately tune down unwanted videos', () => {
   assert.match(html, /const WATCH_FEEDBACK_KEY='vybora:watch-feedback:v1'/);
-  assert.match(html, /function feedbackPenalty\\(post,feedback\\)/);
-  assert.match(html, /function recordRecommendationFeedback\\(post\\)/);
-  assert.match(html, /function recommendationReason\\(post\\)/);
-  assert.match(html, /score:affinity\\+freshness\\+quality\\+savedSignal\\+personal\\+intent-negative/);
+  assert.match(html, /function feedbackPenalty\(post,feedback\)/);
+  assert.match(html, /function recordRecommendationFeedback\(post\)/);
+  assert.match(html, /function recommendationReason\(post\)/);
+  assert.match(html, /score:affinity\+freshness\+quality\+savedSignal\+personal\+intent-negative/);
   assert.match(html, /data-action="why"/);
   assert.match(html, /data-action="less"/);
-  assert.match(html, /recordRecommendationFeedback\\(post\\)/);
-  assert.match(html, /30\\*24\\*60\\*60\\*1000/);
-  assert.match(html, /localStorage\\.setItem\\(WATCH_FEEDBACK_KEY,JSON\\.stringify\\(feedback\\)\\)/);
-  assert.doesNotMatch(html, /sb\\.from\\(['"]vybora_watch_feedback/);
+  assert.match(html, /recordRecommendationFeedback\(post\)/);
+  assert.match(html, /30\*24\*60\*60\*1000/);
+  assert.match(html, /localStorage\.setItem\(WATCH_FEEDBACK_KEY,JSON\.stringify\(feedback\)\)/);
+  assert.doesNotMatch(html, /sb\.from\(['"]vybora_watch_feedback/);
 });
