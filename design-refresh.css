@@ -61,9 +61,20 @@
 .modal{width:min(calc(100vw - 36px),420px);max-width:calc(100vw - 36px);min-width:0}
 
 /* Keep all mobile header actions in distinct, tappable hit targets. */
-.top-actions{display:flex;align-items:center;gap:9px;flex:0 0 auto;min-width:max-content;flex-wrap:nowrap}
+.top-actions{display:flex;align-items:center;gap:9px;flex:0 0 auto;min-width:0;flex-wrap:nowrap}
 @media(max-width:850px){
  .top-actions{gap:5px;flex:0 0 auto;min-width:max-content}
  .top-actions #friendsBtn,.top-actions #liveBtn{width:34px;min-width:34px;max-width:34px;height:34px;padding:0;display:grid;place-items:center;flex:0 0 34px}
+ .top-actions #accountBtn{min-width:58px;padding:8px 10px;font-size:12px;white-space:nowrap;flex:0 0 auto}
+}
+
+/* Compact every utility control so the real mobile header fits narrow phones. */
+@media(max-width:850px){
+ .brand{font-size:16px;letter-spacing:.1em;gap:7px;min-width:0}
+ .logo{width:30px;height:30px}
+ .top-actions{gap:4px;min-width:0;flex:0 0 auto}
+ .top-actions #friendsBtn,.top-actions #liveBtn,.top-actions #dataSaverBtn,.top-actions #soundBtn{width:32px;min-width:32px;max-width:32px;height:32px;padding:0;display:grid;place-items:center;flex:0 0 32px;font-size:0}
+ .top-actions #dataSaverBtn:after{content:'⇩';font-size:16px}
+ .top-actions #soundBtn:after{content:'♫';font-size:16px}
  .top-actions #accountBtn{min-width:58px;padding:8px 10px;font-size:12px;white-space:nowrap;flex:0 0 auto}
 }
