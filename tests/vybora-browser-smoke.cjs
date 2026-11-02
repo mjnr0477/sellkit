@@ -44,15 +44,21 @@ await page.locator('#authClose').click();
     await page.waitForFunction(() => document.querySelector('#authBackdrop').classList.contains('open'));
     assert.match(await page.locator('#authDescription').innerText(), /publish|create an account/i);
 
-    console.log('auth close computed hit-test', await page.locator('#authClose').evaluate(el => {
-      const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
-      const cs = getComputedStyle(el), parent = el.parentElement, ps = getComputedStyle(parent);
-      return { viewport: { innerWidth, innerHeight, clientWidth:document.documentElement.clientWidth }, modalRect: (()=>{const m=el.parentElement.getBoundingClientRect();return {x:m.x,y:m.y,w:m.width,h:m.height}})(), rect: { x:r.x, y:r.y, w:r.width, h:r.height }, position:cs.position, zIndex:cs.zIndex,
-        pointerEvents:cs.pointerEvents, parentTag:parent.tagName, parentClass:parent.className,
-        parentPosition:ps.position, hit:document.elementFromPoint(x,y)?.outerHTML?.slice(0,240),
-        stack:document.elementsFromPoint(x,y).slice(0,5).map(n=>({tag:n.tagName,id:n.id,class:n.className})) };
-    }));
-    await page.locator('#authClose').click();
+await page.locator('#authClose').click();
+    const headerTargets = await page.evaluate(() => {
+      const ids = ['friendsBtn', 'liveBtn', 'accountBtn'];
+      return ids.map(id => {
+        const el = document.getElementById(id), r = el.getBoundingClientRect();
+        return { id, left:r.left, right:r.right, top:r.top, bottom:r.bottom, width:r.width, height:r.height };
+      });
+    });
+    const viewportWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    assert.ok(headerTargets.every(r => r.width > 0 && r.left >= 0 && r.right <= viewportWidth),
+      'mobile header controls must remain inside the viewport: ' + JSON.stringify({viewportWidth,headerTargets}));
+    for (let i=0;i<headerTargets.length;i++) for (let j=i+1;j<headerTargets.length;j++) {
+      assert.ok(headerTargets[i].right <= headerTargets[j].left || headerTargets[j].right <= headerTargets[i].left,
+        'mobile header controls must not overlap: ' + JSON.stringify(headerTargets));
+    }
     await page.locator('#accountBtn').click();
     await page.locator('#authSwitch').click();
     assert.equal(await page.locator('#forgotPassword').isVisible(), true,
