@@ -14,6 +14,17 @@ test('hosted VYBORA feed loads and guest account gates work for available feed c
       hasTouch: true
     });
     const page = await context.newPage();
+    async function activateTopmostControl(selector) {
+      const hit = await page.locator(selector).evaluate(el => {
+        const r = el.getBoundingClientRect();
+        const x = r.left + r.width / 2, y = r.top + r.height / 2;
+        return { topmost: document.elementFromPoint(x, y) === el,
+          rect: { x:r.x, y:r.y, width:r.width, height:r.height },
+          viewport: { innerWidth, clientWidth:document.documentElement.clientWidth } };
+      });
+      assert.equal(hit.topmost, true, selector + ' must be the topmost hit target: ' + JSON.stringify(hit));
+      await page.locator(selector).evaluate(el => el.click());
+    }
     await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 90000 });
     await page.waitForSelector('#feed .video-card', { timeout: 60000 });
     await page.waitForFunction(() =>
@@ -40,7 +51,8 @@ test('hosted VYBORA feed loads and guest account gates work for available feed c
       await likeAction.click();
       await page.waitForFunction(() => document.querySelector('#authBackdrop').classList.contains('open'));
       assert.match(await page.locator('#authDescription').innerText(), /like videos|publish|comment|follow/i);
-await page.locator('#authClose').click();
+await activateTopmostControl('#authClose');
+      await page.waitForFunction(() => !document.querySelector('#authBackdrop').classList.contains('open'));
     } else {
       assert.ok(await page.locator('[data-action="share"]').count() > 0,
         'a curated-only guest feed should still expose share actions');
@@ -50,7 +62,8 @@ await page.locator('#authClose').click();
     await page.waitForFunction(() => document.querySelector('#authBackdrop').classList.contains('open'));
     assert.match(await page.locator('#authDescription').innerText(), /publish|create an account/i);
 
-await page.locator('#authClose').click();
+await activateTopmostControl('#authClose');
+    await page.waitForFunction(() => !document.querySelector('#authBackdrop').classList.contains('open'));
     const headerTargets = await page.evaluate(() => {
       const ids = ['friendsBtn', 'liveBtn', 'accountBtn'];
       return ids.map(id => {
