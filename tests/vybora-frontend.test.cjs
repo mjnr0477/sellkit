@@ -371,3 +371,9 @@ test('mobile auth modal close control is outside the modal header hit area', () 
   assert.match(designCss, /\.modal\{width:min\(calc\(100vw - 36px\),420px\);max-width:calc\(100vw - 36px\);min-width:0/);
 });
 
+
+
+test('mobile header action controls have non-overlapping hit targets', () => {
+  assert.match(designCss, /\.top-actions #friendsBtn,\.top-actions #liveBtn\{width:34px;min-width:34px;max-width:34px;height:34px/);
+  assert.match(designCss, /\.top-actions #accountBtn\{min-width:58px;padding:8px 10px;font-size:12px/);
+});
