@@ -28,7 +28,7 @@ test('account-only interactions prompt guests to authenticate', () => {
   assert.match(html, /if\(!user\)\{authPrompt\('Create an account to follow creators\.'/);
 });
 
-test('frontend uses public publishable credentials only', () => {
+test('frontend uses the canonical production host for auth callbacks and public publishable credentials only', () => {
   assert.match(html, /sb_publishable_[A-Za-z0-9_-]+/);
   assert.match(html, /emailRedirectTo:'https:\/\/vybora-social-live\.onrender\.com\/'/);
   assert.match(html, /redirectTo:'https:\/\/vybora-social-live\.onrender\.com\/'/);
