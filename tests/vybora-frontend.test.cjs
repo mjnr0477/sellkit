@@ -155,7 +155,13 @@ test('community post sharing uses canonical post-specific links and restores the
   assert.match(html, /shareUrl=new URL\('\/',\s*'https:\/\/vybora-social-live-8yyn\.onrender\.com'\)/);
   assert.match(html, /shareUrl\.searchParams\.set\('post',String\(post\.id\)\)/);
   assert.match(html, /\.eq\('id',requestedPostId\)\.eq\('visibility','public'\)/);
-  assert.match(html, /if\(requestedPostId\)\{const index=items\.findIndex\(p=>String\(p\.id\)===requestedPostId\)/);
+  assert.match(html, /const requestedIndex=requestedPostId\?items\.findIndex\(p=>String\(p\.id\)===requestedPostId\):requestedSourceUrl\?items\.findIndex\(p=>String\(p\.source_url\|\|''\)===requestedSourceUrl\):-1/);
+});
+
+test('shared external and open-license source links restore the matching feed card first', () => {
+  assert.match(html, /new URLSearchParams\(location\.search\)\.get\('source'\)/);
+  assert.match(html, /requestedSourceUrl\?items\.findIndex\(p=>String\(p\.source_url\|\|''\)===requestedSourceUrl\)/);
+  assert.match(html, /else if\(post\.source_url\)shareUrl\.searchParams\.set\('source',String\(post\.source_url\)\)/);
 });
 
 test('Watch feed paginates endlessly as the user nears the bottom', () => {
