@@ -53,3 +53,7 @@
 .modal-top{position:static;z-index:auto;display:flex;align-items:center;justify-content:flex-start;gap:12px;pointer-events:none}
 .modal-top h2{padding-right:48px;min-width:0;pointer-events:none}
 .modal-top .close{position:absolute;top:22px;right:22px;z-index:50;width:34px;height:34px;pointer-events:auto;touch-action:manipulation}
+
+/* Close controls sit as direct children of the modal, above the content layer. */
+.modal-top{pointer-events:none;padding-right:48px}
+.modal > .close{position:absolute;top:22px;right:22px;z-index:10000;pointer-events:auto;touch-action:manipulation}
