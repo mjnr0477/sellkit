@@ -41,25 +41,25 @@ const launcher = `<!doctype html>
   <script>
     (function () {
       'use strict';
-      var target = ${JSON.stringify(liveSite)};
+      var target = "https://vybora-social-live-8yyn.onrender.com/";
       var status = document.getElementById('status');
       var retry = document.getElementById('retry');
-      async function connect() {
-        status.textContent = 'Connecting to VYBORA…';
+      var navigationStarted = false;
+      function connect() {
+        if (navigationStarted) return;
+        navigationStarted = true;
+        status.textContent = 'Opening VYBORA…';
         retry.style.display = 'none';
-        var controller = new AbortController();
-        var timeout = window.setTimeout(function () { controller.abort(); }, 20000);
-        try {
-          // A no-cors probe checks basic reachability without exposing response
-          // contents; the actual page is then loaded by normal WebView navigation.
-          await fetch(target, { mode: 'no-cors', cache: 'no-store', signal: controller.signal });
-          window.location.replace(target);
-        } catch (_) {
-          status.textContent = 'VYBORA could not connect. Check your internet connection and try again.';
-          retry.style.display = 'inline-block';
-        } finally {
-          window.clearTimeout(timeout);
-        }
+        // Navigate directly: a cross-origin no-cors fetch cannot prove that the
+        // WebView can render the destination and only adds another network hop.
+        window.location.replace(target);
+        window.setTimeout(function () {
+          if (document.visibilityState === 'visible' && document.location.href !== target) {
+            status.textContent = 'VYBORA could not open. Check your connection and try again.';
+            retry.style.display = 'inline-block';
+            navigationStarted = false;
+          }
+        }, 12000);
       }
       retry.addEventListener('click', connect);
       connect();
