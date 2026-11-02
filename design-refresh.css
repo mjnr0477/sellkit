@@ -78,3 +78,8 @@
  .top-actions #soundBtn:after{content:'♫';font-size:16px}
  .top-actions #accountBtn{min-width:58px;padding:8px 10px;font-size:12px;white-space:nowrap;flex:0 0 auto}
 }
+/* Make recommendation explanations available without obscuring the video. */
+.recommendation-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:8px}
+.recommendation-controls button{border:1px solid #ffffff35;border-radius:999px;background:#080810a8;color:#e8e2ff;padding:6px 10px;font-size:10px;line-height:1.2;backdrop-filter:blur(8px)}
+.recommendation-controls button:active{border-color:var(--aqua);color:var(--aqua)}
+@media(max-width:850px){.recommendation-controls{margin-top:7px}.recommendation-controls button{padding:6px 9px}}
