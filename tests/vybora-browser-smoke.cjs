@@ -44,6 +44,14 @@ await page.locator('#authClose').click();
     await page.waitForFunction(() => document.querySelector('#authBackdrop').classList.contains('open'));
     assert.match(await page.locator('#authDescription').innerText(), /publish|create an account/i);
 
+    console.log('auth close computed hit-test', await page.locator('#authClose').evaluate(el => {
+      const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const cs = getComputedStyle(el), parent = el.parentElement, ps = getComputedStyle(parent);
+      return { rect: { x:r.x, y:r.y, w:r.width, h:r.height }, position:cs.position, zIndex:cs.zIndex,
+        pointerEvents:cs.pointerEvents, parentTag:parent.tagName, parentClass:parent.className,
+        parentPosition:ps.position, hit:document.elementFromPoint(x,y)?.outerHTML?.slice(0,240),
+        stack:document.elementsFromPoint(x,y).slice(0,5).map(n=>({tag:n.tagName,id:n.id,class:n.className})) };
+    }));
     await page.locator('#authClose').click();
     await page.locator('#accountBtn').click();
     await page.locator('#authSwitch').click();
