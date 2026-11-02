@@ -486,3 +486,18 @@ test('personalized feed ranking diversifies creators without discarding relevanc
   assert.match(html, /remaining\.findIndex\(post=>!recent\.has\(feedCreatorKey\(post\)\)\)/);
   assert.match(html, /return diversifyFeedItems\(ranked\)/);
 });
+
+
+test('viewers can steer recommendations with private negative feedback and reset feed learning', () => {
+  assert.match(html, /data-action="not-interested"/);
+  assert.match(html, /function recordNotInterested\(post\)/);
+  assert.match(html, /profile\.hiddenPosts=.*slice\(-120\)/);
+  assert.match(html, /profile\.avoidCreators/);
+  assert.match(html, /profile\.avoidTopics/);
+  assert.match(html, /const negative=avoidCreator\+avoidTopic/);
+  assert.match(html, /items\.filter\(p=>!hiddenPosts\.has\(String\(p\.id\)\)\)/);
+  assert.match(html, /action==='not-interested'/);
+  assert.match(html, /id="resetFeedLearningBtn"/);
+  assert.match(html, /localStorage\.removeItem\(WATCH_INTEREST_KEY\)/);
+  assert.doesNotMatch(html, /sb\.from\(['"]vybora_watch_feedback/);
+});
