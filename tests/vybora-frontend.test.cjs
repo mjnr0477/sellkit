@@ -364,8 +364,8 @@ test('live WebRTC buffers early ICE candidates until remote descriptions are rea
 
 
 test('mobile auth modal close control stays inside the tappable header layout', () => {
-  assert.match(html, /<div class="modal-top"><h2 id="authTitle">Join your universe\.<\/h2><\/div><button class="close" id="authClose" type="button"/);
+  assert.match(html, /<div class="modal-top"><h2 id="authTitle">Join your universe\.<\/h2><button class="close" id="authClose" type="button"/);
   assert.match(html, /design-refresh\.css/);
-  assert.match(designCss, /\.modal > \.close\{position:absolute;top:22px;right:22px;z-index:10000/);
+  assert.match(designCss, /\.modal-top \.close\{position:static;z-index:2;flex:0 0 34px/);
   assert.doesNotMatch(html, /<div class="modal-top">[^<]*<button class="close"/);
 });
