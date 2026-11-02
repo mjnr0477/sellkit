@@ -187,8 +187,8 @@ async function loadMoreArchiveOnly(){
  if(dataSaver)return;
  if(archiveLoading||(!archiveHasMore&&!commonsHasMore&&!openverseHasMore&&!nasaHasMore)||activeTab!=='Watch')return;
  try{
-  const batch=await loadOpenArchiveVideos(archivePage+1),known=new Set(allPosts.map(p=>String(p.id))),fresh=batch.filter(p=>!known.has(String(p.id)));
-  if(fresh.length){allPosts=allPosts.concat(fresh);posts=allPosts;feed.insertAdjacentHTML('beforeend',fresh.map((p,i)=>videoCard(p,feed.querySelectorAll('.video-card').length+i)).join(''));activateVideoObserver()}
+  const batch=await loadOpenArchiveVideos(archivePage+1),known=new Set(allPosts.map(p=>String(p.id))),fresh=rankFeedItems(batch).filter(p=>!known.has(String(p.id)));
+  if(fresh.length){allPosts=allPosts.concat(fresh);posts=posts.concat(fresh);feed.insertAdjacentHTML('beforeend',fresh.map((p,i)=>videoCard(p,feed.querySelectorAll('.video-card').length+i)).join(''));activateVideoObserver()}
   feedHasMore=feedHasMore||archiveHasMore;
   if(!archiveHasMore&&!commonsHasMore&&!openverseHasMore&&!nasaHasMore&&!feedHasMore)feed.dataset.endOfFeed='true';
  }catch(error){console.warn('Open-video discovery temporarily unavailable',error);tell('Open-video discovery is temporarily unavailable. Your loaded videos remain playable.')}
