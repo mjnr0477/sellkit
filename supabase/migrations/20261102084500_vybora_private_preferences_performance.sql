@@ -9,7 +9,6 @@ create table if not exists private.vybora_user_settings (
 
 alter table private.vybora_user_settings enable row level security;
 revoke all on private.vybora_user_settings from public, anon, authenticated;
-grant select, insert, update on private.vybora_user_settings to authenticated;
 
 drop policy if exists "Users read their own VYBORA settings" on private.vybora_user_settings;
 drop policy if exists "Users create their own VYBORA settings" on private.vybora_user_settings;
@@ -37,7 +36,7 @@ create or replace function public.vybora_get_mature_preference()
 returns boolean
 language sql
 stable
-security invoker
+security definer
 set search_path = ''
 as $function$
   select coalesce(
