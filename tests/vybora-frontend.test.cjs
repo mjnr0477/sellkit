@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');\nconst designCss = fs.readFileSync(new URL('../design-refresh.css', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
   assert.match(html, /name="viewport"[^>]*width=device-width/);
@@ -359,4 +359,11 @@ test('live WebRTC buffers early ICE candidates until remote descriptions are rea
   assert.match(social, /if\(pc\?\.remoteDescription\)await pc\.addIceCandidate\(x\.payload\);else\{let queued=pendingIce\.get\(x\.sender_id\)\|\|\[\]/);
   assert.match(social, /for\(const candidate of queued\)await pc\.addIceCandidate\(candidate\)/);
   assert.match(social, /pendingIce\.clear\(\)/);
+});
+
+
+test('mobile auth modal close control stays inside the tappable header layout', () => {
+  assert.match(html, /id="authClose" type="button"/);
+  assert.match(html, /design-refresh\.css/);
+  assert.match(designCss, /\.modal-top \.close\{position:relative;top:auto;right:auto;z-index:10/);
 });
