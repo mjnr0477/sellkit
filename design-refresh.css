@@ -52,3 +52,7 @@
 .modal-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .modal-top h2{padding-right:0;min-width:0}
 .modal-top .close{position:relative;top:auto;right:auto;z-index:10;margin-left:auto;flex:0 0 34px;pointer-events:auto;touch-action:manipulation}
+
+/* Header text is decorative; let pointer events reach the close control. */
+.modal-top{pointer-events:none}
+.modal-top .close{pointer-events:auto}
