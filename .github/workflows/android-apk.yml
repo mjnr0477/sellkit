@@ -47,7 +47,10 @@ jobs:
           test -s www/index.html
           grep -Fq 'https://vybora-social-live-8yyn.onrender.com/' www/index.html
           grep -Fq 'window.location.replace(target)' www/index.html
-          grep -Fq "await fetch(target, { mode: 'no-cors'" www/index.html
+          if grep -Fq "await fetch(target, { mode: 'no-cors'" www/index.html; then
+            echo "::error::Android launcher must not use the obsolete cross-origin probe."
+            exit 1
+          fi
           if grep -Fq 'social-features.js' www/index.html; then
             echo "::error::Android launcher must not bundle the frozen frontend."
             exit 1
