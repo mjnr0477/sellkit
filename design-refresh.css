@@ -49,5 +49,5 @@
 
 /* Keep the auth close control in the modal header's normal layout. */
 .modal-top{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;min-height:36px;pointer-events:auto;padding:0}
-.modal-top h2{flex:1;min-width:0;padding:0;pointer-events:auto}
+.modal-top h2{flex:1;min-width:0;padding:0;pointer-events:none}
 .modal-top .close{position:static;z-index:2;flex:0 0 34px;width:34px;height:34px;pointer-events:auto;touch-action:manipulation}
