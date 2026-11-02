@@ -469,3 +469,12 @@ test('chat read receipts update only read_at and expose unread counts', () => {
   assert.match(socialSource, /unread-count/);
   assert.match(html, /unread-count/);
 });
+
+test('Data Saver avoids background catalogue downloads and respects device data-saving preferences', () => {
+  assert.match(html, /const saved=localStorage\.getItem\('vybora:data-saver:v1'\);if\(saved!==null\)return saved==='on'/);
+  assert.match(html, /connection\?\.saveData\|\|\/\^\(slow-2g\|2g\)\$\//);
+  assert.match(html, /dataSaver\?\{data:\[\],error:null\}:await sb\.from\('vybora_external_videos'\)/);
+  assert.match(html, /async function loadOpenArchiveVideos\(page=1\)\{\s*if\(dataSaver\)return \[\]/);
+  assert.match(html, /async function loadMoreArchiveOnly\(\)\{\s*if\(dataSaver\)return/);
+  assert.match(html, /if\(!dataSaver\)loadFeed\(\)/);
+});
