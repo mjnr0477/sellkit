@@ -5,6 +5,7 @@ const vm = require('node:vm');
 
 const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
 const designCss = fs.readFileSync(new URL('../design-refresh.css', 'file://' + __filename), 'utf8');
+const muteMigration = fs.readFileSync(new URL('../supabase/migrations/20261102072105_vybora_creator_mutes.sql', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
   assert.match(html, /name="viewport"[^>]*width=device-width/);
@@ -60,7 +61,7 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.match(html, /id="savedBackdrop"/);
   assert.match(html, /async function openSavedVideos\(\)/);
   assert.match(html, /if\(tab==='Watch'\)\{posts=allPosts;render\(allPosts.length\?allPosts:demo\);return\}/);
-  assert.match(html, /const list=allPosts\.filter\(p=>p\.following\)/);
+  assert.match(html, /const list=allPosts\.filter\(p=>p\.following&&!mutedAuthors\.has\(p\.author_id\)\)/);
   assert.match(html, /sb\.from\('vybora_profiles'\)\.upsert/);
   assert.match(html, /id="forgotPassword"/);
   assert.match(html, /resetPasswordForEmail/);
@@ -376,4 +377,21 @@ test('mobile auth modal close control is outside the modal header hit area', () 
 test('mobile header action controls have non-overlapping hit targets', () => {
   assert.match(designCss, /\.top-actions #friendsBtn,\.top-actions #liveBtn,\.top-actions #dataSaverBtn,\.top-actions #soundBtn\{width:32px;min-width:32px;max-width:32px;height:32px/);
   assert.match(designCss, /\.top-actions #accountBtn\{min-width:58px;padding:8px 10px;font-size:12px/);
+});
+
+
+test('creator muting is private, persisted, manageable, and applied to feed pagination', () => {
+  assert.match(muteMigration, /create table if not exists public\.vybora_mutes/);
+  assert.match(muteMigration, /enable row level security/);
+  assert.match(muteMigration, /revoke all on public\.vybora_mutes from anon, authenticated/);
+  assert.match(muteMigration, /using \(\(select auth\.uid\(\)\) = user_id\)/);
+  assert.match(html, /async function syncMutedAuthors\(\)/);
+  assert.match(html, /sb\.from\('vybora_mutes'\)\.select\('muted_user_id'\)/);
+  assert.match(html, /async function muteCreator\(author\)/);
+  assert.match(html, /async function unmuteCreator\(author\)/);
+  assert.match(html, /async function openMutedCreators\(\)/);
+  assert.match(html, /data-action="mute"/);
+  assert.match(html, /data-unmute-creator/);
+  assert.match(html, /!mutedAuthors\.has\(p\.author_id\)/);
+  assert.match(html, /Manage muted creators/);
 });
