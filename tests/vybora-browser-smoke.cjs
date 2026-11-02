@@ -7,7 +7,13 @@ const baseURL = process.env.VYBORA_URL || 'https://vybora-social-preview-yb6x.on
 test('hosted VYBORA feed loads and guest account gates work for available feed content', async () => {
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 1,
+      isMobile: true,
+      hasTouch: true
+    });
+    const page = await context.newPage();
     await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 90000 });
     await page.waitForSelector('#feed .video-card', { timeout: 60000 });
     await page.waitForFunction(() =>
