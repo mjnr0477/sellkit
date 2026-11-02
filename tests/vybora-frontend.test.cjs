@@ -11,6 +11,7 @@ const socialSource = fs.readFileSync(new URL('../social-features.js', 'file://' 
 const moderationMigration = fs.readFileSync(new URL('../supabase/migrations/20261102073722_vybora_moderation_queue.sql', 'file://' + __filename), 'utf8');
 const moderationHardening = fs.readFileSync(new URL('../supabase/migrations/20261102073755_harden_vybora_moderation_audit.sql', 'file://' + __filename), 'utf8');
 const readReceiptsMigration = fs.readFileSync(new URL('../supabase/migrations/20261102074553_vybora_message_read_receipts.sql', 'file://' + __filename), 'utf8');
+const readReceiptHardening = fs.readFileSync(new URL('../supabase/migrations/20261102074733_harden_vybora_read_receipt_policy.sql', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
   assert.match(html, /name="viewport"[^>]*width=device-width/);
@@ -444,6 +445,8 @@ test('report moderation queue is app-metadata gated with a private audit trail',
 
 test('chat read receipts update only read_at and expose unread counts', () => {
   assert.match(readReceiptsMigration, /grant update\(read_at\) on public\.vybora_messages to authenticated/);
+  assert.match(readReceiptHardening, /read_at is null/);
+  assert.match(readReceiptHardening, /read_at is not null/);
   assert.match(socialSource, /select\('id,sender_id,recipient_id,body,created_at,read_at'\)/);
   assert.match(socialSource, /update\(\{read_at:readAt\}\)/);
   assert.match(socialSource, /m\.read_at\?' · Seen':' · Sent'/);
