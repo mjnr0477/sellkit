@@ -65,7 +65,7 @@ await activateTopmostControl('#authClose');
 await activateTopmostControl('#authClose');
     await page.waitForFunction(() => !document.querySelector('#authBackdrop').classList.contains('open'));
     const headerTargets = await page.evaluate(() => {
-      const ids = ['friendsBtn', 'liveBtn', 'accountBtn'];
+      const ids = ['friendsBtn', 'liveBtn', 'dataSaverBtn', 'soundBtn', 'accountBtn'];
       return ids.map(id => {
         const el = document.getElementById(id), r = el.getBoundingClientRect();
         return { id, left:r.left, right:r.right, top:r.top, bottom:r.bottom, width:r.width, height:r.height };
