@@ -6,6 +6,8 @@ const vm = require('node:vm');
 const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
 const designCss = fs.readFileSync(new URL('../design-refresh.css', 'file://' + __filename), 'utf8');
 const muteMigration = fs.readFileSync(new URL('../supabase/migrations/20261102072105_vybora_creator_mutes.sql', 'file://' + __filename), 'utf8');
+const blockMigration = fs.readFileSync(new URL('../supabase/migrations/20261102073022_vybora_account_blocking.sql', 'file://' + __filename), 'utf8');
+const socialSource = fs.readFileSync(new URL('../social-features.js', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
   assert.match(html, /name="viewport"[^>]*width=device-width/);
@@ -394,4 +396,25 @@ test('creator muting is private, persisted, manageable, and applied to feed pagi
   assert.match(html, /data-unmute-creator/);
   assert.match(html, /!mutedAuthors\.has\(p\.author_id\)/);
   assert.match(html, /Manage muted creators/);
+});
+
+
+test('account blocking is enforced by private RLS helper across social interactions', () => {
+  assert.match(blockMigration, /create table if not exists public\.vybora_blocks/);
+  assert.match(blockMigration, /alter table public\.vybora_blocks enable row level security/);
+  assert.match(blockMigration, /create or replace function private\.vybora_is_blocked/);
+  assert.match(blockMigration, /security definer set search_path = ''/);
+  assert.match(blockMigration, /revoke all on function private\.vybora_is_blocked\(uuid\) from public, anon/);
+  assert.match(blockMigration, /grant execute on function private\.vybora_is_blocked\(uuid\) to authenticated/);
+  assert.match(blockMigration, /VYBORA friends send messages without blocks/);
+  assert.match(blockMigration, /VYBORA users request friendship without blocks/);
+  assert.match(blockMigration, /Members cannot read blocked VYBORA posts/);
+  assert.match(blockMigration, /Members send live signals without blocks/);
+  assert.match(html, /async function blockCreator\(author\)/);
+  assert.match(html, /async function unblockCreator\(author\)/);
+  assert.match(html, /async function openBlockedCreators\(\)/);
+  assert.match(html, /data-action="block"/);
+  assert.match(html, /data-unblock-creator/);
+  assert.match(html, /Manage blocked accounts/);
+  assert.match(socialSource, /The account may have blocked you or the friend connection is no longer active/);
 });
