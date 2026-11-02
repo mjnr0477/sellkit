@@ -17,7 +17,7 @@ VYBORA is a guest-first short-video social experience. Its design direction is *
 
 ## Preview
 
-**Hosted preview:** https://vybora-social-preview.onrender.com
+**Production:** https://vybora-social-live-8yyn.onrender.com\n\n**Hosted preview:** https://vybora-social-preview-yb6x.onrender.com
 
 This is a separate static preview deployed from `feat/vybora-social-universe-mvp`, not the production `main` branch.
 
