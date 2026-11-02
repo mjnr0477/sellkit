@@ -158,7 +158,7 @@ test('community post sharing uses canonical post-specific links and restores the
   assert.match(html, /if\(requestedPostId\)\{const index=items\.findIndex\(p=>String\(p\.id\)===requestedPostId\)/);
 });
 
-test('Watch feed paginates endlessly as the user nears the bottom', () => {
+test('shared external and open-license source links restore the matching feed card first', () => {\n  assert.match(html, /new URLSearchParams\\(location\\.search\\)\\.get\\('source'\\)/);\n  assert.match(html, /requestedSourceUrl\\?items\\.findIndex\\(p=>String\\(p\\.source_url\\|\\|''\\)===requestedSourceUrl\\)/);\n  assert.match(html, /else if\\(post\\.source_url\\)shareUrl\\.searchParams\\.set\\('source',String\\(post\\.source_url\\)\\)/);\n});\n\ntest('Watch feed paginates endlessly as the user nears the bottom', () => {
   assert.match(html, /async function loadMoreFeed\(\)/);
   assert.match(html, /\.range\(feedPostOffset,feedPostOffset\+49\)/);
   assert.match(html, /feed\.addEventListener\('scroll'/);
