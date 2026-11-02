@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');\nconst designCss = fs.readFileSync(new URL('../design-refresh.css', 'file://' + __filename), 'utf8');
+const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+const designCss = fs.readFileSync(new URL('../design-refresh.css', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
   assert.match(html, /name="viewport"[^>]*width=device-width/);
