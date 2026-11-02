@@ -45,3 +45,10 @@
 }
 @media(min-width:851px){.stage{grid-template-columns:minmax(0,1fr) 300px}.feed-wrap{align-items:stretch}.feed{height:100%}}
 @media(prefers-reduced-motion:reduce){.cover-orb{animation:none!important}*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+
+/* Keep modal close controls in the normal header layout so they remain tappable
+   in mobile WebViews and browser automation. */
+.modal-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.modal-top h2{padding-right:0;min-width:0}
+.modal-top .close{position:relative;top:auto;right:auto;z-index:10;margin-left:auto;flex:0 0 34px;pointer-events:auto;touch-action:manipulation}
