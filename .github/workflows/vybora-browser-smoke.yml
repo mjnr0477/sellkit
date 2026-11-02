@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
-      VYBORA_URL: ${{ github.ref == 'refs/heads/main' && 'https://vybora-social-live.onrender.com' || 'https://vybora-social-preview.onrender.com' }}
+      VYBORA_URL: ${{ github.ref == 'refs/heads/main' && 'https://vybora-social-live-8yyn.onrender.com' || 'https://vybora-social-preview-yb6x.onrender.com' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
