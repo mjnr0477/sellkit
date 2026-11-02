@@ -501,3 +501,10 @@ test('viewers can steer recommendations with private negative feedback and reset
   assert.match(html, /localStorage\.removeItem\(WATCH_INTEREST_KEY\)/);
   assert.doesNotMatch(html, /sb\.from\(['"]vybora_watch_feedback/);
 });
+
+
+test('infinite feed pagination preserves dismissed posts and applies learned preferences to new items', () => {
+  assert.match(html, /const fresh=rankFeedItems\(additions\)\.filter\(p=>!known\.has\(String\(p\.id\)\)\)/);
+  assert.match(html, /allPosts=allPosts\.concat\(fresh\);posts=posts\.concat\(fresh\)/);
+  assert.doesNotMatch(html, /allPosts=allPosts\.concat\(fresh\);posts=allPosts/);
+});
