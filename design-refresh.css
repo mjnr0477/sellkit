@@ -45,3 +45,36 @@
 }
 @media(min-width:851px){.stage{grid-template-columns:minmax(0,1fr) 300px}.feed-wrap{align-items:stretch}.feed{height:100%}}
 @media(prefers-reduced-motion:reduce){.cover-orb{animation:none!important}*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+
+/* Keep the auth close control in the modal header's normal layout. */
+.modal-top{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;min-height:36px;pointer-events:none;padding:0}
+.modal-top h2{flex:1;min-width:0;padding:0;pointer-events:none}
+.modal-top .close{position:static;z-index:2;flex:0 0 34px;width:34px;height:34px;pointer-events:auto;touch-action:manipulation}
+
+/* The authentication close control is a direct child of the modal, outside the header hit area. */
+.modal > .modal-close{position:absolute;top:22px;right:22px;z-index:100;width:34px;height:34px;display:grid;place-items:center;pointer-events:auto;touch-action:manipulation}
+.modal-top{padding-right:48px;pointer-events:none}
+.modal-top h2{pointer-events:none}
+
+/* Prevent modal min-content sizing from pushing controls beyond narrow mobile viewports. */
+.modal{width:min(calc(100vw - 36px),420px);max-width:calc(100vw - 36px);min-width:0}
+
+/* Keep all mobile header actions in distinct, tappable hit targets. */
+.top-actions{display:flex;align-items:center;gap:9px;flex:0 0 auto;min-width:0;flex-wrap:nowrap}
+@media(max-width:850px){
+ .top-actions{gap:5px;flex:0 0 auto;min-width:max-content}
+ .top-actions #friendsBtn,.top-actions #liveBtn{width:34px;min-width:34px;max-width:34px;height:34px;padding:0;display:grid;place-items:center;flex:0 0 34px}
+ .top-actions #accountBtn{min-width:58px;padding:8px 10px;font-size:12px;white-space:nowrap;flex:0 0 auto}
+}
+
+/* Compact every utility control so the real mobile header fits narrow phones. */
+@media(max-width:850px){
+ .brand{font-size:16px;letter-spacing:.1em;gap:7px;min-width:0}
+ .logo{width:30px;height:30px}
+ .top-actions{gap:4px;min-width:0;flex:0 0 auto}
+ .top-actions #friendsBtn,.top-actions #liveBtn,.top-actions #dataSaverBtn,.top-actions #soundBtn{width:32px;min-width:32px;max-width:32px;height:32px;padding:0;display:grid;place-items:center;flex:0 0 32px;font-size:0}
+ .top-actions #dataSaverBtn:after{content:'⇩';font-size:16px}
+ .top-actions #soundBtn:after{content:'♫';font-size:16px}
+ .top-actions #accountBtn{min-width:58px;padding:8px 10px;font-size:12px;white-space:nowrap;flex:0 0 auto}
+}

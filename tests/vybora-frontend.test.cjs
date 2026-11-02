@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+const designCss = fs.readFileSync(new URL('../design-refresh.css', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
   assert.match(html, /name="viewport"[^>]*width=device-width/);
@@ -359,4 +360,20 @@ test('live WebRTC buffers early ICE candidates until remote descriptions are rea
   assert.match(social, /if\(pc\?\.remoteDescription\)await pc\.addIceCandidate\(x\.payload\);else\{let queued=pendingIce\.get\(x\.sender_id\)\|\|\[\]/);
   assert.match(social, /for\(const candidate of queued\)await pc\.addIceCandidate\(candidate\)/);
   assert.match(social, /pendingIce\.clear\(\)/);
+});
+
+
+test('mobile auth modal close control is outside the modal header hit area', () => {
+  assert.match(html, /<section class="modal"><button class="close modal-close" id="authClose" type="button"/);
+  assert.match(html, /<div class="modal-top"><h2 id="authTitle">Join your universe\.<\/h2><\/div>/);
+  assert.match(html, /design-refresh\.css/);
+  assert.match(designCss, /\.modal > \.modal-close\{position:absolute;top:22px;right:22px;z-index:100/);
+  assert.match(designCss, /\.modal\{width:min\(calc\(100vw - 36px\),420px\);max-width:calc\(100vw - 36px\);min-width:0/);
+});
+
+
+
+test('mobile header action controls have non-overlapping hit targets', () => {
+  assert.match(designCss, /\.top-actions #friendsBtn,\.top-actions #liveBtn,\.top-actions #dataSaverBtn,\.top-actions #soundBtn\{width:32px;min-width:32px;max-width:32px;height:32px/);
+  assert.match(designCss, /\.top-actions #accountBtn\{min-width:58px;padding:8px 10px;font-size:12px/);
 });
