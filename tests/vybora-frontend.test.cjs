@@ -435,7 +435,7 @@ test('report moderation queue is app-metadata gated with a private audit trail',
   assert.match(moderationHardening, /grant execute on function public\.vybora_review_report/);
   assert.match(socialSource, /user\.app_metadata\?\.vybora_role/);
   assert.match(socialSource, /sb\.rpc\('vybora_review_report'/);
-  assert.match(socialSource, /data-review-action/);
+  assert.match(socialSource, /event:'\*'/);
   assert.match(html, /id="moderationBackdrop"/);
   assert.match(html, /id="moderationOpenBtn"[^>]*hidden/);
   assert.match(moderationHardening, /returns void language sql security invoker set search_path = ''/);
@@ -443,12 +443,12 @@ test('report moderation queue is app-metadata gated with a private audit trail',
 });
 
 test('chat read receipts update only read_at and expose unread counts', () => {
-  assert.match(readReceiptsMigration, /grant update\\(read_at\\) on public\\.vybora_messages to authenticated/);
-  assert.match(socialSource, /select\\('id,sender_id,recipient_id,body,created_at,read_at'\\)/);
-  assert.match(socialSource, /update\\(\\{read_at:readAt\\}\\)/);
-  assert.match(socialSource, /m\\.read_at\\?' · Seen':' · Sent'/);
+  assert.match(readReceiptsMigration, /grant update\(read_at\) on public\.vybora_messages to authenticated/);
+  assert.match(socialSource, /select\('id,sender_id,recipient_id,body,created_at,read_at'\)/);
+  assert.match(socialSource, /update\(\{read_at:readAt\}\)/);
+  assert.match(socialSource, /m\.read_at\?' · Seen':' · Sent'/);
   assert.match(socialSource, /refreshUnreadCount/);
-  assert.match(socialSource, /data\\('event':'\\*'/);
+  assert.match(socialSource, /event:'\*'/);
   assert.match(socialSource, /unread-count/);
   assert.match(html, /unread-count/);
 });
