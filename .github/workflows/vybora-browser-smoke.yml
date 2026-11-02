@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'design-refresh.css'
       - 'tests/vybora-browser-smoke.cjs'
       - '.github/workflows/vybora-browser-smoke.yml'
   workflow_dispatch:
