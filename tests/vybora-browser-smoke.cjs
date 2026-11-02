@@ -71,9 +71,19 @@ await activateTopmostControl('#authClose');
         return { id, left:r.left, right:r.right, top:r.top, bottom:r.bottom, width:r.width, height:r.height };
       });
     });
+    const layoutMetrics = await page.evaluate(() => {
+      const rect = selector => {
+        const r = document.querySelector(selector).getBoundingClientRect();
+        return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right};
+      };
+      return {innerWidth,clientWidth:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth,
+        visualViewport:{width:visualViewport?.width,scale:visualViewport?.scale},
+        app:rect('.app'),top:rect('.top'),brand:rect('.brand'),actions:rect('.top-actions'),
+        devicePixelRatio,mediaMobile:matchMedia('(max-width:850px)').matches};
+    });
     const viewportWidth = await page.evaluate(() => document.documentElement.clientWidth);
     assert.ok(headerTargets.every(r => r.width > 0 && r.left >= 0 && r.right <= viewportWidth),
-      'mobile header controls must remain inside the viewport: ' + JSON.stringify({viewportWidth,headerTargets}));
+      'mobile header controls must remain inside the viewport: ' + JSON.stringify({viewportWidth,headerTargets,layoutMetrics}));
     for (let i=0;i<headerTargets.length;i++) for (let j=i+1;j<headerTargets.length;j++) {
       assert.ok(headerTargets[i].right <= headerTargets[j].left || headerTargets[j].right <= headerTargets[i].left,
         'mobile header controls must not overlap: ' + JSON.stringify(headerTargets));
