@@ -34,7 +34,14 @@ test('hosted VYBORA feed loads and guest account gates work for available feed c
       await likeAction.click();
       await page.waitForFunction(() => document.querySelector('#authBackdrop').classList.contains('open'));
       assert.match(await page.locator('#authDescription').innerText(), /like videos|publish|comment|follow/i);
-      await page.locator('#authClose').click();
+      console.log('auth close hit-test', await page.locator('#authClose').evaluate(el => {
+      const r = el.getBoundingClientRect();
+      const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      const style = getComputedStyle(el), parentStyle = getComputedStyle(el.parentElement);
+      return { rect: { x:r.x, y:r.y, width:r.width, height:r.height }, position:style.position, zIndex:style.zIndex, pointerEvents:style.pointerEvents, parent:el.parentElement?.className, parentPointerEvents:parentStyle.pointerEvents, hit:hit?.outerHTML?.slice(0,240) };
+    }));
+    await page.locator('#authClose').click();
     } else {
       assert.ok(await page.locator('[data-action="share"]').count() > 0,
         'a curated-only guest feed should still expose share actions');
