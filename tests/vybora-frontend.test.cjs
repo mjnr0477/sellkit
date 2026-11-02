@@ -368,5 +368,6 @@ test('mobile auth modal close control is outside the modal header hit area', () 
   assert.match(html, /<div class="modal-top"><h2 id="authTitle">Join your universe\.<\/h2><\/div>/);
   assert.match(html, /design-refresh\.css/);
   assert.match(designCss, /\.modal > \.modal-close\{position:absolute;top:22px;right:22px;z-index:100/);
+  assert.match(designCss, /\.modal\{width:min\(calc\(100vw - 36px\),420px\);max-width:calc\(100vw - 36px\);min-width:0/);
 });
 
