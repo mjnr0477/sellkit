@@ -501,3 +501,13 @@ test('viewers can steer recommendations with private negative feedback and reset
   assert.match(html, /localStorage\.removeItem\(WATCH_INTEREST_KEY\)/);
   assert.doesNotMatch(html, /sb\.from\(['"]vybora_watch_feedback/);
 });
+
+test('viewers can understand why a video was recommended without sending watch history to the server', () => {
+  assert.match(html, /function recommendationReason\\(post\\)/);
+  assert.match(html, /data-action="why"/);
+  assert.match(html, /action==='why'/);
+  assert.match(html, /currentIntentTokens\.some\(token=>words\.includes\(token\)\)/);
+  assert.match(html, /Because you follow this creator/);
+  assert.match(html, /creator variety/);
+  assert.doesNotMatch(html, /sb\.from\(['"]vybora_watch_interests/);
+});
