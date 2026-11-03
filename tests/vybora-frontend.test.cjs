@@ -49,6 +49,12 @@ test('video upload uses VYBORA storage and database records', () => {
   assert.match(html, /media_path:path/);
   assert.match(html, /expires_at:new Date\(Date\.now\(\)\+24\*60\*60\*1000\)/);
   assert.match(html, /file\.size>10\*1024\*1024/);
+  assert.match(html, /async function getSupportedVideoMimeType\(file\)/);
+  assert.match(html, /header\[0\]===0x1a&&header\[1\]===0x45&&header\[2\]===0xdf&&header\[3\]===0xa3/);
+  assert.match(html, /String\.fromCharCode\(\.\.\.header\.slice\(4,8\)\)==='ftyp'/);
+  assert.match(html, /String\.fromCharCode\(\.\.\.header\.slice\(8,12\)\)==='qt  '\?'video\/quicktime':'video\/mp4'/);
+  assert.match(html, /contentType:uploadMime/);
+  assert.match(html, /uploadMime=await getSupportedVideoMimeType\(file\)/);
   assert.match(html, /vybora_record_video_view/);
   assert.match(html, /views_count/);
   assert.match(html, /sb\.from\('vybora_comments'\)\.insert/);
@@ -561,4 +567,18 @@ test('Following feed paginates its own creator-only result set', () => {
   assert.match(html, /\.range\(followingPostOffset,followingPostOffset\+pageSize-1\)/);
   assert.match(html, /followingHasMore=\(rows\|\|\[\]\)\.length===pageSize/);
   assert.match(html, /if\(activeTab==='Following'\)loadMoreFollowingFeed\(\);else\{loadMoreFeed\(\);loadMoreArchiveOnly\(\)\}/);
+});
+
+
+test('video signature detection identifies WebM, MP4, MOV and rejects unrelated files', async () => {
+  const start = html.indexOf('async function getSupportedVideoMimeType(file){');
+  const end = html.indexOf('async function getVideoDuration(file)', start);
+  assert.ok(start >= 0 && end > start, 'video signature helper should be present');
+  const detectMime = vm.runInNewContext('(' + html.slice(start, end).trim() + ')');
+  const fakeFile = bytes => ({ slice: () => ({ arrayBuffer: async () => Uint8Array.from(bytes).buffer }) });
+  assert.equal(await detectMime(fakeFile([0x1a,0x45,0xdf,0xa3,0,0,0,0])), 'video/webm');
+  assert.equal(await detectMime(fakeFile([0,0,0,24,0x66,0x74,0x79,0x70,0x69,0x73,0x6f,0x6d])), 'video/mp4');
+  assert.equal(await detectMime(fakeFile([0,0,0,24,0x66,0x74,0x79,0x70,0x71,0x74,0x20,0x20])), 'video/quicktime');
+  assert.equal(await detectMime(fakeFile([0,1,2,3,4,5,6,7,8,9,10,11])), null);
+  assert.equal(await detectMime({}), null);
 });
