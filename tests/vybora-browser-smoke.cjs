@@ -119,13 +119,13 @@ test('Data Saver defers video bytes until the viewer explicitly presses play', a
       card.className = 'video-card';
       card.dataset.id = 'demo-1';
       card.dataset.mediaUrl = 'https://media.test/clip.mp4';
-      card.innerHTML = '<video data-src="https://media.test/clip.mp4" preload="none"></video><button data-action="play" type="button">Play</button>';
+      card.innerHTML = '<video data-src="https://media.test/clip.mp4" preload="none"></video><button class="play-toggle" data-action="play" type="button">Play</button>';
       document.querySelector('#feed').replaceChildren(card);
     });
     const video = page.locator('#feed video');
     assert.equal(await video.getAttribute('src'), null, 'video bytes must not be requested before playback');
     assert.equal(await video.getAttribute('data-src'), 'https://media.test/clip.mp4');
-    await page.locator('#feed [data-action="play"]').evaluate(button => button.click());
+    await page.locator('#feed [data-action="play"]').click();
     await page.waitForFunction(() => document.querySelector('#feed video')?.getAttribute('src') === 'https://media.test/clip.mp4');
     assert.equal(await video.getAttribute('preload'), 'auto', 'explicit playback should opt into loading the clip');
   } finally {
