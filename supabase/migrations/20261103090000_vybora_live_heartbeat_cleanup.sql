@@ -15,7 +15,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = pg_catalog, public
-as $
+as $touch$
 begin
   update public.vybora_live_sessions
      set heartbeat_at = clock_timestamp()
@@ -24,7 +24,7 @@ begin
      and status = 'live';
   return found;
 end;
-$;
+$touch$;
 
 revoke all on function public.vybora_touch_live_session(uuid) from public, anon;
 grant execute on function public.vybora_touch_live_session(uuid) to authenticated;
