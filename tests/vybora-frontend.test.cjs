@@ -821,7 +821,7 @@ test('stale live cleanup preserves participant authorization during terminal-eve
 });
 
 
-test('PeerTube expands open-licensed discovery and rejects private, mature, and live results from the watch feed', () => {
+test('clean discovery blocks explicit sexual violence, graphic harm, extremist and hate content metadata', () => {\n  assert.match(html, /sexual assault\|rape\|erotic/);\n  assert.match(html, /execution\|murder\|snuff/);\n  assert.match(html, /terrorist propaganda\|extremist\|hate speech/);\n});\n\ntest('PeerTube expands open-licensed discovery and rejects private, mature, and live results from the watch feed', () => {
   assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm='short film'\)/);
   assert.match(html, /https:\/\/sepiasearch\.org\/api\/v1\/search\/videos/);
   assert.match(html, /licenceOneOf:'1,2,7,8'/);
