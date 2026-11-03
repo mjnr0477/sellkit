@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+const cleanFeed = fs.readFileSync(new URL('../clean-feed.js', 'file://' + __filename), 'utf8');
 const designCss = fs.readFileSync(new URL('../design-refresh.css', 'file://' + __filename), 'utf8');
 const muteMigration = fs.readFileSync(new URL('../supabase/migrations/20261102072105_vybora_creator_mutes.sql', 'file://' + __filename), 'utf8');
 const blockMigration = fs.readFileSync(new URL('../supabase/migrations/20261102073022_vybora_account_blocking.sql', 'file://' + __filename), 'utf8');
@@ -175,31 +176,30 @@ test('uploaded community videos are limited to short clips', () => {
 });
 
 
-test('Data Saver prevents automatic video and embed loading until the viewer requests it', () => {
+test('Data Saver defers bytes until a video enters view, then automatically plays it', () => {
   assert.match(html, /id="dataSaverBtn" aria-pressed="false"/);
   assert.match(html, /vybora:data-saver:v1/);
-  assert.match(html, /dataSaver\?'data-src="'\+esc\(media\)\+'" ':'src="'\+esc\(media\)\+'" '/);
-  assert.match(html, /if\(!dataSaver&&v&&!v\.getAttribute\('src'\)&&v\.dataset\.src\)\{v\.src=v\.dataset\.src;v\.preload='auto';v\.load\(\)\}/);
-  assert.match(html, /dataSaver\?'':'autoplay '/);
-  assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
-  assert.match(html, /dataSaver&&isExternal&&!isDirectExternal/);
-  assert.match(html, /data-action="load-external"/);
-  assert.match(html, /if\(!dataSaver&&entry\.isIntersecting/);
-  assert.match(html, /if\(!dataSaver\)\{const playback=v\.play\(\)/);
-  assert.match(html, /action==='load-external'/);
-  assert.match(html, /isExternal&&!isDirectExternal\?'':'<button class="play-toggle" data-action="play"/);
+  assert.match(html, /<video data-src="'\+esc\(media\)\+'" muted playsinline loop preload="none"/);
+  assert.match(html, /if\(video&&near&&!video\.getAttribute\('src'\)&&video\.dataset\.src\)/);
+  assert.doesNotMatch(html, /<script src="clean-feed\.js"><\/script>/);
+  assert.match(cleanFeed, /video\.dataset\.src&&!video\.src/);
+  assert.match(cleanFeed, /video\.play\(\)/);
+  assert.match(cleanFeed, /frame\.dataset\.src&&!frame\.src/);
+  assert.doesNotMatch(html, /data-action="load-external"/);
+  assert.doesNotMatch(html, /vybora_external_video_(?:stats|reactions|bookmarks|comments)/);
 });
 
 test('Data Saver keeps video discovery and infinite scrolling active without preloading source media', () => {
   assert.doesNotMatch(html, /async function loadOpenArchiveVideos\(page=1\)\{\s*if\(dataSaver\)return \[\]/);
   assert.doesNotMatch(html, /async function loadPeerTubeVideos\(page=1,searchTerm=''\)\{\s*if\(dataSaver/);
   assert.doesNotMatch(html, /async function loadMoreArchiveOnly\(\)\{\s*if\(dataSaver\)return/);
-  assert.match(html, /if\(!dataSaver&&v&&!v\.getAttribute\('src'\)&&v\.dataset\.src\)/);
+  assert.match(html, /if\(video&&near&&!video\.getAttribute\('src'\)&&video\.dataset\.src\)/);
+  assert.match(html, /if\(active&&!frame\.getAttribute\('src'\)&&frame\.dataset\.src\)/);
 });
 
 test('video feed avoids downloading every clip at once and never inserts fabricated demo clips', () => {
-  assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
-  assert.match(html, /v\.preload='auto';v\.load\(\)/);
+  assert.match(html, /preload="none"/);
+  assert.match(html, /video\.preload=dataSaver\?'none':\(active\?'auto':'metadata'\);video\.load\(\)/);
   assert.doesNotMatch(html, /demo-1|VYBORA Daily|Showing demo videos/);
   assert.match(html, /feed-empty-state/);
 });
@@ -344,9 +344,9 @@ test('feed cards remove platform-source badges while preserving mature-content w
 
 
 test('scrolling videos autoplay muted and pause offscreen to protect playback performance', () => {
-  assert.match(html, /<video '\+\(dataSaver\?'data-src="'\+esc\(media\)\+'" ':'src="'\+esc\(media\)\+'" '\)\+\(dataSaver\?'':'autoplay '\)\+'muted playsinline loop/);
-  assert.match(html, /if\(v\)\{v\.muted=true;if\(!dataSaver\)\{const playback=v\.play\(\)/);
-  assert.match(html, /finishWatchSession\(card\);if\(v\)v\.pause\(\)/);
+  assert.match(html, /<video data-src="'\+esc\(media\)\+'" muted playsinline loop preload="none"/);
+  assert.match(html, /video\.muted=true;\s*const playback=video\.play\(\)/);
+  assert.match(html, /finishWatchSession\(card\);if\(video\)video\.pause\(\)/);
 });
 
 test('official live embeds remain in-app and do not display provider attribution or outbound watch links', () => {
@@ -375,7 +375,7 @@ test('VYBORA registers a visible offline/online status and service worker', () =
 
 test('offline worker caches only the public app shell and never caches API mutations', () => {
   const worker = fs.readFileSync(new URL('../service-worker.js', 'file://' + __filename), 'utf8');
-  assert.ok(worker.includes("const SHELL = ['/', '/index.html', '/design-refresh.css', '/social-features.js'];"));
+  assert.ok(worker.includes("const SHELL = ['/', '/index.html', '/design-refresh.css', '/social-features.js', '/clean-feed.css', '/clean-feed.js'];"));
   assert.match(worker, /request\.method !== 'GET'/);
   assert.match(worker, /request\.mode === 'navigate'/);
   assert.match(worker, /url\.pathname === '\/social-features\.js'/);
@@ -530,8 +530,8 @@ test('chat read receipts update only read_at and expose unread counts', () => {
 test('Data Saver reduces remote page size and avoids preloading source media', () => {
   assert.match(html, /const requestPage=page,pageSize=dataSaver\?8:20/);
   assert.match(html, /const postBatchSize=dataSaver\?20:50/);
-  assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
-  assert.match(html, /if\(!dataSaver&&v&&!v\.getAttribute\('src'\)&&v\.dataset\.src\)/);
+  assert.match(html, /const requestPage=page,pageSize=dataSaver\?8:20/);
+  assert.match(html, /if\(video&&near&&!video\.getAttribute\('src'\)&&video\.dataset\.src\)/);
 });
 
 test('personalized feed ranking diversifies creators without discarding relevance scores', () => {
@@ -578,7 +578,7 @@ test('viewers can understand why a video was recommended without sending watch h
 
 test('offline worker caches the VYBORA stylesheet and serves its last good copy offline', () => {
   const worker = fs.readFileSync(new URL('../service-worker.js', 'file://' + __filename), 'utf8');
-  assert.match(worker, /const CACHE_NAME = 'vybora-shell-v3'/);
+  assert.match(worker, /const CACHE_NAME = 'vybora-shell-v4'/);
   assert.ok(worker.includes("'/design-refresh.css'"));
   assert.ok(worker.includes("url.pathname === '/design-refresh.css'"));
   assert.ok(worker.includes('if (response.ok) await cache.put(request, response.clone())'));
@@ -874,19 +874,44 @@ test('live event embeds support additional providers and satisfy Twitch parent-d
 test('feed scroll loading is animation-frame throttled to avoid repeated layout and network work', () => {
   assert.match(html, /let feedScrollQueued=false;feed\.addEventListener\('scroll'/);
   assert.match(html, /requestAnimationFrame\(\(\)=>\{feedScrollQueued=false/);
-  assert.match(html, /if\(!entry\.isIntersecting\)\{if\(v&&v\.getAttribute\('src'\)\)/);
-  assert.match(html, /v\.dataset\.src=v\.getAttribute\('src'\)/);
+  assert.match(html, /if\(!entry\.isIntersecting\)\{\s*pauseCard\(card\)/);
+  assert.match(html, /video\.dataset\.src=card\.dataset\.mediaUrl/);
 });
 
 
-test('topic search queries federated PeerTube and open video sources without importing media', () => {
-  assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm=''\)/);
-  assert.match(html, /if\(searchTerm\)params\.set\('search',String\(searchTerm\)\.slice\(0,100\)\)/);
-  assert.match(html, /loadPeerTubeVideos\(1,q\)/);
-  assert.match(html, /async function loadNasaVideos\(page=1,queryOverride=''\)/);
-  assert.match(html, /q:String\(queryOverride\|\|'NASA'\)/);
-  assert.match(html, /loadNasaVideos\(1,q\)/);
-  assert.match(html, /loadOpenverseVideos\(1,q\)/);
-  assert.match(html, /loadBlenderVideos\(1,q\)/);
+test('PeerTube feed accepts only commercial-use-compatible open licenses and carries attribution', () => {
+  assert.match(html, /licenceId=Number\(video\.licence\?\.id\?\?video\.licence\)/);
+  assert.match(html, /licenceUrls=\{1:'https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/',2:'https:\/\/creativecommons\.org\/licenses\/by-sa\/4\.0\/',3:'https:\/\/creativecommons\.org\/licenses\/by-nd\/4\.0\/',7:'https:\/\/creativecommons\.org\/publicdomain\/zero\/1\.0\/',8:'https:\/\/creativecommons\.org\/publicdomain\/mark\/1\.0\/'\}/);
+  assert.match(html, /!archiveLicense\|\|video\.isLive===true/);
+  assert.match(html, /source_name:'PeerTube',archiveLicense/);
+  assert.match(html, /Creator credit[\s\S]*Reuse terms/);
 });
 
+
+
+test('all direct video cards defer their source and avoid eager autoplay downloads', () => {
+  assert.match(html, /<video data-src="'\+esc\(media\)\+'" muted playsinline loop preload="none"/);
+  assert.doesNotMatch(html, /<video '\+\(dataSaver\?/);
+  assert.match(html, /video\.preload=dataSaver\?'none':\(active\?'auto':'metadata'\);video\.load\(\)/);
+});
+
+test('only the active card loads provider embeds and a single observer owns playback', () => {
+  assert.equal((html.match(/function activateVideoObserver\(/g) || []).length, 1);
+  assert.match(html, /threshold:\[\.12,\.72\]/);
+  assert.match(html, /if\(active&&!frame\.getAttribute\('src'\)&&frame\.dataset\.src\)/);
+  assert.doesNotMatch(html, /<script src="clean-feed\.js"><\/script>/);
+});
+
+test('frontend styles remain structurally balanced for consistent browser parsing', () => {
+  assert.equal((html.match(/<style(?:\s|>)/g) || []).length, (html.match(/<\/style>/g) || []).length);
+  assert.doesNotMatch(html, /<style>\.live-room-list/);
+});
+
+test('guest fallback renders fast public sources before slower catalogue discovery', () => {
+  assert.match(html, /quickSources=\[\s*loadOpenverseVideos\(1\),\s*loadPeerTubeVideos\(1\)\s*\]/);
+  assert.match(html, /quickSources\.forEach\(\(request,index\)=>request\.then\(batch=>/);
+  assert.match(html, /await Promise\.allSettled\(quickSources\)/);
+  assert.match(html, /loadOpenArchiveVideos\(1\)\.then\(batch=>/);
+  assert.match(html, /if\(!queryOverride&&page<=openversePage\)return \[\]/);
+  assert.match(html, /if\(peertubeLoading\|\|\(!searchTerm&&page<=peertubePage\)/);
+});

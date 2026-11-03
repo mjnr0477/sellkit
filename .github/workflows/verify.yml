@@ -27,6 +27,10 @@ jobs:
           node-version: 22
       - name: Verify production interface and safety invariants
         run: node scripts/verify-production.mjs
+      - name: Verify clean-feed JavaScript syntax and autoplay lifecycle
+        run: |
+          node --check clean-feed.js
+          node --test tests/clean-feed.test.cjs tests/video-startup-contract.test.cjs
       - name: Build Android live-site launcher
         run: npm run build:web
       - name: Verify generated launcher

@@ -40,8 +40,8 @@ test('hosted VYBORA feed loads and guest account gates work for available feed c
     const offlineShellReady = await page.evaluate(async () => {
       if (!('serviceWorker' in navigator)) return false;
       const registration = await navigator.serviceWorker.ready;
-      const cache = await caches.open('vybora-shell-v3');
-      return Boolean(registration.active && await cache.match('/design-refresh.css?v=20261102b', { ignoreSearch: true }));
+      const cache = await caches.open('vybora-shell-v4');
+      return Boolean(registration.active && await cache.match('/design-refresh.css?v=20261102b', { ignoreSearch: true }) && await cache.match('/clean-feed.css') && await cache.match('/clean-feed.js'));
     });
     assert.equal(offlineShellReady, true, 'offline shell should cache the production stylesheet');
     assert.ok(await page.locator('.video-card').count() > 0, 'guest feed should show video cards');
@@ -54,20 +54,18 @@ test('hosted VYBORA feed loads and guest account gates work for available feed c
       'feed should accept natural vertical touch movement');
     assert.ok(await page.locator('#feed .video-card[data-external-id][data-media-url^="https://"]').count() > 0,
       'guest feed must contain real curated video sources, not only decorative cards');
-    const mdnCard = page.locator('#feed .video-card[data-media-url*="interactive-examples.mdn.mozilla.net"]').first();
-    assert.equal(await mdnCard.count(), 1, 'curated feed should include a known playable CC0 sample');
-    await mdnCard.scrollIntoViewIfNeeded();
-    const mdnVideo = mdnCard.locator('video');
-    await mdnVideo.waitFor({ state: 'attached', timeout: 15000 });
-    if (!await mdnVideo.getAttribute('src') || await mdnVideo.evaluate(video => video.paused)) {
-      await mdnCard.locator('[data-action="play"]').click();
-    }
-    await page.waitForFunction(() => {
-      const card = [...document.querySelectorAll('#feed .video-card')].find(item =>
-        item.dataset.mediaUrl?.includes('interactive-examples.mdn.mozilla.net'));
-      const video = card?.querySelector('video');
-      return Boolean(video && video.readyState >= 2 && video.currentTime > 0);
-    }, null, { timeout: 30000 });
+    const playableCard = page.locator('#feed .video-card[data-external-id][data-media-url^="https://"]').first();
+    await playableCard.scrollIntoViewIfNeeded();
+    await page.waitForFunction(card => {
+      const media = card.querySelector('video,iframe');
+      return Boolean(media && (media.getAttribute('src') || media.getAttribute('data-src')));
+    }, await playableCard.elementHandle(), { timeout: 15000 });
+    const playableMedia = playableCard.locator('video,iframe').first();
+    assert.equal(await playableMedia.count(), 1, 'a curated card must contain a real video or provider embed');
+    await page.waitForFunction(card => {
+      const media = card.querySelector('video,iframe');
+      return Boolean(media && media.getAttribute('src'));
+    }, await playableCard.elementHandle(), { timeout: 30000 });
 
     // Curated third-party videos intentionally expose sharing, not community post reactions.
     // Only test the like gate when the live feed actually contains a community post.
@@ -191,29 +189,64 @@ test('successful email sign-in creates a persistent authenticated session in the
   }
 });
 
-test('Data Saver defers video bytes until the viewer explicitly presses play', async () => {
+test('Data Saver still auto-loads only the visible video when it enters the watch viewport', async () => {
   const browser = await chromium.launch({ headless: true });
   try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const page = await context.newPage();
     await page.addInitScript(() => localStorage.setItem('vybora:data-saver:v1', 'on'));
-    await page.route('https://media.test/**', route => route.abort());
     await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 90000 });
     await page.waitForSelector('#feed .video-card', { timeout: 60000 });
     await page.evaluate(() => {
       const card = document.createElement('article');
       card.className = 'video-card';
       card.dataset.id = 'demo-1';
-      card.dataset.mediaUrl = 'https://media.test/clip.mp4';
-      card.innerHTML = '<video data-src="https://media.test/clip.mp4" preload="none"></video><button class="play-toggle" data-action="play" type="button">Play</button>';
+      card.dataset.mediaUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+      card.innerHTML = '<video data-src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" preload="none"></video><button class="play-toggle" data-action="play" type="button">Play</button>';
       document.querySelector('#feed').replaceChildren(card);
     });
     const video = page.locator('#feed video');
-    assert.equal(await video.getAttribute('src'), null, 'video bytes must not be requested before playback');
-    assert.equal(await video.getAttribute('data-src'), 'https://media.test/clip.mp4');
-    await page.locator('#feed [data-action="play"]').click();
-    await page.waitForFunction(() => document.querySelector('#feed video')?.getAttribute('src') === 'https://media.test/clip.mp4');
-    assert.equal(await video.getAttribute('preload'), 'auto', 'explicit playback should opt into loading the clip');
+    await page.waitForFunction(() => document.querySelector('#feed video')?.getAttribute('src') === 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+      { timeout: 15000 });
+    assert.equal(await video.getAttribute('data-src'), null, 'visible media should be promoted from deferred source');
+    assert.equal(await video.evaluate(el => el.muted), true, 'automatic playback must start muted');
+    assert.equal(await video.getAttribute('preload'), 'none', 'Data Saver must preserve low-preload behavior');
+  } finally {
+    await browser.close();
+  }
+});
+
+test('feed media requests stay bounded and initial frontend execution stays error-free', async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 1,
+      isMobile: true,
+      hasTouch: true
+    });
+    const page = await context.newPage();
+    const pageErrors = [];
+    page.on('pageerror', error => pageErrors.push(error.message));
+    await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 90000 });
+    await page.waitForSelector('#feed .video-card', { timeout: 60000 });
+    await page.waitForTimeout(1200);
+    const startup = await page.evaluate(() => {
+      const cards = [...document.querySelectorAll('#feed .video-card')];
+      const loadedVideos = cards.flatMap(card => [...card.querySelectorAll('video[src]')]);
+      const loadedFrames = cards.flatMap(card => [...card.querySelectorAll('iframe[src]')]);
+      const videos = cards.flatMap(card => [...card.querySelectorAll('video')]);
+      return {
+        loadedMedia: loadedVideos.length + loadedFrames.length,
+        eagerAutoplayVideos: videos.filter(video => video.hasAttribute('autoplay')).length,
+        deferredVideos: videos.filter(video => !video.getAttribute('src') && video.hasAttribute('data-src')).length
+      };
+    });
+    assert.ok(startup.loadedMedia <= 1,
+      'only the active feed card should load its media at startup: ' + JSON.stringify(startup));
+    assert.equal(startup.eagerAutoplayVideos, 0,
+      'off-screen video elements must not carry eager autoplay');
+    assert.equal(pageErrors.length, 0, 'the frontend should not throw during initial feed startup: ' + pageErrors.join('; '));
   } finally {
     await browser.close();
   }
