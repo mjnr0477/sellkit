@@ -48,8 +48,12 @@ test('hosted VYBORA feed loads and guest account gates work for available feed c
     assert.equal(await page.locator('[data-tab="Watch"]').count(), 1, 'watch navigation should exist');
     assert.equal(await page.locator('#createBtn').count(), 1, 'create navigation should exist');
     assert.equal(await page.locator('#savedOpenBtn').count(), 1, 'saved-video library should exist');
-    assert.equal(await page.locator('#feed').evaluate(el => getComputedStyle(el).scrollSnapType.includes('y')), true,
-      'feed should use vertical scroll snapping');
+    assert.equal(await page.locator('#feed').evaluate(el => getComputedStyle(el).scrollSnapType), 'none',
+      'steering feed should not force snap scrolling');
+    assert.match(await page.locator('#feed').evaluate(el => getComputedStyle(el).touchAction), /pan-y/,
+      'feed should accept natural vertical touch movement');
+    assert.ok(await page.locator('#feed .video-card[data-external-id][data-media-url^="https://"]').count() > 0,
+      'guest feed must contain real curated video sources, not only decorative cards');
 
     // Curated third-party videos intentionally expose sharing, not community post reactions.
     // Only test the like gate when the live feed actually contains a community post.
@@ -99,6 +103,25 @@ await activateTopmostControl('#authClose');
     await page.locator('#authSwitch').click();
     assert.equal(await page.locator('#forgotPassword').isVisible(), true,
       'forgot-password action should be available during sign-in');
+    assert.equal(await page.locator('#resendConfirmation').isVisible(), false,
+      'confirmation resend should stay hidden until an unconfirmed account is detected');
+    let resendRequested = false;
+    await page.route(/\/auth\/v1\/token\?grant_type=password$/, route => route.fulfill({
+      status: 400, contentType: 'application/json',
+      body: JSON.stringify({ code: 'email_not_confirmed', msg: 'Email not confirmed' })
+    }));
+    await page.route(/\/auth\/v1\/resend(?:\?|$)/, route => {
+      resendRequested = true;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    await page.locator('#email').fill('browser-test@example.com');
+    await page.locator('#password').fill('not-a-real-password');
+    await page.locator('#authSubmit').click();
+    await page.locator('#resendConfirmation').waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('#resendConfirmation').click();
+    await page.waitForFunction(() => document.querySelector('#notice')?.classList.contains('show') ||
+      document.querySelector('.notice')?.classList.contains('show'), { timeout: 15000 });
+    assert.equal(resendRequested, true, 'unconfirmed accounts should be able to request a new confirmation email');
   } finally {
     await browser.close();
   }
