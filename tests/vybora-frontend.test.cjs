@@ -199,7 +199,7 @@ test('Data Saver keeps video discovery and infinite scrolling active without pre
 
 test('video feed avoids downloading every clip at once and never inserts fabricated demo clips', () => {
   assert.match(html, /preload="none"/);
-  assert.match(html, /video\.preload=active\?'auto':'metadata';video\.load\(\)/);
+  assert.match(html, /video\.preload=dataSaver\?'none':\(active\?'auto':'metadata'\);video\.load\(\)/);
   assert.doesNotMatch(html, /demo-1|VYBORA Daily|Showing demo videos/);
   assert.match(html, /feed-empty-state/);
 });
