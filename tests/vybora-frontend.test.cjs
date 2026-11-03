@@ -906,3 +906,11 @@ test('frontend styles remain structurally balanced for consistent browser parsin
   assert.equal((html.match(/<style(?:\\s|>)/g) || []).length, (html.match(/<\\/style>/g) || []).length);
   assert.doesNotMatch(html, /<style>\\.live-room-list/);
 });
+
+test('guest fallback renders fast public sources before slower catalogue discovery', () => {
+  assert.match(html, /loadOpenverseVideos\(1\)\.catch[\s\S]*?loadPeerTubeVideos\(1\)\.catch/);
+  assert.match(html, /posts=rankFeedItems\(\[\.\.\.\(openverse\|\|\[\]\),\.\.\.\(peerTube\|\|\[\]\)\]\)/);
+  assert.match(html, /loadOpenArchiveVideos\(1\)\.then\(batch=>/);
+  assert.match(html, /if\(!queryOverride&&page<=openversePage\)return \[\]/);
+  assert.match(html, /if\(peertubeLoading\|\|\(!searchTerm&&page<=peertubePage\)/);
+});
