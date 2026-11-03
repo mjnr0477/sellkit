@@ -689,7 +689,7 @@ test('live signaling waits for realtime readiness and reconciles viewers that jo
   assert.match(signaling, /if\(host\)\{const \{data,error\}=await sb\.from\('vybora_live_participants'\)\.select\('user_id'\)/);
   assert.match(signaling, /for\(const participant of data\|\|\[\]\)await offerViewer\(participant\.user_id\)/);
   assert.match(socialSource, /liveSay\('Joining live…'\);try\{await liveRealtime\(\)\}/);
-  assert.match(socialSource, /liveSay\('You are live\. Keep this screen open\.'\);try\{await liveRealtime\(\)\}/);
+  assert.match(socialSource, /liveSay\('You are live\. Keep this screen open\.'\);try\{await liveRealtime\(\);startLiveHeartbeat\(\)\}/);
   assert.match(socialSource, /async function offerViewer\(id\)[\s\S]*?pc\.close\(\);peers\.delete\(id\)/);
 });
 
