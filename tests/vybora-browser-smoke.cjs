@@ -142,6 +142,50 @@ await activateTopmostControl('#authClose');
 });
 
 
+test('successful email sign-in creates a persistent authenticated session in the UI', async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const page = await context.newPage();
+    const now = Math.floor(Date.now() / 1000);
+    const jwtPart = value => Buffer.from(JSON.stringify(value)).toString('base64url');
+    const token = jwtPart({ alg: 'HS256', typ: 'JWT' }) + '.' + jwtPart({
+      sub: '00000000-0000-4000-8000-000000000123', aud: 'authenticated', role: 'authenticated',
+      email: 'signed-in-browser@example.com', iat: now, exp: now + 3600
+    }) + '.browser-test-signature';
+    await page.route(/\\/auth\\/v1\\/token\\?grant_type=password$/, route => route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        access_token: token, token_type: 'bearer', expires_in: 3600, refresh_token: 'browser-test-refresh',
+        user: {
+          id: '00000000-0000-4000-8000-000000000123', aud: 'authenticated', role: 'authenticated',
+          email: 'signed-in-browser@example.com', email_confirmed_at: new Date().toISOString(),
+          app_metadata: { provider: 'email', providers: ['email'] }, user_metadata: {},
+          identities: [], created_at: new Date().toISOString()
+        }
+      })
+    }));
+    await page.route(/\\/rest\\/v1\\//, route => route.fulfill({
+      status: route.request().method() === 'POST' ? 201 : 200,
+      contentType: 'application/json', body: '[]'
+    }));
+    await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 90000 });
+    await page.waitForSelector('#feed .video-card', { timeout: 60000 });
+    await page.locator('#accountBtn').click();
+    await page.locator('#authSwitch').click();
+    await page.locator('#email').fill('signed-in-browser@example.com');
+    await page.locator('#password').fill('ValidTestPassword123!');
+    await page.locator('#authSubmit').click();
+    await page.waitForFunction(() => document.querySelector('#accountStatus')?.innerText.includes('Signed in'),
+      { timeout: 20000 });
+    assert.match(await page.locator('#accountStatus').innerText(), /Signed in/);
+    assert.equal(await page.locator('#authBackdrop').isVisible(), false,
+      'successful sign-in should close the authentication modal');
+  } finally {
+    await browser.close();
+  }
+});
+
 test('Data Saver defers video bytes until the viewer explicitly presses play', async () => {
   const browser = await chromium.launch({ headless: true });
   try {
