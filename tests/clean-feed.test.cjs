@@ -40,7 +40,7 @@ function harness() {
   const source = fs.readFileSync(require.resolve('../clean-feed.js'), 'utf8');
   vm.runInNewContext(source, { document, IntersectionObserver: MockIntersectionObserver,
     MutationObserver: MockMutationObserver, URL, JSON, Set });
-  return { observer, video, frame, card, feed, feedListeners, document, documentListeners };
+  return { observer, video, frame, frameMessages, card, feed, feedListeners, document, documentListeners };
 }
 
 test('visible video lazy-loads and starts muted automatically', async () => {
@@ -61,7 +61,9 @@ test('off-screen media pauses and visible playback resumes after tab visibility 
   h.observer.callback([{ target: h.card, isIntersecting: false, intersectionRatio: 0 }]);
   assert.equal(h.video.paused, true);
   assert.equal(h.video.currentTime, 0);
-  assert.equal(h.frame.src, '');
+  assert.equal(h.frame.src, 'https://www.youtube-nocookie.com/embed/demo?autoplay=1&mute=1');
+  assert.equal(h.frameMessages.length, 1);
+  assert.equal(h.frameMessages[0][1], 'https://www.youtube-nocookie.com');
   assert.equal(h.frame.dataset.src, 'https://www.youtube-nocookie.com/embed/demo?autoplay=1&mute=1');
   h.observer.callback([{ target: h.card, isIntersecting: true, intersectionRatio: 0.9 }]);
   h.document.hidden = true;
