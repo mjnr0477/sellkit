@@ -387,7 +387,7 @@ test('live WebRTC buffers early ICE candidates until remote descriptions are rea
   const social = fs.readFileSync(new URL('../social-features.js', 'file://' + __filename), 'utf8');
   assert.match(social, /pendingIce=new Map\(\)/);
   assert.match(social, /async function setRemoteAndDrain\(pc,id,description\)/);
-  assert.match(social, /if\(pc\?\.remoteDescription\)await pc\.addIceCandidate\(x\.payload\);else\{let queued=pendingIce\.get\(x\.sender_id\)\|\|\[\]/);
+  assert.match(social, /if\(pc\?\.remoteDescription\)await pc\.addIceCandidate\(x\.payload\);else\{const queued=pendingIce\.get\(x\.sender_id\)\|\|\[\]/);
   assert.match(social, /for\(const candidate of queued\)await pc\.addIceCandidate\(candidate\)/);
   assert.match(social, /pendingIce\.clear\(\)/);
 });
