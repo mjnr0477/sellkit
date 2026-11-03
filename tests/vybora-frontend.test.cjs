@@ -387,7 +387,7 @@ test('live WebRTC buffers early ICE candidates until remote descriptions are rea
   const social = fs.readFileSync(new URL('../social-features.js', 'file://' + __filename), 'utf8');
   assert.match(social, /pendingIce=new Map\(\)/);
   assert.match(social, /async function setRemoteAndDrain\(pc,id,description\)/);
-  assert.match(social, /if\(pc\?\.remoteDescription\)await pc\.addIceCandidate\(x\.payload\);else\{let queued=pendingIce\.get\(x\.sender_id\)\|\|\[\]/);
+  assert.match(social, /if\(pc\?\.remoteDescription\)await pc\.addIceCandidate\(x\.payload\);else\{const queued=pendingIce\.get\(x\.sender_id\)\|\|\[\]/);
   assert.match(social, /for\(const candidate of queued\)await pc\.addIceCandidate\(candidate\)/);
   assert.match(social, /pendingIce\.clear\(\)/);
 });
@@ -675,4 +675,18 @@ test('Following feed hydrates profile and interaction state concurrently', () =>
 test('turning Data Saver off preserves the current Search view', () => {
   assert.match(html, /render\(\);if\(activeTab==='Following'&&user\)loadFollowingFeed\(\);else if\(!dataSaver\)refreshActiveFeed\(\);tell\(dataSaver\?/);
   assert.match(html, /async function refreshActiveFeed\(\)\{if\(activeTab==='Following'&&user\)return loadFollowingFeed\(\);if\(activeTab==='Search'\)return searchVideos\(\$\('searchInput'\)\.value\);return loadFeed\(\)\}/);
+});
+
+
+test('live signaling waits for realtime readiness and reconciles viewers that joined during host startup', () => {
+  const start = socialSource.indexOf('async function liveRealtime()');
+  const end = socialSource.indexOf('async function refreshLive()', start);
+  const signaling = socialSource.slice(start, end);
+  assert.ok(start >= 0 && end > start, 'live signaling implementation should exist');
+  assert.match(signaling, /next\.subscribe\(status=>\{if\(status==='SUBSCRIBED'\)resolve\(\)/);
+  assert.match(signaling, /if\(host\)\{const \{data,error\}=await sb\.from\('vybora_live_participants'\)\.select\('user_id'\)/);
+  assert.match(signaling, /for\(const participant of data\|\|\[\]\)await offerViewer\(participant\.user_id\)/);
+  assert.match(socialSource, /liveSay\('Joining live…'\);try\{await liveRealtime\(\)\}/);
+  assert.match(socialSource, /liveSay\('You are live\. Keep this screen open\.'\);try\{await liveRealtime\(\)\}/);
+  assert.match(socialSource, /async function offerViewer\(id\)[\s\S]*?pc\.close\(\);peers\.delete\(id\)/);
 });
