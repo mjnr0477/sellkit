@@ -320,7 +320,7 @@ async function loadPeerTubeLiveEvents(hub,signal,searchTerm=''){
     }catch(error){console.warn('Skipping unverified PeerTube live stream',error?.message||error);return null}
    }));
    const cards=verified.filter(Boolean);
-   if(cards.length){hub.querySelector('[data-live-search-empty]')?.remove();hub.insertAdjacentHTML('beforeend',cards.join(''));const activeQuery=(hub.querySelector('[data-live-event-search]')?.value||'').trim().toLowerCase();if(activeQuery)hub.querySelectorAll('.peertube-live-event').forEach(card=>{card.hidden=!card.textContent.toLowerCase().includes(activeQuery)})}
+   if(cards.length){hub.querySelector('[data-live-search-empty]')?.remove();hub.insertAdjacentHTML('beforeend',cards.join(''));const activeQuery=(hub.querySelector('[data-live-event-search]')?.value||'').trim().toLowerCase();if(activeQuery&&!searchTerm)hub.querySelectorAll('.peertube-live-event').forEach(card=>{card.hidden=!card.textContent.toLowerCase().includes(activeQuery)})}
    status.textContent=cards.length?(searchTerm?'Matching live streams found.':'Verified live streams from PeerTube. Scroll for more live events.'):hasMore?'No live streams on this page. Keep scrolling to check more verified streams.':'No verified public PeerTube live streams are available right now. Other live sources remain available.';
   }catch(error){console.warn('PeerTube live discovery unavailable',error?.message||error);status.textContent='Federated live discovery is temporarily unavailable. Other live sources remain available.';hasMore=false}
   finally{loading=false}
