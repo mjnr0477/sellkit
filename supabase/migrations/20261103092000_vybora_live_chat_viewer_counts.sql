@@ -11,18 +11,33 @@ update public.vybora_live_sessions s
         and p.user_id <> s.host_id
    );
 
--- Keep active participants able to observe the end-of-live event.
+-- SECURITY DEFINER helper avoids a circular RLS dependency:
+-- live-session SELECT -> participants SELECT -> live-session SELECT.
+create or replace function public.vybora_is_live_participant(p_session_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = pg_catalog, public
+as $participant$
+  select exists (
+    select 1
+      from public.vybora_live_participants p
+     where p.session_id = p_session_id
+       and p.user_id = auth.uid()
+  );
+$participant$;
+
+revoke all on function public.vybora_is_live_participant(uuid) from public, anon;
+grant execute on function public.vybora_is_live_participant(uuid) to authenticated;
+
 drop policy if exists "Vybora active live sessions are public" on public.vybora_live_sessions;
 create policy "Vybora active live sessions are public"
   on public.vybora_live_sessions for select to anon, authenticated
   using (
     status = 'live'
     or host_id = (select auth.uid())
-    or exists (
-      select 1 from public.vybora_live_participants p
-       where p.session_id = vybora_live_sessions.id
-         and p.user_id = (select auth.uid())
-    )
+    or (auth.uid() is not null and public.vybora_is_live_participant(id))
   );
 
 create or replace function public.vybora_zero_live_viewer_count_on_end()
