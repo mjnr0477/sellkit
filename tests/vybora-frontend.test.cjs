@@ -519,3 +519,12 @@ test('viewers can understand why a video was recommended without sending watch h
   assert.match(html, /creator variety/);
   assert.doesNotMatch(html, /sb\.from\(['"]vybora_watch_interests/);
 });
+
+test('offline worker caches the VYBORA stylesheet and serves its last good copy offline', () => {
+  const worker = fs.readFileSync(new URL('../service-worker.js', 'file://' + __filename), 'utf8');
+  assert.match(worker, /const CACHE_NAME = 'vybora-shell-v3'/);
+  assert.match(worker, /const SHELL = \\[.*?\\/design-refresh\\.css.*?\\]/);
+  assert.match(worker, /url\\.pathname === '\\/design-refresh\\.css'/);
+  assert.match(worker, /if\\(response\\.ok\\) await cache\\.put\\(request, response\\.clone\\(\\)\\)/);
+  assert.match(worker, /cache\\.match\\(request\\)\\) \\|\\| Response\\.error\\(\\)/);
+});
