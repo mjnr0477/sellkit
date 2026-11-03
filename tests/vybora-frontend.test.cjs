@@ -589,6 +589,6 @@ test('creators can delete only their own posts and uploaded media', () => {
   assert.match(html, /if\(action==='delete'\)\{if\(!user\|\|post\.author_id!==user\.id/);
   assert.match(html, /sb\.storage\.from\('vybora-media'\)\.remove\(\[post\.media_path\]\)/);
   assert.match(html, /sb\.from\('vybora_posts'\)\.delete\(\)\.eq\('id',post\.id\)\.eq\('author_id',user\.id\)/);
-  assert.match(html, /post\.media_path\)\{if\(!String\(post\.media_path\)\.startsWith\(user\.id\+'\\/'\)\)/);
+  assert.ok(html.includes("post.media_path){if(!String(post.media_path).startsWith(user.id+'/'))"));
   assert.doesNotMatch(html, /update\(\{expires_at:new Date\(\)\.toISOString\(\)\}\)/);
 });
