@@ -595,7 +595,7 @@ test('creators can delete only their own posts and uploaded media', () => {
 
 
 test('search results preserve mute and block preferences when refreshed', () => {
-  assert.match(html, /filter\(p=>\(p\.body\+' '\+\(p\.username\|\|' '\)\+' '\+\(p\.handle\|\|' '\)\)\.toLowerCase\(\)\.includes\(q\.toLowerCase\(\)\)&&!mutedAuthors\.has\(p\.author_id\)&&!blockedAuthors\.has\(p\.author_id\)\)/);
+  assert.match(html, /filter\(p=>\(p\.body\+' '\+\(p\.username\|\|''\)\+' '\+\(p\.handle\|\|''\)\)\.toLowerCase\(\)\.includes\(q\.toLowerCase\(\)\)&&!mutedAuthors\.has\(p\.author_id\)&&!blockedAuthors\.has\(p\.author_id\)\)/);
   assert.match(html, /const dbPosts=\(postResult\.data\|\|\[\]\)\.filter\(p=>\(window\.vyboraAllowMature\|\|!p\.mature_content\)&&!mutedAuthors\.has\(p\.author_id\)&&!blockedAuthors\.has\(p\.author_id\)\)/);
 });
 
