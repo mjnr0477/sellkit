@@ -52,6 +52,8 @@ test('video upload uses VYBORA storage and database records', () => {
   assert.match(html, /async function isSupportedVideoFile\(file\)/);
   assert.match(html, /header\[0\]===0x1a&&header\[1\]===0x45&&header\[2\]===0xdf&&header\[3\]===0xa3/);
   assert.match(html, /String\.fromCharCode\(\.\.\.header\.slice\(4,8\)\)==='ftyp'/);
+  assert.match(html, /String\.fromCharCode\(\.\.\.header\.slice\(8,12\)\)==='qt  '\?'video\/quicktime':'video\/mp4'/);
+  assert.match(html, /contentType:uploadMime/);
   assert.match(html, /const validVideo=await isSupportedVideoFile\(file\)/);
   assert.match(html, /vybora_record_video_view/);
   assert.match(html, /views_count/);
