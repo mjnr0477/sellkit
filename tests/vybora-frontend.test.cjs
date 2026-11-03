@@ -250,7 +250,7 @@ test('official live-event feed embeds only recently verified active events and h
   assert.match(html, /\.eq\('status','live'\)/);
   assert.match(html, /last_verified_at&&now-Date\.parse\(e\.last_verified_at\)<60\*60\*1000/);
   assert.match(html, /class="official-live-player"/);
-  assert.match(html, /const allowed=\['youtube\.com','www\.youtube\.com','www\.youtube-nocookie\.com','player\.vimeo\.com','vimeo\.com','www\.twitch\.tv','player\.twitch\.tv'\]/);
+  assert.match(html, /const allowed=\['youtube\.com','www\.youtube\.com','www\.youtube-nocookie\.com','player\.vimeo\.com','vimeo\.com','www\.twitch\.tv','player\.twitch\.tv','geo\.dailymotion\.com','player\.kick\.com'\]/);
   assert.doesNotMatch(html, /Watch on official service/);
   assert.doesNotMatch(html, /LIVE STATUS UNVERIFIED/);
 });
@@ -307,7 +307,7 @@ test('Discover feed mixes Internet Archive and Wikimedia Commons without importi
   assert.match(html, /meta\.LicenseShortName/);
   assert.match(html, /commonsHasMore/);
   assert.match(html, /commonsPage=page/);
-  assert.match(html, /return \[\.\.\.entries\.filter\(Boolean\),\.\.\.commonsPromise,\.\.\.openversePromise,\.\.\.nasaPromise,\.\.\.blenderPromise\]/);
+  assert.match(html, /const combined=\[\.\.\.entries\.filter\(Boolean\),\.\.\.commonsPromise,\.\.\.openversePromise,\.\.\.nasaPromise,\.\.\.blenderPromise,\.\.\.peertubePromise\]/);
   assert.match(html, /handle:'@openfeed'/);
   assert.doesNotMatch(html, /commons\.wikimedia\.org[\s\S]{0,1800}sb\.storage\.from\('vybora-media'\)\.upload/);
 });
