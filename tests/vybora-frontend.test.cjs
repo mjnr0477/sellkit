@@ -85,6 +85,10 @@ test('video upload uses VYBORA storage and database records', () => {
   assert.match(html, /sb\.from\('vybora_follows'\)/);
 });
 
+test('profile creation retries with a unique username when an email-derived username is taken', () => {
+  assert.ok(html.includes("uniqueUsername=username.slice(0,22)+'_'+user.id.replace(/-/g,'').slice(0,7)"));
+});
+
 test('comments, saved videos, and profile editing have working UI handlers', () => {
   assert.match(html, /id="commentsBackdrop"/);
   assert.match(html, /async function showComments\(post\)/);
