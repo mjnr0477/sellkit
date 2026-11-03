@@ -555,7 +555,7 @@ test('Following feed fetches public posts from the signed-in viewer’s followed
   assert.match(html, /sb\.from\('vybora_follows'\)\.select\('followed_id'\)\.eq\('follower_id',user\.id\)/);
   assert.match(html, /sb\.from\('vybora_posts'\)[\s\S]*?\.in\('author_id',followedIds\)/);
   assert.match(html, /function setTab\(tab\)[\s\S]*?if\(tab==='Following'\)[\s\S]*?loadFollowingFeed\(\)/);
-  assert.match(html, /async function refreshActiveFeed\(\)\{if\(activeTab==='Following'&&user\)return loadFollowingFeed\(\);return loadFeed\(\)\}/);
+  assert.match(html, /async function refreshActiveFeed\(\)\{if\(activeTab==='Following'&&user\)return loadFollowingFeed\(\);if\(activeTab==='Search'\)return searchVideos\(\$\('searchInput'\)\.value\);return loadFeed\(\)\}/);
   assert.doesNotMatch(html, /allPosts\.filter\(p=>p\.following/);
 });
 
