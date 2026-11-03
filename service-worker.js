@@ -72,7 +72,7 @@ self.addEventListener('fetch', event => {
         if (response.ok) await cache.put(request, response.clone());
         return response;
       } catch (_) {
-        return (await cache.match(request)) || Response.error();
+        return (await cache.match(request, { ignoreSearch: true })) || Response.error();
       }
     })());
     return;
