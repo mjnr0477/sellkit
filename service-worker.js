@@ -93,6 +93,20 @@ self.addEventListener('fetch', event => {
     })());
   }
 
+  if (url.pathname === '/clean-feed.css' || url.pathname === '/clean-feed.js') {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      try {
+        const response = await fetch(request, { cache: 'no-store' });
+        if (response.ok) await cache.put(request, response.clone());
+        return response;
+      } catch (_) {
+        return (await cache.match(request)) || Response.error();
+      }
+    })());
+    return;
+  }
+
   if (url.pathname === '/social-features.js') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
