@@ -24,7 +24,7 @@ function harness() {
     dataset: {}, querySelector(selector) { return selector === 'video' ? video : selector === 'iframe' ? frame : null; }
   };
   const feed = {
-    querySelectorAll(selector) { return selector === '.video-card,.live-event-card' ? [card] : selector === 'video' ? [video] : []; },
+    querySelectorAll(selector) { return selector === '.video-card,.live-event-card' ? [card] : selector === 'video' ? [video] : selector === 'iframe' ? [frame] : []; },
     addEventListener(name, fn) { feedListeners[name] = fn; }
   };
   class MockIntersectionObserver {
