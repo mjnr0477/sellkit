@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
+const cleanFeed = fs.readFileSync(new URL('../clean-feed.js', 'file://' + __filename), 'utf8');
 const designCss = fs.readFileSync(new URL('../design-refresh.css', 'file://' + __filename), 'utf8');
 const muteMigration = fs.readFileSync(new URL('../supabase/migrations/20261102072105_vybora_creator_mutes.sql', 'file://' + __filename), 'utf8');
 const blockMigration = fs.readFileSync(new URL('../supabase/migrations/20261102073022_vybora_account_blocking.sql', 'file://' + __filename), 'utf8');
