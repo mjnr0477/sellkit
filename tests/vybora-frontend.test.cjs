@@ -485,7 +485,7 @@ test('Data Saver avoids background catalogue downloads and respects device data-
   assert.match(html, /dataSaver\?\{data:\[\],error:null\}:await sb\.from\('vybora_external_videos'\)/);
   assert.match(html, /async function loadOpenArchiveVideos\(page=1\)\{\s*if\(dataSaver\)return \[\]/);
   assert.match(html, /async function loadMoreArchiveOnly\(\)\{\s*if\(dataSaver\)return/);
-  assert.match(html, /if\(!dataSaver\)loadFeed\(\)/);
+  assert.match(html, /if\(!dataSaver\)refreshActiveFeed\(\)/);
 });
 
 test('personalized feed ranking diversifies creators without discarding relevance scores', () => {
