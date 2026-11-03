@@ -37,6 +37,13 @@ test('hosted VYBORA feed loads and guest account gates work for available feed c
     );
 
     assert.match(await page.title(), /VYBORA/i);
+    const offlineShellReady = await page.evaluate(async () => {
+      if (!('serviceWorker' in navigator)) return false;
+      const registration = await navigator.serviceWorker.ready;
+      const cache = await caches.open('vybora-shell-v3');
+      return Boolean(registration.active && await cache.match('/design-refresh.css'));
+    });
+    assert.equal(offlineShellReady, true, 'offline shell should cache the production stylesheet');
     assert.ok(await page.locator('.video-card').count() > 0, 'guest feed should show video cards');
     assert.equal(await page.locator('[data-tab="Watch"]').count(), 1, 'watch navigation should exist');
     assert.equal(await page.locator('#createBtn').count(), 1, 'create navigation should exist');
