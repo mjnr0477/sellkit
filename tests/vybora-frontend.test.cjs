@@ -631,5 +631,5 @@ test('database search results hydrate real likes, bookmarks and comment counts',
 
 test('search results remain addressable by shared video actions', () => {
   assert.match(html, /const found=rankFeedItems\(\[\.\.\.dedup\.values\(\)\]\);posts=found;activeTab='Search'/);
-  assert.match(html, /const post=posts\.find\(p=>String\(p\.id\)===id\)\|\|demo\.find\(p=>p\.id===id\)/);
+  assert.match(html, /id,post=posts\.find\(p=>String\(p\.id\)===id\)\|\|demo\.find\(p=>p\.id===id\)/);
 });
