@@ -144,6 +144,7 @@ test('Data Saver prevents automatic video and embed loading until the viewer req
   assert.match(html, /if\(!dataSaver&&entry\.isIntersecting/);
   assert.match(html, /if\(!dataSaver\)\{const playback=v\.play\(\)/);
   assert.match(html, /action==='load-external'/);
+  assert.match(html, /isExternal&&!isDirectExternal\?'':'<button class="play-toggle" data-action="play"/);
 });
 
 test('video feed avoids downloading every clip at once and does not fake variety with duplicate demo clips', () => {
