@@ -699,7 +699,11 @@ test('live host heartbeats keep active rooms alive and scheduled cleanup ends ab
   assert.match(liveHeartbeatMigration, /where status = 'live'[\s\S]*heartbeat_at < p_stale_before/i);
   assert.match(liveHeartbeatMigration, /delete from public\.vybora_live_participants[\s\S]*delete from public\.vybora_live_signals/i);
   assert.match(liveHeartbeatMigration, /grant execute on function public\.vybora_cleanup_stale_live_sessions\(timestamptz\) to service_role/i);
+  assert.match(liveHeartbeatMigration, /revoke update on public\.vybora_live_sessions from authenticated/i);
+  assert.match(liveHeartbeatMigration, /grant update \(status, ended_at\) on public\.vybora_live_sessions to authenticated/i);
+  assert.match(liveHeartbeatMigration, /where id = p_session_id[\s\S]*host_id = \(select auth\.uid\(\)\)[\s\S]*status = 'live'/i);
   assert.match(socialSource, /async function touchLiveHeartbeat\(\)/);
+  assert.match(socialSource, /sb\.rpc\('vybora_touch_live_session',\{p_session_id:sessionId\}\)/);
   assert.match(socialSource, /setInterval\(\(\)=>touchLiveHeartbeat\(\)\.catch\(error=>console\.warn\('Live heartbeat update failed',error\)\),30000\)/);
   assert.match(socialSource, /try\{await liveRealtime\(\);startLiveHeartbeat\(\)\}/);
   assert.match(socialSource, /async function leaveLive\(\)\{stopLiveHeartbeat\(\)/);
