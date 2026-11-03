@@ -135,7 +135,7 @@ function activateVideoObserver(){
    const active=entry.isIntersecting&&entry.intersectionRatio>=.72;
    if(video&&near&&!video.getAttribute('src')&&video.dataset.src){
     video.src=video.dataset.src;delete video.dataset.src;
-    video.preload=active?'auto':'metadata';video.load();
+    video.preload=dataSaver?'none':(active?'auto':'metadata');video.load();
    }
    if(frame){
     if(active&&!frame.getAttribute('src')&&frame.dataset.src){frame.src=frame.dataset.src;delete frame.dataset.src}
@@ -170,6 +170,13 @@ function activateVideoObserver(){
   }
  },{root:feed,threshold:[.12,.72]});
  feed.querySelectorAll('.video-card').forEach(card=>window.videoObserver.observe(card));
+ if(window.feedMutationObserver)window.feedMutationObserver.disconnect();
+ window.feedMutationObserver=new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
+  if(node.nodeType!==1)return;
+  if(node.matches?.('.video-card'))window.videoObserver.observe(node);
+  node.querySelectorAll?.('.video-card').forEach(card=>window.videoObserver.observe(card));
+ })));
+ window.feedMutationObserver.observe(feed,{childList:true,subtree:true});
 }
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden)feed.querySelectorAll('.video-card').forEach(card=>{
