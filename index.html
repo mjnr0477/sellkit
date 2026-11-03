@@ -205,7 +205,7 @@ async function loadPeerTubeVideos(){
     const source=new URL(String(video.url||''));
     const uuid=String(video.uuid||video.shortUUID||'');
     const licence=Number(video.licence?.id??video.licence);
-    if(source.protocol!=='https:'||!uuid||!/^([a-z0-9-]+\\.)+[a-z]{2,}$/i.test(source.hostname)||video.isLive===true||video.nsfw===true||![1,2,7,8].includes(licence)||!isCleanVideoMetadata(video.name,video.description,(video.tags||[]).join(' ')))return null;
+    if(source.protocol!=='https:'||!uuid||!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(source.hostname)||video.isLive===true||video.nsfw===true||![1,2,7,8].includes(licence)||!isCleanVideoMetadata(video.name,video.description,(video.tags||[]).join(' ')))return null;
     if(video.privacy?.id!=null&&Number(video.privacy.id)!==1)return null;
     const embedPath=String(video.embedPath||('/videos/embed/'+uuid));
     const embed=new URL(embedPath,source.origin);
@@ -300,7 +300,7 @@ async function loadPeerTubeLiveEvents(hub){
   const verified=await Promise.all(candidates.map(async video=>{
    try{
     const source=new URL(String(video.url||'')),uuid=String(video.uuid||video.shortUUID||'');
-    if(source.protocol!=='https:'||!uuid||!/^([a-z0-9-]+\\.)+[a-z]{2,}$/i.test(source.hostname))return null;
+    if(source.protocol!=='https:'||!uuid||!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(source.hostname))return null;
     const detailResponse=await fetchWithTimeout(new URL('/api/v1/videos/'+encodeURIComponent(uuid),source.origin).href,{headers:{Accept:'application/json'}},8000);
     if(!detailResponse.ok)return null;
     const detail=await detailResponse.json();
