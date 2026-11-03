@@ -169,7 +169,7 @@ test('shared external and open-license source links restore the matching feed ca
 
 test('Watch feed paginates endlessly as the user nears the bottom', () => {
   assert.match(html, /async function loadMoreFeed\(\)/);
-  assert.match(html, /\.range\(feedPostOffset,feedPostOffset\+49\)/);
+  assert.match(html, /\.range\(feedPostOffset,feedPostOffset\+postBatchSize-1\)/);
   assert.match(html, /feed\.addEventListener\('scroll'/);
   assert.match(html, /feed\.insertAdjacentHTML\('beforeend'/);
   assert.match(html, /feedHasMore/);
@@ -530,4 +530,14 @@ test('offline worker caches the VYBORA stylesheet and serves its last good copy 
   assert.ok(worker.includes("url.pathname === '/design-refresh.css'"));
   assert.ok(worker.includes('if (response.ok) await cache.put(request, response.clone())'));
   assert.ok(worker.includes('(await cache.match(request, { ignoreSearch: true })) || Response.error()'));
+});
+
+
+test('Data Saver reduces community feed page sizes without changing normal browsing', () => {
+  assert.match(html, /const initialPostBatchSize=dataSaver\?30:100/);
+  assert.match(html, /\.limit\(initialPostBatchSize\)/);
+  assert.match(html, /feedHasMore=rows\.length===initialPostBatchSize/);
+  assert.match(html, /const postBatchSize=dataSaver\?20:50/);
+  assert.match(html, /\.range\(feedPostOffset,feedPostOffset\+postBatchSize-1\)/);
+  assert.match(html, /feedHasMore=\(rows\|\|\[\]\)\.length===postBatchSize/);
 });
