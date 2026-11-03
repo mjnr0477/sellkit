@@ -15,6 +15,7 @@ const readReceiptHardening = fs.readFileSync(new URL('../supabase/migrations/202
 const liveHeartbeatMigration = fs.readFileSync(new URL('../supabase/migrations/20261103090000_vybora_live_heartbeat_cleanup.sql', 'file://' + __filename), 'utf8');
 const liveHeartbeatHardeningMigration = fs.readFileSync(new URL('../supabase/migrations/20261103091000_vybora_live_heartbeat_trigger_guard.sql', 'file://' + __filename), 'utf8');
 const liveChatMigration = fs.readFileSync(new URL('../supabase/migrations/20261103092000_vybora_live_chat_viewer_counts.sql', 'file://' + __filename), 'utf8');
+const liveCleanupGraceMigration = fs.readFileSync(new URL('../supabase/migrations/20261103094000_vybora_live_cleanup_grace.sql', 'file://' + __filename), 'utf8');
 const liveCapacityMigration = fs.readFileSync(new URL('../supabase/migrations/20261103093000_vybora_live_direct_viewer_cap.sql', 'file://' + __filename), 'utf8');
 const cleanupFunction = fs.readFileSync(new URL('../supabase/functions/vybora-cleanup-expired-videos/index.ts', 'file://' + __filename), 'utf8');
 
@@ -758,4 +759,14 @@ test('direct WebRTC live rooms enforce a safe viewer cap until SFU media is avai
   assert.match(liveCapacityMigration, /as restrictive/i);
   assert.match(liveCapacityMigration, /create trigger vybora_live_participant_capacity_guard/i);
   assert.match(socialSource, /This live room has reached its safe viewer limit/);
+});
+
+
+test('stale live cleanup preserves participant authorization during terminal-event grace', () => {
+  assert.match(liveCleanupGraceMigration, /interval '20 minutes'/i);
+  assert.match(liveCleanupGraceMigration, /retain participant rows for a grace window/i);
+  assert.match(liveCleanupGraceMigration, /delete from public\.vybora_live_participants p[\s\S]*s\.status = 'ended'/i);
+  assert.match(liveCleanupGraceMigration, /s\.ended_at < now\(\) - interval '20 minutes'/i);
+  assert.match(liveCleanupGraceMigration, /s\.status = 'live'/i);
+  assert.match(liveCleanupGraceMigration, /join public\.vybora_live_sessions s[\s\S]*s\.status = 'live'/i);
 });
