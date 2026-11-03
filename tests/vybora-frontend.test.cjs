@@ -830,7 +830,9 @@ test('clean discovery blocks explicit sexual violence, graphic harm, extremist a
 test('PeerTube expands open-licensed discovery and rejects private, mature, and live results from the watch feed', () => {
   assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm=''\)/);
   assert.match(html, /https:\/\/sepiasearch\.org\/api\/v1\/search\/videos/);
-  assert.match(html, /privacyOneOf:'1'/);\n  assert.doesNotMatch(html, /licenceOneOf/);\n  assert.match(html, /pageSize=dataSaver\?8:20/);
+  assert.match(html, /privacyOneOf:'1'/);
+  assert.doesNotMatch(html, /licenceOneOf/);
+  assert.match(html, /pageSize=dataSaver\?8:20/);
   assert.match(html, /video\.isLive===true\|\|video\.nsfw===true/);
   assert.match(html, /video\.privacy\?\.id!=null&&Number\(video\.privacy\.id\)!==1/);
   assert.match(html, /embed\.origin!==source\.origin/);
@@ -851,7 +853,8 @@ test('Live tab discovers and re-verifies currently live PeerTube streams before 
   assert.match(html, /async function loadPeerTubeLiveEvents\(hub,signal\)/);
   assert.match(html, /detail\.isLive!==true/);
   assert.match(html, /detail\.privacy\?\.id!=null&&Number\(detail\.privacy\.id\)!==1/);
-  assert.match(html, /detail\.state\?\.id!=null&&Number\(detail\.state\.id\)!==1/);\n  assert.doesNotMatch(html.slice(html.indexOf('async function loadPeerTubeLiveEvents'),html.indexOf('function renderLiveEvents')), /licenceOneOf/);
+  assert.match(html, /detail\.state\?\.id!=null&&Number\(detail\.state\.id\)!==1/);
+  assert.doesNotMatch(html.slice(html.indexOf('async function loadPeerTubeLiveEvents'),html.indexOf('function renderLiveEvents')), /licenceOneOf/);
   assert.match(html, /peertube-live-event/);
   assert.match(html, /loadPeerTubeLiveEvents\(hub,liveScrollSignal\)/);
   assert.match(html, /feed\.addEventListener\('scroll',[\s\S]*?appendPage\(\)/);
