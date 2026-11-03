@@ -151,10 +151,10 @@ function activateVideoObserver(){
     if(!watchStartedAt.has(card))watchStartedAt.set(card,Date.now());
     feed.querySelectorAll('.video-card').forEach(other=>{if(other!==card)pauseCard(other)});
     if(video){
-     video.muted=!soundOn;
+     video.muted=true;
      const playback=video.play();
      if(playback&&typeof playback.then==='function')playback.then(()=>{
-      if(!card.isConnected||document.hidden||!card.isConnected)return;
+      if(!card.isConnected||document.hidden)return;
       if(soundOn)video.muted=false;
      }).catch(()=>{});
      const play=card.querySelector('[data-action="play"]');if(play)play.textContent='Ⅱ';
