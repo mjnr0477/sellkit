@@ -721,6 +721,10 @@ test('live host heartbeats keep active rooms alive and scheduled cleanup ends ab
 test('live rooms expose participant-only chat and database-maintained viewer counts', () => {
   assert.match(liveChatMigration, /add column if not exists viewer_count integer not null default 0/i);
   assert.match(liveChatMigration, /create table if not exists public\.vybora_live_chat_messages/i);
+  assert.match(liveChatMigration, /create or replace function public\.vybora_guard_live_chat_insert/i);
+  assert.match(liveChatMigration, /v_recent_count >= 20/i);
+  assert.match(liveChatMigration, /new\.created_at := clock_timestamp\(\)/i);
+  assert.match(socialSource, /insert\(\{session_id:live\.id,sender_id:user\.id,body\}\)\.select\('id,sender_id,body,created_at'\)/);
   assert.match(liveChatMigration, /enable row level security/i);
   assert.match(liveChatMigration, /create policy "Live participants read live chat"[\s\S]*vybora_live_participants/i);
   assert.match(liveChatMigration, /create policy "Live participants send live chat"[\s\S]*sender_id = \(select auth\.uid\(\)\)/i);
