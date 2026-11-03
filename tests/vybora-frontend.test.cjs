@@ -627,3 +627,9 @@ test('database search results hydrate real likes, bookmarks and comment counts',
   assert.match(html, /vybora_bookmarks'\)\.select\('post_id'\)\.eq\('user_id',user\.id\)\.in\('post_id',searchPostIds\)/);
   assert.match(html, /liked:searchLiked\.has\(p\.id\),saved:searchSaved\.has\(p\.id\),comments_count:searchComments\[p\.id\]\|\|0/);
 });
+
+
+test('search results remain addressable by shared video actions', () => {
+  assert.match(html, /const found=rankFeedItems\(\[\.\.\.dedup\.values\(\)\]\);posts=found;activeTab='Search'/);
+  assert.match(html, /const post=posts\.find\(p=>String\(p\.id\)===id\)\|\|demo\.find\(p=>p\.id===id\)/);
+});
