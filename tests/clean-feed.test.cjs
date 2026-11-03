@@ -61,7 +61,6 @@ test('off-screen media pauses and visible playback resumes after tab visibility 
   h.observer.callback([{ target: h.card, isIntersecting: false, intersectionRatio: 0 }]);
   assert.equal(h.video.paused, true);
   assert.equal(h.video.currentTime, 0);
-  assert.equal(h.frame.src, 'https://www.youtube-nocookie.com/embed/demo?autoplay=1&mute=1');
   assert.equal(h.frame.src, '');
   assert.equal(h.frame.dataset.src, 'https://www.youtube-nocookie.com/embed/demo?autoplay=1&mute=1');
   h.observer.callback([{ target: h.card, isIntersecting: true, intersectionRatio: 0.9 }]);
