@@ -568,3 +568,17 @@ test('Following feed paginates its own creator-only result set', () => {
   assert.match(html, /followingHasMore=\(rows\|\|\[\]\)\.length===pageSize/);
   assert.match(html, /if\(activeTab==='Following'\)loadMoreFollowingFeed\(\);else\{loadMoreFeed\(\);loadMoreArchiveOnly\(\)\}/);
 });
+
+
+test('video signature detection identifies WebM, MP4, MOV and rejects unrelated files', async () => {
+  const start = html.indexOf('async function getSupportedVideoMimeType(file){');
+  const end = html.indexOf('async function getVideoDuration(file)', start);
+  assert.ok(start >= 0 && end > start, 'video signature helper should be present');
+  const detectMime = vm.runInNewContext('(' + html.slice(start, end).trim() + ')');
+  const fakeFile = bytes => ({ slice: () => ({ arrayBuffer: async () => Uint8Array.from(bytes).buffer }) });
+  assert.equal(await detectMime(fakeFile([0x1a,0x45,0xdf,0xa3,0,0,0,0])), 'video/webm');
+  assert.equal(await detectMime(fakeFile([0,0,0,24,0x66,0x74,0x79,0x70,0x69,0x73,0x6f,0x6d])), 'video/mp4');
+  assert.equal(await detectMime(fakeFile([0,0,0,24,0x66,0x74,0x79,0x70,0x71,0x74,0x20,0x20])), 'video/quicktime');
+  assert.equal(await detectMime(fakeFile([0,1,2,3,4,5,6,7,8,9,10,11])), null);
+  assert.equal(await detectMime({}), null);
+});
