@@ -28,7 +28,9 @@ test('VYBORA page is mobile-ready and keeps the steering feed free of forced sna
 
 test('guest browsing remains available without account creation', () => {
   assert.match(html, /async function loadFeed\(\)/);
-  assert.match(html, /async function loadOpenArchiveVideos\(page=1\)/);\n  assert.match(html, /feed-empty-state/);\n  assert.match(html, /render\(\[\]\)/);
+  assert.match(html, /async function loadOpenArchiveVideos\(page=1\)/);
+  assert.match(html, /feed-empty-state/);
+  assert.match(html, /render\(\[\]\)/);
   assert.ok(html.includes('https://sepiasearch.org/api/v1/search/videos'));
   assert.match(html, /Your universe, in motion/);
   assert.match(html, /You can keep watching without one/);
@@ -323,7 +325,7 @@ test('Discover adds Openverse and NASA sources with clean-content filtering and 
   assert.match(html, /license:'by,by-sa,cc0,pdm'/);
   assert.match(html, /unstable__sort_by:'indexed_on',unstable__sort_dir:'desc'/, 'prefer newly indexed open-license videos');
   assert.match(html, /mature:'false'/);
-  assert.match(html, /async function loadNasaVideos\(page=1\)/);
+  assert.match(html, /async function loadNasaVideos\(page=1,queryOverride=''\)/);
   assert.match(html, /https:\/\/images-api\.nasa\.gov\/search/);
   assert.match(html, /https:\/\/images-api\.nasa\.gov\/asset\//);
   assert.match(html, /function isCleanVideoMetadata/);
@@ -825,7 +827,8 @@ test('PeerTube expands open-licensed discovery and rejects private, mature, and 
 });
 
 test('PeerTube feed prioritizes trending and live tab requests only active streams', () => {
-  assert.match(html, /if\(searchTerm==='short film'\)params\.set\('sort','-trending'\)/);\n  assert.doesNotMatch(html, /'-match'/);
+  assert.match(html, /if\(searchTerm==='short film'\)params\.set\('sort','-trending'\)/);
+  assert.doesNotMatch(html, /'-match'/);
   assert.match(html, /search:'live',isLive:'true'/);
 });
 
@@ -856,7 +859,9 @@ test('topic search queries the federated PeerTube catalogue and additional open 
   assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm='short film'\)/);
   assert.match(html, /search:String\(searchTerm\|\|'short film'\)/);
   assert.match(html, /loadPeerTubeVideos\(1,q\)/);
-  assert.match(html, /async function loadNasaVideos\(page=1,queryOverride=''\)/);\n  assert.match(html, /q:String\(queryOverride\|\|'NASA'\)/);\n  assert.match(html, /loadNasaVideos\(1,q\)/);
+  assert.match(html, /async function loadNasaVideos\(page=1,queryOverride=''\)/);
+  assert.match(html, /q:String\(queryOverride\|\|'NASA'\)/);
+  assert.match(html, /loadNasaVideos\(1,q\)/);
   assert.match(html, /loadOpenverseVideos\(1,q\)/);
   assert.match(html, /loadBlenderVideos\(1,q\)/);
   assert.match(html, /federated creators/);
