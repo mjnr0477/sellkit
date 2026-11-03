@@ -203,3 +203,47 @@ create policy "Live hosts or senders delete live chat"
   );
 
 alter publication supabase_realtime add table public.vybora_live_chat_messages;
+
+-- Prevent chat flooding and client-forged timestamps. A sender can post
+-- at most 20 messages per minute per live room.
+create or replace function public.vybora_guard_live_chat_insert()
+returns trigger
+language plpgsql
+set search_path = pg_catalog, public
+as $chat_guard$
+declare
+  v_recent_count integer;
+begin
+  if auth.uid() is not null and auth.uid() <> new.sender_id then
+    raise exception using errcode = '42501',
+      message = 'Live chat sender must match the signed-in user';
+  end if;
+
+  new.body := btrim(new.body);
+  new.created_at := clock_timestamp();
+
+  perform pg_advisory_xact_lock(
+    hashtextextended(new.session_id::text || ':' || new.sender_id::text, 0)
+  );
+
+  select count(*)::integer into v_recent_count
+    from public.vybora_live_chat_messages
+   where session_id = new.session_id
+     and sender_id = new.sender_id
+     and created_at > clock_timestamp() - interval '1 minute';
+
+  if v_recent_count >= 20 then
+    raise exception using errcode = 'P0001',
+      message = 'Live chat rate limit exceeded; wait before sending again';
+  end if;
+
+  return new;
+end;
+$chat_guard$;
+
+revoke all on function public.vybora_guard_live_chat_insert() from public, anon, authenticated;
+drop trigger if exists vybora_live_chat_insert_guard on public.vybora_live_chat_messages;
+create trigger vybora_live_chat_insert_guard
+before insert on public.vybora_live_chat_messages
+for each row execute function public.vybora_guard_live_chat_insert();
+
