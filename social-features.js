@@ -26,7 +26,7 @@ function liveSay(t){$('liveStatus').textContent=t}
 async function signal(to,type,payload){const {error}=await sb.from('vybora_live_signals').insert({session_id:live.id,sender_id:user.id,recipient_id:to,signal_type:type,payload});if(error)throw error}
 async function setRemoteAndDrain(pc,id,description){await pc.setRemoteDescription(description);const queued=pendingIce.get(id)||[];pendingIce.delete(id);for(const candidate of queued)await pc.addIceCandidate(candidate)}
 function peer(id){if(peers.has(id))return peers.get(id);const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});peers.set(id,pc);if(stream)stream.getTracks().forEach(t=>pc.addTrack(t,stream));pc.onicecandidate=e=>e.candidate&&signal(id,'ice',e.candidate.toJSON()).catch(err=>console.warn('Live ICE signal failed',err));pc.ontrack=e=>{if(!host){$('liveRemote').srcObject=e.streams[0];liveSay('Connected to live video.')}};return pc}
-async function offerViewer(id){if(!host||!id||id===user.id||peers.has(id))return;const pc=peer(id),offer=await pc.createOffer();await pc.setLocalDescription(offer);await signal(id,'offer',pc.localDescription.toJSON())}
+async function offerViewer(id){if(!host||!id||id===user.id||peers.has(id))return;const pc=peer(id);try{const offer=await pc.createOffer();await pc.setLocalDescription(offer);await signal(id,'offer',pc.localDescription.toJSON())}catch(error){pc.close();peers.delete(id);throw error}}
 async function liveRealtime(){
  if(channel){await sb.removeChannel(channel);channel=null}
  const sessionId=live.id;
