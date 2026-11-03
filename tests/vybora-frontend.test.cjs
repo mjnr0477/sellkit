@@ -908,8 +908,9 @@ test('frontend styles remain structurally balanced for consistent browser parsin
 });
 
 test('guest fallback renders fast public sources before slower catalogue discovery', () => {
-  assert.match(html, /loadOpenverseVideos\(1\)\.catch[\s\S]*?loadPeerTubeVideos\(1\)\.catch/);
-  assert.match(html, /posts=rankFeedItems\(\[\.\.\.\(openverse\|\|\[\]\),\.\.\.\(peerTube\|\|\[\]\)\]\)/);
+  assert.match(html, /quickSources=\[\s*loadOpenverseVideos\(1\),\s*loadPeerTubeVideos\(1\)\s*\]/);
+  assert.match(html, /quickSources\.forEach\(\(request,index\)=>request\.then\(batch=>/);
+  assert.match(html, /await Promise\.allSettled\(quickSources\)/);
   assert.match(html, /loadOpenArchiveVideos\(1\)\.then\(batch=>/);
   assert.match(html, /if\(!queryOverride&&page<=openversePage\)return \[\]/);
   assert.match(html, /if\(peertubeLoading\|\|\(!searchTerm&&page<=peertubePage\)/);
