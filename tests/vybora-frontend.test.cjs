@@ -825,7 +825,7 @@ test('PeerTube expands open-licensed discovery and rejects private, mature, and 
 });
 
 test('PeerTube feed prioritizes trending and live tab requests only active streams', () => {
-  assert.match(html, /sort:searchTerm==='short film'\?'-trending'/);
+  assert.match(html, /if\(searchTerm==='short film'\)params\.set\('sort','-trending'\)/);\n  assert.doesNotMatch(html, /'-match'/);
   assert.match(html, /search:'live',isLive:'true'/);
 });
 
@@ -856,7 +856,7 @@ test('topic search queries the federated PeerTube catalogue and additional open 
   assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm='short film'\)/);
   assert.match(html, /search:String\(searchTerm\|\|'short film'\)/);
   assert.match(html, /loadPeerTubeVideos\(1,q\)/);
-  assert.match(html, /loadNasaVideos\(1,q\)/);
+  assert.match(html, /async function loadNasaVideos\(page=1,queryOverride=''\)/);\n  assert.match(html, /q:String\(queryOverride\|\|'NASA'\)/);\n  assert.match(html, /loadNasaVideos\(1,q\)/);
   assert.match(html, /loadOpenverseVideos\(1,q\)/);
   assert.match(html, /loadBlenderVideos\(1,q\)/);
   assert.match(html, /federated creators/);
