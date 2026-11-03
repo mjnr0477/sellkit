@@ -297,9 +297,7 @@ async function loadPeerTubeLiveEvents(hub,signal){
    const topics=['live','sports','football','music','gaming','news'];
    const batches=await Promise.all(topics.map(async topic=>{
     const params=new URLSearchParams({search:topic,isLive:'true',count:String(pageSize),start:String(offset),sort:'-publishedAt',nsfw:'false',licenceOneOf:'1,2,7,8'});
-    const response=await fetchWithTimeout('https://sepiasearch.org/api/v1/search/videos?'+params.toString(),{headers:{Accept:'application/json'}});
-    if(!response.ok)throw new Error('PeerTube live search returned HTTP '+response.status);
-    const payload=await response.json();return payload?.data||payload?.videos||[];
+    try{const response=await fetchWithTimeout('https://sepiasearch.org/api/v1/search/videos?'+params.toString(),{headers:{Accept:'application/json'}});if(!response.ok)throw new Error('HTTP '+response.status);const payload=await response.json();return payload?.data||payload?.videos||[]}catch(error){console.warn('PeerTube live topic unavailable:',topic,error?.message||error);return []}
    }));
    hasMore=batches.some(items=>items.length===pageSize);offset+=pageSize;
    const unique=new Map();batches.flat().forEach(v=>{const key=String(v.uuid||v.shortUUID||v.id||'');if(key&&!unique.has(key))unique.set(key,v)});
