@@ -67,7 +67,7 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.match(html, /id="savedBackdrop"/);
   assert.match(html, /async function openSavedVideos\(\)/);
   assert.match(html, /if\(tab==='Watch'\)\{posts=allPosts;render\(allPosts.length\?allPosts:demo\);return\}/);
-  assert.match(html, /const list=allPosts\.filter\(p=>p\.following&&!mutedAuthors\.has\(p\.author_id\)\)/);
+  assert.match(html, /async function loadFollowingFeed\(\)/);
   assert.match(html, /sb\.from\('vybora_profiles'\)\.upsert/);
   assert.match(html, /id="forgotPassword"/);
   assert.match(html, /resetPasswordForEmail/);
