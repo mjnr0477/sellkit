@@ -708,5 +708,5 @@ test('live host heartbeats keep active rooms alive and scheduled cleanup ends ab
   assert.match(socialSource, /try\{await liveRealtime\(\);startLiveHeartbeat\(\)\}/);
   assert.match(socialSource, /async function leaveLive\(\)\{stopLiveHeartbeat\(\)/);
   assert.match(cleanupFunction, /vybora_cleanup_stale_live_sessions/);
-  assert.match(cleanupFunction, /Date\.now\(\) - 10 \* 60 \* 1000/);
+  assert.match(cleanupFunction, /Date\.now\(\) - 30 \* 60 \* 1000/);
 });
