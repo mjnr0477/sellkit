@@ -216,7 +216,7 @@ test('Data Saver still auto-loads only the visible video when it enters the watc
   }
 });
 
-test('feed media requests stay bounded and rapid feed updates do not break the frontend', async () => {
+test('feed media requests stay bounded and initial frontend execution stays error-free', async () => {
   const browser = await chromium.launch({ headless: true });
   try {
     const context = await browser.newContext({
