@@ -192,7 +192,7 @@ test('Data Saver prevents automatic video and embed loading until the viewer req
 
 test('Data Saver keeps video discovery and infinite scrolling active without preloading source media', () => {
   assert.doesNotMatch(html, /async function loadOpenArchiveVideos\(page=1\)\{\s*if\(dataSaver\)return \[\]/);
-  assert.doesNotMatch(html, /async function loadPeerTubeVideos\(page=1,searchTerm='short film'\)\{\s*if\(dataSaver/);
+  assert.doesNotMatch(html, /async function loadPeerTubeVideos\(page=1,searchTerm=''\)\{\s*if\(dataSaver/);
   assert.doesNotMatch(html, /async function loadMoreArchiveOnly\(\)\{\s*if\(dataSaver\)return/);
   assert.match(html, /if\(!dataSaver&&v&&!v\.getAttribute\('src'\)&&v\.dataset\.src\)/);
 });
@@ -828,21 +828,21 @@ test('clean discovery blocks explicit sexual violence, graphic harm, extremist a
 });
 
 test('PeerTube expands open-licensed discovery and rejects private, mature, and live results from the watch feed', () => {
-  assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm='short film'\)/);
+  assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm=''\)/);
   assert.match(html, /https:\/\/sepiasearch\.org\/api\/v1\/search\/videos/);
-  assert.match(html, /licenceOneOf:'1,2,7,8'/);
+  assert.match(html, /privacyOneOf:'1'/);\n  assert.doesNotMatch(html, /licenceOneOf/);\n  assert.match(html, /pageSize=dataSaver\?8:20/);
   assert.match(html, /video\.isLive===true\|\|video\.nsfw===true/);
   assert.match(html, /video\.privacy\?\.id!=null&&Number\(video\.privacy\.id\)!==1/);
   assert.match(html, /embed\.origin!==source\.origin/);
   assert.match(html, /loadPeerTubeVideos\(page\)/);
-  assert.match(html, /requestPage\*20<Number\(payload\.total\)/);
+  assert.match(html, /requestPage\*pageSize<Number\(payload\.total\)/);
   assert.ok(html.includes("!/^([a-z0-9-]+\\.)+[a-z]{2,}$/i.test(source.hostname)"));
 });
 
 test('PeerTube feed prioritizes trending and live tab requests only active streams', () => {
-  assert.match(html, /if\(searchTerm==='short film'\)params\.set\('sort','-trending'\)/);
+  assert.match(html, /if\(searchTerm\)params\.set\('search',String\(searchTerm\)\.slice\(0,100\)\);else params\.set\('sort','-trending'\)/);
   assert.doesNotMatch(html, /'-match'/);
-  assert.match(html, /const topics=\['live','sports','football','music','gaming','news'\]/);
+  assert.match(html, /\['live','sports','football','music','gaming','news'\]/);
   assert.match(html, /search:topic,isLive:'true'/);
   assert.match(html, /PeerTube live topic unavailable/);
 });
@@ -851,7 +851,7 @@ test('Live tab discovers and re-verifies currently live PeerTube streams before 
   assert.match(html, /async function loadPeerTubeLiveEvents\(hub,signal\)/);
   assert.match(html, /detail\.isLive!==true/);
   assert.match(html, /detail\.privacy\?\.id!=null&&Number\(detail\.privacy\.id\)!==1/);
-  assert.match(html, /detail\.state\?\.id!=null&&Number\(detail\.state\.id\)!==1/);
+  assert.match(html, /detail\.state\?\.id!=null&&Number\(detail\.state\.id\)!==1/);\n  assert.doesNotMatch(html.slice(html.indexOf('async function loadPeerTubeLiveEvents'),html.indexOf('function renderLiveEvents')), /licenceOneOf/);
   assert.match(html, /peertube-live-event/);
   assert.match(html, /loadPeerTubeLiveEvents\(hub,liveScrollSignal\)/);
   assert.match(html, /feed\.addEventListener\('scroll',[\s\S]*?appendPage\(\)/);
@@ -888,7 +888,7 @@ test('feed scroll loading is animation-frame throttled to avoid repeated layout 
 
 test('topic search queries the federated PeerTube catalogue and additional open video sources without importing media', () => {
   assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm='short film'\)/);
-  assert.match(html, /search:String\(searchTerm\|\|'short film'\)/);
+  assert.match(html, /if\(searchTerm\)params\.set\('search',String\(searchTerm\)\.slice\(0,100\)\)/);
   assert.match(html, /loadPeerTubeVideos\(1,q\)/);
   assert.match(html, /async function loadNasaVideos\(page=1,queryOverride=''\)/);
   assert.match(html, /q:String\(queryOverride\|\|'NASA'\)/);
