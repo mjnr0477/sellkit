@@ -727,7 +727,7 @@ test('live rooms expose participant-only chat and database-maintained viewer cou
   assert.match(liveChatMigration, /after insert or delete on public\.vybora_live_participants/i);
   assert.match(liveChatMigration, /alter publication supabase_realtime add table public\.vybora_live_chat_messages/i);
   assert.match(liveChatMigration, /create policy "Vybora active live sessions are public"[\s\S]*exists \([\s\S]*vybora_live_participants/i);
-  assert.match(liveChatMigration, /removed_chat_messages as \([\s\S]*vybora_live_chat_messages/i);
+  assert.match(liveChatMigration, /delete from public\.vybora_live_chat_messages where session_id = v_session_id/i);
   assert.match(liveChatMigration, /grant execute on function public\.vybora_cleanup_stale_live_sessions\(timestamptz\) to service_role/i);
   assert.match(cleanupFunction, /removedLiveChatMessages/);
   assert.match(socialSource, /async function liveChatRealtime\(\)/);
