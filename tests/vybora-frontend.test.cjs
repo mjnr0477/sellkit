@@ -19,9 +19,9 @@ const liveCleanupGraceMigration = fs.readFileSync(new URL('../supabase/migration
 const liveCapacityMigration = fs.readFileSync(new URL('../supabase/migrations/20261103093000_vybora_live_direct_viewer_cap.sql', 'file://' + __filename), 'utf8');
 const cleanupFunction = fs.readFileSync(new URL('../supabase/functions/vybora-cleanup-expired-videos/index.ts', 'file://' + __filename), 'utf8');
 
-test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
+test('VYBORA page is mobile-ready and keeps the steering feed free of forced snapping', () => {
   assert.match(html, /name="viewport"[^>]*width=device-width/);
-  assert.match(html, /scroll-snap-type:y mandatory/);
+  assert.match(html, /scroll-snap-type:none/);
   assert.match(html, /class="feed" id="feed"/);
   assert.match(html, /@media\(max-width:850px\)/);
 });
@@ -257,7 +257,9 @@ test('Watch feed discovers recent open-licensed archive videos without API keys 
   assert.match(html, /archivePage\+1/);
   assert.match(html, /feedHasMore=feedHasMore\|\|archiveHasMore/);
   assert.match(html, /if\(!sb\)\{try\{posts=await loadOpenArchiveVideos\(1\)/);
-  assert.match(html, /Community feed is temporarily unavailable\. Showing open-licensed videos/);
+  assert.match(html, /posts=rankFeedItems\(\[\.\.\.remote,\.\.\.featured\]\)/);
+  assert.match(html, /loadOpenArchiveVideos\(1\)\.then\(archive=>/);
+  assert.match(html, /Background open-video discovery unavailable/);
   assert.match(html, /archive-credit/);
   assert.match(html, /Internet Archive is a public discovery source: VYBORA keeps only transient metadata in memory/);
   assert.match(html, /Video bytes stay hosted by the archive; no imported video is written to Supabase/);
@@ -274,13 +276,13 @@ test('Discover feed mixes Internet Archive and Wikimedia Commons without importi
   assert.match(html, /meta\.LicenseShortName/);
   assert.match(html, /commonsHasMore/);
   assert.match(html, /commonsPage=page/);
-  assert.match(html, /return \[\.\.\.entries\.filter\(Boolean\),\.\.\.commonsPromise,\.\.\.openversePromise,\.\.\.nasaPromise\]/);
+  assert.match(html, /return \[\.\.\.entries\.filter\(Boolean\),\.\.\.commonsPromise,\.\.\.openversePromise,\.\.\.nasaPromise,\.\.\.blenderPromise\]/);
   assert.match(html, /handle:'@openfeed'/);
   assert.doesNotMatch(html, /commons\.wikimedia\.org[\s\S]{0,1800}sb\.storage\.from\('vybora-media'\)\.upload/);
 });
 
 test('Discover adds Openverse and NASA sources with clean-content filtering and no media imports', () => {
-  assert.match(html, /async function loadOpenverseVideos\(page=1\)/);
+  assert.match(html, /async function loadOpenverseVideos\(page=1,queryOverride=''\)/);
   assert.match(html, /https:\/\/api\.openverse\.org\/v1\/videos\//);
   assert.match(html, /license:'by,by-sa,cc0,pdm'/);
   assert.match(html, /unstable__sort_by:'indexed_on',unstable__sort_dir:'desc'/, 'prefer newly indexed open-license videos');
@@ -349,7 +351,7 @@ test('feed ranking prioritizes followed creators and combines freshness with eng
   assert.match(html, /const affinity=p\.following\?4\.5:0/);
   assert.match(html, /const freshness=Math\.max\(0,2\.5-Math\.log2\(ageHours\+1\)\*0\.45\)/);
   assert.match(html, /const likes=Math\.log2\(Number\(p\.likes\|\|0\)\+1\)\*0\.22/);
-  assert.match(html, /posts=rankFeedItems\(\[\.\.\.remote,\.\.\.featured,\.\.\.archive\]\)/);
+  assert.match(html, /posts=rankFeedItems\(\[\.\.\.remote,\.\.\.featured\]\)/);
 });
 
 test('current intent boosts matching topics in the current session without persisting a separate profile', () => {
@@ -488,7 +490,8 @@ test('chat read receipts update only read_at and expose unread counts', () => {
 test('Data Saver avoids background catalogue downloads and respects device data-saving preferences', () => {
   assert.match(html, /const saved=localStorage\.getItem\('vybora:data-saver:v1'\);if\(saved!==null\)return saved==='on'/);
   assert.match(html, /connection\?\.saveData\|\|\/\^\(slow-2g\|2g\)\$\//);
-  assert.match(html, /dataSaver\?\{data:\[\],error:null\}:await sb\.from\('vybora_external_videos'\)/);
+  assert.match(html, /dataSaver&&isExternal&&!isDirectExternal/);
+  assert.match(html, /if\(dataSaver\)return \[\]/);
   assert.match(html, /async function loadOpenArchiveVideos\(page=1\)\{\s*if\(dataSaver\)return \[\]/);
   assert.match(html, /async function loadMoreArchiveOnly\(\)\{\s*if\(dataSaver\)return/);
   assert.match(html, /if\(!dataSaver\)refreshActiveFeed\(\)/);
@@ -636,7 +639,8 @@ test('database search results hydrate real likes, bookmarks and comment counts',
 
 
 test('search results remain addressable by shared video actions', () => {
-  assert.match(html, /const found=rankFeedItems\(\[\.\.\.dedup\.values\(\)\]\);posts=found;activeTab='Search'/);
+  assert.match(html, /const found=rankFeedItems\(\[\.\.\.dedup\.values\(\)\]\)/);
+  assert.match(html, /posts=found;activeTab='Search'/);
   assert.match(html, /id,post=posts\.find\(p=>String\(p\.id\)===id\)\|\|demo\.find\(p=>p\.id===id\)/);
 });
 
