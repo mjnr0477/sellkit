@@ -70,7 +70,7 @@ test('video upload uses VYBORA storage and database records', () => {
   assert.match(html, /sb\.from\('vybora_posts'\)\.insert/);
   assert.match(html, /media_path:path/);
   assert.match(html, /expires_at:new Date\(Date\.now\(\)\+24\*60\*60\*1000\)/);
-  assert.match(html, /file\.size>10\*1024\*1024/);
+  assert.match(html, /file\.size>25\*1024\*1024/);
   assert.match(html, /async function getSupportedVideoMimeType\(file\)/);
   assert.match(html, /header\[0\]===0x1a&&header\[1\]===0x45&&header\[2\]===0xdf&&header\[3\]===0xa3/);
   assert.match(html, /String\.fromCharCode\(\.\.\.header\.slice\(4,8\)\)==='ftyp'/);
@@ -143,7 +143,7 @@ test('inline application JavaScript parses without syntax errors', () => {
   for (const source of scripts) new vm.Script(source);
 });
 
-test('feed uses touch-friendly smooth scrolling and avoids forced stop on every card', () => {
+test('new account profile creation retries with a unique username when email-derived names collide', () => {\n  assert.match(html, /uniqueUsername=username\\.slice\\(0,22\\)\\+'_ '\.trim\\(\\)\\+user\\.id/);\n});\n\ntest('feed uses touch-friendly smooth scrolling and avoids forced stop on every card', () => {
   assert.match(html, /scroll-behavior:smooth;-webkit-overflow-scrolling:touch;touch-action:pan-y/);
   assert.match(html, /\.video-card\{[^}]*scroll-snap-stop:normal/);
 });
