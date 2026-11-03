@@ -14,6 +14,7 @@ const readReceiptsMigration = fs.readFileSync(new URL('../supabase/migrations/20
 const readReceiptHardening = fs.readFileSync(new URL('../supabase/migrations/20261102074733_harden_vybora_read_receipt_policy.sql', 'file://' + __filename), 'utf8');
 const liveHeartbeatMigration = fs.readFileSync(new URL('../supabase/migrations/20261103090000_vybora_live_heartbeat_cleanup.sql', 'file://' + __filename), 'utf8');
 const liveHeartbeatHardeningMigration = fs.readFileSync(new URL('../supabase/migrations/20261103091000_vybora_live_heartbeat_trigger_guard.sql', 'file://' + __filename), 'utf8');
+const liveChatMigration = fs.readFileSync(new URL('../supabase/migrations/20261103092000_vybora_live_chat_viewer_counts.sql', 'file://' + __filename), 'utf8');
 const cleanupFunction = fs.readFileSync(new URL('../supabase/functions/vybora-cleanup-expired-videos/index.ts', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
@@ -714,4 +715,29 @@ test('live host heartbeats keep active rooms alive and scheduled cleanup ends ab
   assert.match(socialSource, /async function leaveLive\(\)\{stopLiveHeartbeat\(\)/);
   assert.match(cleanupFunction, /vybora_cleanup_stale_live_sessions/);
   assert.match(cleanupFunction, /Date\.now\(\) - 30 \* 60 \* 1000/);
+});
+
+
+test('live rooms expose participant-only chat and database-maintained viewer counts', () => {
+  assert.match(liveChatMigration, /add column if not exists viewer_count integer not null default 0/i);
+  assert.match(liveChatMigration, /create table if not exists public\.vybora_live_chat_messages/i);
+  assert.match(liveChatMigration, /create or replace function public\.vybora_guard_live_chat_insert/i);
+  assert.match(liveChatMigration, /v_recent_count >= 20/i);
+  assert.match(liveChatMigration, /new\.created_at := clock_timestamp\(\)/i);
+  assert.match(socialSource, /insert\(\{session_id:live\.id,sender_id:user\.id,body\}\)\.select\('id,sender_id,body,created_at'\)/);
+  assert.match(liveChatMigration, /enable row level security/i);
+  assert.match(liveChatMigration, /create policy "Live participants read live chat"[\s\S]*vybora_live_participants/i);
+  assert.match(liveChatMigration, /create policy "Live participants send live chat"[\s\S]*sender_id = \(select auth\.uid\(\)\)/i);
+  assert.match(liveChatMigration, /after insert or delete on public\.vybora_live_participants/i);
+  assert.match(liveChatMigration, /alter publication supabase_realtime add table public\.vybora_live_chat_messages/i);
+  assert.match(liveChatMigration, /create policy "Vybora active live sessions are public"[\s\S]*exists \([\s\S]*vybora_live_participants/i);
+  assert.match(liveChatMigration, /delete from public\.vybora_live_chat_messages where session_id = v_session_id/i);
+  assert.match(liveChatMigration, /grant execute on function public\.vybora_cleanup_stale_live_sessions\(timestamptz\) to service_role/i);
+  assert.match(cleanupFunction, /removedLiveChatMessages/);
+  assert.match(socialSource, /async function liveChatRealtime\(\)/);
+  assert.match(socialSource, /liveChatPending\.forEach\(message=>merged\.set\(message\.id,message\)\)/);
+  assert.match(socialSource, /\.sort\(\(a,b\)=>new Date\(a\.created_at\)-new Date\(b\.created_at\)\)/);
+  assert.match(socialSource, /async function sendLiveChat\(e\)/);
+  assert.match(socialSource, /async function refreshLiveCount\(\)/);
+  assert.match(socialSource, /liveChatForm.*addEventListener\('submit',sendLiveChat\)/);
 });
