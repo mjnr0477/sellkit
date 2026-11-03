@@ -658,3 +658,15 @@ test('initial feed hydrates creator and viewer metadata concurrently', () => {
   assert.match(loader, /sb\.from\('vybora_comments'\)\.select\('post_id'\)\.in\('post_id',ids\)/);
   assert.match(loader, /comments_count:ccounts\[p\.id\]\|\|0/);
 });
+
+
+test('Following feed hydrates profile and interaction state concurrently', () => {
+  const start = html.indexOf('async function hydrateFollowingRows(rows)');
+  const end = html.indexOf('async function loadFollowingFeed()', start);
+  const loader = html.slice(start, end);
+  assert.match(loader, /const \[profilesResult,statsResult,likesResult,bookmarksResult,commentsResult\]=await Promise\.all\(/);
+  assert.match(loader, /sb\.from\('vybora_reactions'\)\.select\('post_id'\)\.eq\('user_id',user\.id\)/);
+  assert.match(loader, /sb\.from\('vybora_bookmarks'\)\.select\('post_id'\)\.eq\('user_id',user\.id\)/);
+  assert.match(loader, /sb\.from\('vybora_comments'\)\.select\('post_id'\)/);
+  assert.match(loader, /following:true,comments_count:commentCounts\[p\.id\]\|\|0/);
+});
