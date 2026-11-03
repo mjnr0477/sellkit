@@ -500,6 +500,7 @@ test('viewers can steer recommendations with private negative feedback and reset
   assert.match(html, /const negative=avoidCreator\+avoidTopic/);
   assert.match(html, /items\.filter\(p=>!hiddenPosts\.has\(String\(p\.id\)\)\)/);
   assert.match(html, /action==='not-interested'/);
+  assert.match(html, /posts=posts\.filter\(p=>String\(p\.id\)!==String\(id\)\);allPosts=allPosts\.filter\(p=>String\(p\.id\)!==String\(id\)\)/);
   assert.match(html, /id="resetFeedLearningBtn"/);
   assert.match(html, /localStorage\.removeItem\(WATCH_INTEREST_KEY\)/);
   assert.doesNotMatch(html, /sb\.from\(['"]vybora_watch_feedback/);
