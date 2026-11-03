@@ -67,7 +67,7 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.match(html, /id="savedBackdrop"/);
   assert.match(html, /async function openSavedVideos\(\)/);
   assert.match(html, /if\(tab==='Watch'\)\{posts=allPosts;render\(allPosts.length\?allPosts:demo\);return\}/);
-  assert.match(html, /const list=allPosts\.filter\(p=>p\.following&&!mutedAuthors\.has\(p\.author_id\)\)/);
+  assert.match(html, /async function loadFollowingFeed\(\)/);
   assert.match(html, /sb\.from\('vybora_profiles'\)\.upsert/);
   assert.match(html, /id="forgotPassword"/);
   assert.match(html, /resetPasswordForEmail/);
@@ -500,6 +500,7 @@ test('viewers can steer recommendations with private negative feedback and reset
   assert.match(html, /const negative=avoidCreator\+avoidTopic/);
   assert.match(html, /items\.filter\(p=>!hiddenPosts\.has\(String\(p\.id\)\)\)/);
   assert.match(html, /action==='not-interested'/);
+  assert.match(html, /posts=posts\.filter\(p=>String\(p\.id\)!==String\(id\)\);allPosts=allPosts\.filter\(p=>String\(p\.id\)!==String\(id\)\)/);
   assert.match(html, /id="resetFeedLearningBtn"/);
   assert.match(html, /localStorage\.removeItem\(WATCH_INTEREST_KEY\)/);
   assert.doesNotMatch(html, /sb\.from\(['"]vybora_watch_feedback/);
@@ -540,4 +541,14 @@ test('Data Saver reduces community feed page sizes without changing normal brows
   assert.match(html, /const postBatchSize=dataSaver\?20:50/);
   assert.match(html, /\.range\(feedPostOffset,feedPostOffset\+postBatchSize-1\)/);
   assert.match(html, /feedHasMore=\(rows\|\|\[\]\)\.length===postBatchSize/);
+});
+
+
+test('Following feed fetches public posts from the signed-in viewer’s followed creators', () => {
+  assert.match(html, /async function loadFollowingFeed\(\)/);
+  assert.match(html, /sb\.from\('vybora_follows'\)\.select\('followed_id'\)\.eq\('follower_id',user\.id\)/);
+  assert.match(html, /sb\.from\('vybora_posts'\)[\s\S]*?\.in\('author_id',followedIds\)/);
+  assert.match(html, /function setTab\(tab\)[\s\S]*?if\(tab==='Following'\)[\s\S]*?loadFollowingFeed\(\)/);
+  assert.match(html, /async function refreshActiveFeed\(\)\{if\(activeTab==='Following'&&user\)return loadFollowingFeed\(\);return loadFeed\(\)\}/);
+  assert.doesNotMatch(html, /allPosts\.filter\(p=>p\.following/);
 });
