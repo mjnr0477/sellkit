@@ -11,6 +11,39 @@ update public.vybora_live_sessions s
         and p.user_id <> s.host_id
    );
 
+-- Keep active participants able to observe the end-of-live event.
+drop policy if exists "Vybora active live sessions are public" on public.vybora_live_sessions;
+create policy "Vybora active live sessions are public"
+  on public.vybora_live_sessions for select to anon, authenticated
+  using (
+    status = 'live'
+    or host_id = (select auth.uid())
+    or exists (
+      select 1 from public.vybora_live_participants p
+       where p.session_id = vybora_live_sessions.id
+         and p.user_id = (select auth.uid())
+    )
+  );
+
+create or replace function public.vybora_zero_live_viewer_count_on_end()
+returns trigger
+language plpgsql
+set search_path = pg_catalog, public
+as $zero_viewers$
+begin
+  if old.status = 'live' and new.status = 'ended' then
+    new.viewer_count := 0;
+  end if;
+  return new;
+end;
+$zero_viewers$;
+
+revoke all on function public.vybora_zero_live_viewer_count_on_end() from public, anon, authenticated;
+drop trigger if exists vybora_zero_viewer_count_on_end on public.vybora_live_sessions;
+create trigger vybora_zero_viewer_count_on_end
+before update of status on public.vybora_live_sessions
+for each row execute function public.vybora_zero_live_viewer_count_on_end();
+
 create or replace function public.vybora_update_live_viewer_count()
 returns trigger
 language plpgsql
@@ -22,6 +55,7 @@ declare
   v_user_id uuid;
   v_delta integer;
   v_host_id uuid;
+  v_status text;
 begin
   if tg_op = 'INSERT' then
     v_session_id := new.session_id;
@@ -33,11 +67,11 @@ begin
     v_delta := -1;
   end if;
 
-  select host_id into v_host_id
+  select host_id, status into v_host_id, v_status
     from public.vybora_live_sessions
    where id = v_session_id;
 
-  if v_host_id is not null and v_user_id <> v_host_id then
+  if v_status = 'live' and v_host_id is not null and v_user_id <> v_host_id then
     update public.vybora_live_sessions
        set viewer_count = greatest(0, viewer_count + v_delta)
      where id = v_session_id;
@@ -53,6 +87,48 @@ drop trigger if exists vybora_live_viewer_count_change on public.vybora_live_par
 create trigger vybora_live_viewer_count_change
 after insert or delete on public.vybora_live_participants
 for each row execute function public.vybora_update_live_viewer_count();
+
+-- Purge chat with abandoned live rooms after the 30-minute heartbeat grace period.
+create or replace function public.vybora_cleanup_stale_live_sessions(p_stale_before timestamptz)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $cleanup$
+declare
+  result jsonb;
+begin
+  with stale as (
+    update public.vybora_live_sessions
+       set status = 'ended', ended_at = now(), viewer_count = 0
+     where status = 'live'
+       and heartbeat_at < p_stale_before
+    returning id
+  ),
+  removed_participants as (
+    delete from public.vybora_live_participants p
+     using stale s where p.session_id = s.id returning 1
+  ),
+  removed_signals as (
+    delete from public.vybora_live_signals x
+     using stale s where x.session_id = s.id returning 1
+  ),
+  removed_chat_messages as (
+    delete from public.vybora_live_chat_messages c
+     using stale s where c.session_id = s.id returning 1
+  )
+  select jsonb_build_object(
+    'endedSessions', (select count(*) from stale),
+    'removedParticipants', (select count(*) from removed_participants),
+    'removedSignals', (select count(*) from removed_signals),
+    'removedChatMessages', (select count(*) from removed_chat_messages)
+  ) into result;
+  return result;
+end;
+$cleanup$;
+
+revoke all on function public.vybora_cleanup_stale_live_sessions(timestamptz) from public, anon, authenticated;
+grant execute on function public.vybora_cleanup_stale_live_sessions(timestamptz) to service_role;
 
 create table if not exists public.vybora_live_chat_messages (
   id uuid primary key default gen_random_uuid(),
