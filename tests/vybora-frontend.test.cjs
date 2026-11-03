@@ -15,6 +15,7 @@ const readReceiptHardening = fs.readFileSync(new URL('../supabase/migrations/202
 const liveHeartbeatMigration = fs.readFileSync(new URL('../supabase/migrations/20261103090000_vybora_live_heartbeat_cleanup.sql', 'file://' + __filename), 'utf8');
 const liveHeartbeatHardeningMigration = fs.readFileSync(new URL('../supabase/migrations/20261103091000_vybora_live_heartbeat_trigger_guard.sql', 'file://' + __filename), 'utf8');
 const liveChatMigration = fs.readFileSync(new URL('../supabase/migrations/20261103092000_vybora_live_chat_viewer_counts.sql', 'file://' + __filename), 'utf8');
+const liveCapacityMigration = fs.readFileSync(new URL('../supabase/migrations/20261103093000_vybora_live_direct_viewer_cap.sql', 'file://' + __filename), 'utf8');
 const cleanupFunction = fs.readFileSync(new URL('../supabase/functions/vybora-cleanup-expired-videos/index.ts', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
@@ -740,4 +741,15 @@ test('live rooms expose participant-only chat and database-maintained viewer cou
   assert.match(socialSource, /async function sendLiveChat\(e\)/);
   assert.match(socialSource, /async function refreshLiveCount\(\)/);
   assert.match(socialSource, /liveChatForm.*addEventListener\('submit',sendLiveChat\)/);
+});
+
+
+test('direct WebRTC live rooms enforce a safe viewer cap until SFU media is available', () => {
+  assert.match(liveCapacityMigration, /viewer_count >= 3/i);
+  assert.match(html, /limited to 3 viewers per room/i);
+  assert.match(socialSource, /Number\(x\.viewer_count\|\|0\)>=3\?'disabled':''/);
+  assert.match(liveCapacityMigration, /for update/i);
+  assert.match(liveCapacityMigration, /as restrictive/i);
+  assert.match(liveCapacityMigration, /create trigger vybora_live_participant_capacity_guard/i);
+  assert.match(socialSource, /This live room has reached its safe viewer limit/);
 });
