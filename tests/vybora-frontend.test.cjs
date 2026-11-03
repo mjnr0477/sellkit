@@ -825,7 +825,7 @@ test('PeerTube expands open-licensed discovery and rejects private, mature, and 
 });
 
 test('PeerTube feed prioritizes trending and live tab requests only active streams', () => {
-  assert.match(html, /sort:searchTerm==='short film'\?' -trending'/);
+  assert.match(html, /sort:searchTerm==='short film'\?'-trending'/);
   assert.match(html, /search:'live',isLive:'true'/);
 });
 
