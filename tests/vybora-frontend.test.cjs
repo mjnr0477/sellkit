@@ -816,6 +816,7 @@ test('PeerTube expands open-licensed discovery and rejects private, mature, and 
   assert.match(html, /embed\.origin!==source\.origin/);
   assert.match(html, /loadPeerTubeVideos\(page\)/);
   assert.match(html, /requestPage\*20<Number\(payload\.total\)/);
+  assert.ok(html.includes("!/^([a-z0-9-]+\\.)+[a-z]{2,}$/i.test(source.hostname)"));
 });
 
 test('Live tab discovers and re-verifies currently live PeerTube streams before embedding them', () => {
