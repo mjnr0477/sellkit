@@ -31,7 +31,7 @@
  },{root:feed,threshold:[0,0.6,0.85]});
  const observe=()=>{
   active.forEach(card=>{if(!card.isConnected)active.delete(card)});
-  feed.querySelectorAll('.video-card').forEach(card=>{
+  feed.querySelectorAll('.video-card,.live-event-card').forEach(card=>{
    if(!card.dataset.cleanObserved){card.dataset.cleanObserved='1';mediaObserver.observe(card)}
   });
  };
