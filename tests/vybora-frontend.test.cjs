@@ -29,7 +29,7 @@ test('VYBORA page is mobile-ready and keeps the steering feed free of forced sna
 test('guest browsing remains available without account creation', () => {
   assert.match(html, /async function loadFeed\(\)/);
   assert.match(html, /render\(posts\.length\?posts:demo\)/);
-  assert.match(html, /vybora_external_videos/);
+  assert.match(html, /https:\\/\\/sepiasearch\\.org\\/api\\/v1\\/search\\/videos/);
   assert.match(html, /Your universe, in motion/);
   assert.match(html, /You can keep watching without one/);
 });
@@ -156,9 +156,14 @@ test('feed uses touch-friendly smooth scrolling and avoids forced stop on every 
   assert.match(html, /\.video-card\{[^}]*scroll-snap-stop:normal/);
 });
 
-test('curated video feed requests up to 100 entries and validates trusted HTTPS embeds', () => {
-  assert.match(html, /vybora_external_videos'[\s\S]*?\.range\(0,99\)/);
-  assert.match(html, /externalRows=.*new URL\(v\.embed_url\)/);
+test('external video discovery streams from live sources without reading the persisted video catalogue', () => {
+  const feedSource = html.slice(html.indexOf('async function loadFeed()'), html.indexOf('async function ensureProfile()'));
+  const searchSource = html.slice(html.indexOf('async function searchVideos(query)'), html.indexOf("$('searchSubmit').addEventListener"));
+  assert.doesNotMatch(feedSource, /sb\.from\('vybora_external_videos'\)/);
+  assert.doesNotMatch(searchSource, /sb\.from\('vybora_external_videos'\)/);
+  assert.match(feedSource, /loadOpenArchiveVideos\(1\)/);
+  assert.match(searchSource, /loadPeerTubeVideos\(1,q\)/);
+  assert.match(searchSource, /loadOpenverseVideos\(1,q\)/);
 });
 
 test('uploaded community videos are limited to short clips', () => {
@@ -817,6 +822,11 @@ test('PeerTube expands open-licensed discovery and rejects private, mature, and 
   assert.match(html, /loadPeerTubeVideos\(page\)/);
   assert.match(html, /requestPage\*20<Number\(payload\.total\)/);
   assert.ok(html.includes("!/^([a-z0-9-]+\\.)+[a-z]{2,}$/i.test(source.hostname)"));
+});
+
+test('PeerTube feed prioritizes trending and live tab requests only active streams', () => {
+  assert.match(html, /sort:searchTerm==='short film'\?' -trending'/);
+  assert.match(html, /search:'live',isLive:'true'/);
 });
 
 test('Live tab discovers and re-verifies currently live PeerTube streams before embedding them', () => {
