@@ -203,13 +203,13 @@ async function loadPeerTubeVideos(page=1,searchTerm=''){
    try{
     const source=new URL(String(video.url||''));
     const uuid=String(video.uuid||video.shortUUID||'');
-    if(source.protocol!=='https:'||!uuid||!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(source.hostname)||video.isLive===true||video.nsfw===true||!isCleanVideoMetadata(video.name,video.description,(video.tags||[]).join(' ')))return null;
+    const licenceId=Number(video.licence?.id??video.licence),licenceUrls={2:'https://creativecommons.org/licenses/by/4.0/',3:'https://creativecommons.org/licenses/by-sa/4.0/',7:'https://creativecommons.org/publicdomain/mark/1.0/',8:'https://creativecommons.org/publicdomain/zero/1.0/'};const archiveLicense=licenceUrls[licenceId];if(source.protocol!=='https:'||!uuid||!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(source.hostname)||!archiveLicense||video.isLive===true||video.nsfw===true||!isCleanVideoMetadata(video.name,video.description,(video.tags||[]).join(' ')))return null;
     if(video.privacy?.id!=null&&Number(video.privacy.id)!==1)return null;
     const embedPath=String(video.embedPath||('/videos/embed/'+uuid));
     const embed=new URL(embedPath,source.origin);
     if(embed.protocol!=='https:'||embed.origin!==source.origin||!embed.pathname.startsWith('/videos/embed/'))return null;embed.searchParams.set('autoplay','1');embed.searchParams.set('muted','1');
     const creator=String(video.channel?.displayName||video.account?.displayName||video.channel?.name||'PeerTube creator');
-    return {id:'peertube-'+source.hostname+'-'+uuid,external_video_id:'peertube:'+source.hostname+':'+uuid,body:String(video.name||'Community video').slice(0,220),media_url:embed.href,media_type:'external',source_url:source.href,source_name:'PeerTube',username:creator.slice(0,90),handle:'@peertube',created_at:video.publishedAt||video.createdAt||new Date().toISOString(),views_count:Number(video.views)||0,likes:0,comments_count:0};
+    return {id:'peertube-'+source.hostname+'-'+uuid,external_video_id:'peertube:'+source.hostname+':'+uuid,body:String(video.name||'Community video').slice(0,220),media_url:embed.href,media_type:'external',source_url:source.href,source_name:'PeerTube',archiveLicense,username:creator.slice(0,90),handle:'@peertube',created_at:video.publishedAt||video.createdAt||new Date().toISOString(),views_count:Number(video.views)||0,likes:0,comments_count:0};
    }catch{return null}
   }).filter(Boolean);
  }finally{peertubeLoading=false}
