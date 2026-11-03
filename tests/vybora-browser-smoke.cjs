@@ -202,12 +202,12 @@ test('Data Saver still auto-loads only the visible video when it enters the watc
       const card = document.createElement('article');
       card.className = 'video-card';
       card.dataset.id = 'demo-1';
-      card.dataset.mediaUrl = 'https://media.test/clip.mp4';
-      card.innerHTML = '<video data-src="https://media.test/clip.mp4" preload="none"></video><button class="play-toggle" data-action="play" type="button">Play</button>';
+      card.dataset.mediaUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+      card.innerHTML = '<video data-src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" preload="none"></video><button class="play-toggle" data-action="play" type="button">Play</button>';
       document.querySelector('#feed').replaceChildren(card);
     });
     const video = page.locator('#feed video');
-    await page.waitForFunction(() => document.querySelector('#feed video')?.getAttribute('src') === 'https://media.test/clip.mp4',
+    await page.waitForFunction(() => document.querySelector('#feed video')?.getAttribute('src') === 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
       { timeout: 15000 });
     assert.equal(await video.getAttribute('data-src'), null, 'visible media should be promoted from deferred source');
     assert.equal(await video.evaluate(el => el.muted), true, 'automatic playback must start muted');
