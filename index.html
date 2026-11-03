@@ -189,6 +189,7 @@ async function loadBlenderVideos(page=1,queryOverride=''){
  }).filter(Boolean);
 }
 async function loadOpenArchiveVideos(page=1){
+ if(dataSaver)return [];
  if(archiveLoading||(!archiveHasMore&&!commonsHasMore&&!openverseHasMore&&!nasaHasMore&&!blenderHasMore&&page>archivePage))return [];
  archiveLoading=true;
  try{
