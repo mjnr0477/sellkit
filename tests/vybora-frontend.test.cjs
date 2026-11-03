@@ -731,6 +731,8 @@ test('live rooms expose participant-only chat and database-maintained viewer cou
   assert.match(liveChatMigration, /grant execute on function public\.vybora_cleanup_stale_live_sessions\(timestamptz\) to service_role/i);
   assert.match(cleanupFunction, /removedLiveChatMessages/);
   assert.match(socialSource, /async function liveChatRealtime\(\)/);
+  assert.match(socialSource, /liveChatPending\.forEach\(message=>merged\.set\(message\.id,message\)\)/);
+  assert.match(socialSource, /\.sort\(\(a,b\)=>new Date\(a\.created_at\)-new Date\(b\.created_at\)\)/);
   assert.match(socialSource, /async function sendLiveChat\(e\)/);
   assert.match(socialSource, /async function refreshLiveCount\(\)/);
   assert.match(socialSource, /liveChatForm.*addEventListener\('submit',sendLiveChat\)/);
