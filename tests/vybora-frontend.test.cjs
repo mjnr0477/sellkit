@@ -744,6 +744,12 @@ test('live rooms expose participant-only chat and database-maintained viewer cou
 });
 
 
+test('direct live video uses a mobile data-saving capture and per-viewer bitrate cap', () => {
+  assert.match(socialSource, /width:\{ideal:640\},height:\{ideal:360\},frameRate:\{ideal:24,max:24\}/);
+  assert.match(socialSource, /noiseSuppression:true/);
+  assert.match(socialSource, /maxBitrate:650000,maxFramerate:24/);
+});
+
 test('direct WebRTC live rooms enforce a safe viewer cap until SFU media is available', () => {
   assert.match(liveCapacityMigration, /viewer_count >= 3/i);
   assert.match(html, /limited to 3 viewers per room/i);
