@@ -633,3 +633,15 @@ test('search results remain addressable by shared video actions', () => {
   assert.match(html, /const found=rankFeedItems\(\[\.\.\.dedup\.values\(\)\]\);posts=found;activeTab='Search'/);
   assert.match(html, /id,post=posts\.find\(p=>String\(p\.id\)===id\)\|\|demo\.find\(p=>p\.id===id\)/);
 });
+
+
+test('later For You pages hydrate real viewer likes, saves, follows and comment counts', () => {
+  const start = html.indexOf('async function loadMoreFeed()');
+  const end = html.indexOf("feed.addEventListener('scroll'", start);
+  const loader = html.slice(start, end);
+  assert.match(loader, /sb\.from\('vybora_reactions'\)\.select\('post_id'\)\.eq\('user_id',user\.id\)/);
+  assert.match(loader, /sb\.from\('vybora_bookmarks'\)\.select\('post_id'\)\.eq\('user_id',user\.id\)/);
+  assert.match(loader, /sb\.from\('vybora_follows'\)\.select\('followed_id'\)\.eq\('follower_id',user\.id\)/);
+  assert.match(loader, /sb\.from\('vybora_comments'\)\.select\('post_id'\)/);
+  assert.match(loader, /liked:myLikes\.has\(p\.id\),saved:mySaves\.has\(p\.id\),following:following\.has\(p\.author_id\),comments_count:commentCounts\[p\.id\]\|\|0/);
+});
