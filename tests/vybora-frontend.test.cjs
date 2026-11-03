@@ -526,5 +526,5 @@ test('offline worker caches the VYBORA stylesheet and serves its last good copy 
   assert.ok(worker.includes("'/design-refresh.css'"));
   assert.ok(worker.includes("url.pathname === '/design-refresh.css'"));
   assert.ok(worker.includes('if (response.ok) await cache.put(request, response.clone())'));
-  assert.ok(worker.includes('(await cache.match(request)) || Response.error()'));
+  assert.ok(worker.includes('(await cache.match(request, { ignoreSearch: true })) || Response.error()'));
 });
