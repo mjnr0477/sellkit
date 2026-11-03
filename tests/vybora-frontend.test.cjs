@@ -646,3 +646,15 @@ test('later For You pages hydrate real viewer likes, saves, follows and comment 
   assert.match(loader, /liked:myLikes\.has\(p\.id\),saved:mySaves\.has\(p\.id\),following:following\.has\(p\.author_id\),comments_count:commentCounts\[p\.id\]\|\|0/);
   assert.match(loader, /const \[statsResult,commentsResult,reactsResult,marksResult,followingResult\]=await Promise\.all\(/);
 });
+
+
+test('initial feed hydrates creator and viewer metadata concurrently', () => {
+  const start = html.indexOf('async function loadFeed()');
+  const end = html.indexOf('async function ensureProfile()', start);
+  const loader = html.slice(start, end);
+  assert.match(loader, /const \[statsResult,likesResult,followsResult,bookmarksResult,profilesResult,commentsResult\]=await Promise\.all\(/);
+  assert.match(loader, /sb\.from\('vybora_reactions'\)\.select\('post_id'\)\.eq\('user_id',user\.id\)/);
+  assert.match(loader, /sb\.from\('vybora_bookmarks'\)\.select\('post_id'\)\.eq\('user_id',user\.id\)/);
+  assert.match(loader, /sb\.from\('vybora_comments'\)\.select\('post_id'\)\.in\('post_id',ids\)/);
+  assert.match(loader, /comments_count:ccounts\[p\.id\]\|\|0/);
+});
