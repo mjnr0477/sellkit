@@ -188,22 +188,21 @@ async function loadBlenderVideos(page=1,queryOverride=''){
   return {id:'blender-'+uuid,external_video_id:'blender:'+uuid,body:String(video.name||'Blender Open Movie'),media_url:embedUrl,media_type:'external',source_url:sourceUrl,source_name:'Blender Video',username:channel,handle:'@blenderopenmovies',created_at:video.publishedAt||video.createdAt||new Date().toISOString(),views_count:Number(video.views)||0,likes:0,comments_count:0};
  }).filter(Boolean);
 }
-async function loadPeerTubeVideos(page=1,searchTerm='short film'){
+async function loadPeerTubeVideos(page=1,searchTerm=''){
  if(peertubeLoading||(!peertubeHasMore&&page>peertubePage))return [];
  peertubeLoading=true;
- const requestPage=page;
+ const requestPage=page,pageSize=dataSaver?8:20;
  try{
-  const params=new URLSearchParams({search:String(searchTerm||'short film').slice(0,100),count:'20',start:String((requestPage-1)*20),nsfw:'false',licenceOneOf:'1,2,7,8'});if(searchTerm==='short film')params.set('sort','-trending');
+  const params=new URLSearchParams({count:String(pageSize),start:String((requestPage-1)*pageSize),nsfw:'false',privacyOneOf:'1'});if(searchTerm)params.set('search',String(searchTerm).slice(0,100));else params.set('sort','-trending');
   const response=await fetchWithTimeout('https://sepiasearch.org/api/v1/search/videos?'+params.toString(),{headers:{Accept:'application/json'}});
   if(!response.ok)throw new Error('PeerTube discovery returned HTTP '+response.status);
   const payload=await response.json(),items=payload?.data||payload?.videos||[];
-  peertubePage=requestPage;peertubeHasMore=items.length===20&&(!Number.isFinite(Number(payload?.total))||requestPage*20<Number(payload.total));
+  peertubePage=requestPage;peertubeHasMore=items.length===pageSize&&(!Number.isFinite(Number(payload?.total))||requestPage*pageSize<Number(payload.total));
   return items.map(video=>{
    try{
     const source=new URL(String(video.url||''));
     const uuid=String(video.uuid||video.shortUUID||'');
-    const licence=Number(video.licence?.id??video.licence);
-    if(source.protocol!=='https:'||!uuid||!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(source.hostname)||video.isLive===true||video.nsfw===true||![1,2,7,8].includes(licence)||!isCleanVideoMetadata(video.name,video.description,(video.tags||[]).join(' ')))return null;
+    if(source.protocol!=='https:'||!uuid||!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(source.hostname)||video.isLive===true||video.nsfw===true||!isCleanVideoMetadata(video.name,video.description,(video.tags||[]).join(' ')))return null;
     if(video.privacy?.id!=null&&Number(video.privacy.id)!==1)return null;
     const embedPath=String(video.embedPath||('/videos/embed/'+uuid));
     const embed=new URL(embedPath,source.origin);
@@ -296,13 +295,13 @@ async function loadPeerTubeLiveEvents(hub,signal,searchTerm=''){
   try{
    const topics=searchTerm?[String(searchTerm).slice(0,100)]:['live','sports','football','music','gaming','news'];
    const batches=await Promise.all(topics.map(async topic=>{
-    const params=new URLSearchParams({search:topic,isLive:'true',count:String(pageSize),start:String(offset),sort:'-publishedAt',nsfw:'false',licenceOneOf:'1,2,7,8'});
+    const params=new URLSearchParams({search:topic,isLive:'true',count:String(pageSize),start:String(offset),sort:'-publishedAt',nsfw:'false',privacyOneOf:'1'});
     try{const response=await fetchWithTimeout('https://sepiasearch.org/api/v1/search/videos?'+params.toString(),{headers:{Accept:'application/json'}});if(!response.ok)throw new Error('HTTP '+response.status);const payload=await response.json();return payload?.data||payload?.videos||[]}catch(error){console.warn('PeerTube live topic unavailable:',topic,error?.message||error);return []}
    }));
    hasMore=!searchTerm&&batches.some(items=>items.length===pageSize);offset+=pageSize;
    const unique=new Map();batches.flat().forEach(v=>{const key=String(v.uuid||v.shortUUID||v.id||'');if(key&&!unique.has(key))unique.set(key,v)});
    const items=[...unique.values()];
-   const candidates=items.filter(v=>v?.isLive===true&&v.nsfw!==true&&(v.privacy?.id==null||Number(v.privacy.id)===1)&&isCleanVideoMetadata(v.name,v.description,(v.tags||[]).join(' '))&&[1,2,7,8].includes(Number(v.licence?.id??v.licence))&&!seen.has(String(v.uuid||v.shortUUID||v.id))).slice(0,pageSize);
+   const candidates=items.filter(v=>v?.isLive===true&&v.nsfw!==true&&(v.privacy?.id==null||Number(v.privacy.id)===1)&&isCleanVideoMetadata(v.name,v.description,(v.tags||[]).join(' '))&&!seen.has(String(v.uuid||v.shortUUID||v.id))).slice(0,pageSize);
    const verified=await Promise.all(candidates.map(async video=>{
     try{
      const source=new URL(String(video.url||'')),uuid=String(video.uuid||video.shortUUID||'');
@@ -311,7 +310,7 @@ async function loadPeerTubeLiveEvents(hub,signal,searchTerm=''){
      const detailResponse=await fetchWithTimeout(new URL('/api/v1/videos/'+encodeURIComponent(uuid),source.origin).href,{headers:{Accept:'application/json'}},8000);
      if(!detailResponse.ok)return null;
      const detail=await detailResponse.json();
-     if(detail.isLive!==true||detail.nsfw===true||detail.privacy?.id!=null&&Number(detail.privacy.id)!==1||!isCleanVideoMetadata(detail.name,detail.description,(detail.tags||[]).join(' '))||Number(detail.licence?.id??detail.licence)!==Number(video.licence?.id??video.licence)||detail.state?.id!=null&&Number(detail.state.id)!==1)return null;
+     if(detail.isLive!==true||detail.nsfw===true||detail.privacy?.id!=null&&Number(detail.privacy.id)!==1||!isCleanVideoMetadata(detail.name,detail.description,(detail.tags||[]).join(' '))||detail.state?.id!=null&&Number(detail.state.id)!==1)return null;
      const embed=new URL(String(detail.embedPath||video.embedPath||('/videos/embed/'+uuid)),source.origin);
      if(embed.protocol!=='https:'||embed.origin!==source.origin||!embed.pathname.startsWith('/videos/embed/'))return null;
      const title=esc(detail.name||video.name||'PeerTube live stream');
