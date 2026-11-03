@@ -609,3 +609,27 @@ test('blocked creators stay hidden in the initial and paginated community feed',
   assert.match(html, /rows=rows\.filter\(p=>\(window\.vyboraAllowMature\|\|!p\.mature_content\)&&!mutedAuthors\.has\(p\.author_id\)&&!blockedAuthors\.has\(p\.author_id\)\)/);
   assert.match(html, /const clean=\(rows\|\|\[\]\)\.filter\(p=>\(window\.vyboraAllowMature\|\|!p\.mature_content\)&&!mutedAuthors\.has\(p\.author_id\)&&!blockedAuthors\.has\(p\.author_id\)\)/);
 });
+
+
+test('like and save actions refresh the active feed instead of forcing For You', () => {
+  const likeStart = html.indexOf("if(action==='like')");
+  const followStart = html.indexOf("if(action==='follow')", likeStart);
+  assert.ok(likeStart >= 0 && followStart > likeStart);
+  assert.match(html.slice(likeStart, followStart), /await refreshActiveFeed\(\);return/);
+  assert.ok(html.includes("tell(existing?'Removed from saved videos.':'Video saved to your account.');await refreshActiveFeed();return}}"));
+});
+
+
+test('database search results hydrate real likes, bookmarks and comment counts', () => {
+  assert.match(html, /const searchPostIds=dbPosts\.map\(p=>p\.id\)/);
+  assert.match(html, /vybora_post_stats'\)\.select\('post_id,likes_count'\)\.in\('post_id',searchPostIds\)/);
+  assert.match(html, /vybora_reactions'\)\.select\('post_id'\)\.eq\('user_id',user\.id\)\.in\('post_id',searchPostIds\)/);
+  assert.match(html, /vybora_bookmarks'\)\.select\('post_id'\)\.eq\('user_id',user\.id\)\.in\('post_id',searchPostIds\)/);
+  assert.match(html, /liked:searchLiked\.has\(p\.id\),saved:searchSaved\.has\(p\.id\),comments_count:searchComments\[p\.id\]\|\|0/);
+});
+
+
+test('search results remain addressable by shared video actions', () => {
+  assert.match(html, /const found=rankFeedItems\(\[\.\.\.dedup\.values\(\)\]\);posts=found;activeTab='Search'/);
+  assert.match(html, /id,post=posts\.find\(p=>String\(p\.id\)===id\)\|\|demo\.find\(p=>p\.id===id\)/);
+});
