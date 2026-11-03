@@ -103,3 +103,32 @@ await activateTopmostControl('#authClose');
     await browser.close();
   }
 });
+
+
+test('Data Saver defers video bytes until the viewer explicitly presses play', async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const page = await context.newPage();
+    await page.addInitScript(() => localStorage.setItem('vybora:data-saver:v1', 'on'));
+    await page.route('https://media.test/**', route => route.abort());
+    await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 90000 });
+    await page.waitForSelector('#feed .video-card', { timeout: 60000 });
+    await page.evaluate(() => {
+      const card = document.createElement('article');
+      card.className = 'video-card';
+      card.dataset.id = 'demo-1';
+      card.dataset.mediaUrl = 'https://media.test/clip.mp4';
+      card.innerHTML = '<video data-src="https://media.test/clip.mp4" preload="none"></video><button data-action="play" type="button">Play</button>';
+      document.querySelector('#feed').replaceChildren(card);
+    });
+    const video = page.locator('#feed video');
+    assert.equal(await video.getAttribute('src'), null, 'video bytes must not be requested before playback');
+    assert.equal(await video.getAttribute('data-src'), 'https://media.test/clip.mp4');
+    await page.locator('#feed [data-action="play"]').click();
+    await page.waitForFunction(() => document.querySelector('#feed video')?.getAttribute('src') === 'https://media.test/clip.mp4');
+    assert.equal(await video.getAttribute('preload'), 'auto', 'explicit playback should opt into loading the clip');
+  } finally {
+    await browser.close();
+  }
+});
