@@ -164,7 +164,6 @@ async function loadWikimediaVideos(page=1){
  }).filter(Boolean);
 }
 async function loadOpenArchiveVideos(page=1){
- if(dataSaver)return [];
  if(archiveLoading||(!archiveHasMore&&!commonsHasMore&&!openverseHasMore&&!nasaHasMore&&page>archivePage))return [];
  archiveLoading=true;
  try{
