@@ -1,0 +1,14 @@
+/* VYBORA clean watch surface: video is the product, controls stay quiet. */
+.stage{grid-template-columns:minmax(0,1fr)!important;justify-content:center!important}
+.feed-wrap{width:100%!important;max-width:100%!important}
+.side{display:none!important}
+.video-card{min-height:calc(100svh - 116px)!important;height:calc(100svh - 116px)!important;max-height:none!important;border-radius:0!important}
+.video-info .tag,.video-info .video-caption,.video-info .recommendation-controls,.video-info .archive-credit,.video-info .creator .handle{display:none!important}
+.video-info{pointer-events:none!important;background:linear-gradient(transparent 55%,rgba(0,0,0,.24))!important}
+.video-info .creator{pointer-events:auto!important}
+.video-info .creator .avatar,.video-info .creator .follow,.video-info .creator .mute-creator,.video-info .creator .block-creator{display:none!important}
+.video-actions{z-index:8}
+.video-card iframe,.video-card video{object-fit:cover}
+.top{justify-content:center!important}
+.top-actions .desktop-search,.top-actions #dataSaverBtn,.top-actions #soundBtn{display:none!important}
+@media(max-width:850px){.stage{padding:0!important}.feed-wrap{padding:0!important}.video-card{height:calc(100svh - 76px - env(safe-area-inset-bottom,0px))!important;min-height:calc(100svh - 76px - env(safe-area-inset-bottom,0px))!important}}
