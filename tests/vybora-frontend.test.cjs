@@ -837,4 +837,6 @@ test('live event embeds support additional providers and satisfy Twitch parent-d
 test('feed scroll loading is animation-frame throttled to avoid repeated layout and network work', () => {
   assert.match(html, /let feedScrollQueued=false;feed\.addEventListener\('scroll'/);
   assert.match(html, /requestAnimationFrame\(\(\)=>\{feedScrollQueued=false/);
+  assert.match(html, /if\(!entry\.isIntersecting\)\{if\(v&&v\.getAttribute\('src'\)\)/);
+  assert.match(html, /v\.dataset\.src=v\.getAttribute\('src'\)/);
 });
