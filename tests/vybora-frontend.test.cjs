@@ -485,7 +485,7 @@ test('Data Saver avoids background catalogue downloads and respects device data-
   assert.match(html, /dataSaver\?\{data:\[\],error:null\}:await sb\.from\('vybora_external_videos'\)/);
   assert.match(html, /async function loadOpenArchiveVideos\(page=1\)\{\s*if\(dataSaver\)return \[\]/);
   assert.match(html, /async function loadMoreArchiveOnly\(\)\{\s*if\(dataSaver\)return/);
-  assert.match(html, /if\(!dataSaver\)loadFeed\(\)/);
+  assert.match(html, /if\(!dataSaver\)refreshActiveFeed\(\)/);
 });
 
 test('personalized feed ranking diversifies creators without discarding relevance scores', () => {
@@ -669,4 +669,10 @@ test('Following feed hydrates profile and interaction state concurrently', () =>
   assert.match(loader, /sb\.from\('vybora_bookmarks'\)\.select\('post_id'\)\.eq\('user_id',user\.id\)/);
   assert.match(loader, /sb\.from\('vybora_comments'\)\.select\('post_id'\)/);
   assert.match(loader, /following:true,comments_count:commentCounts\[p\.id\]\|\|0/);
+});
+
+
+test('turning Data Saver off preserves the current Search view', () => {
+  assert.match(html, /render\(\);if\(activeTab==='Following'&&user\)loadFollowingFeed\(\);else if\(!dataSaver\)refreshActiveFeed\(\);tell\(dataSaver\?/);
+  assert.match(html, /async function refreshActiveFeed\(\)\{if\(activeTab==='Following'&&user\)return loadFollowingFeed\(\);if\(activeTab==='Search'\)return searchVideos\(\$\('searchInput'\)\.value\);return loadFeed\(\)\}/);
 });
