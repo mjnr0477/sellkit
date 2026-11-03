@@ -190,7 +190,14 @@ test('Data Saver prevents automatic video and embed loading until the viewer req
   assert.match(html, /isExternal&&!isDirectExternal\?'':'<button class="play-toggle" data-action="play"/);
 });
 
-test('Data Saver keeps video discovery and infinite scrolling active without preloading source media', () => {\n  assert.doesNotMatch(html, /async function loadOpenArchiveVideos\(page=1\)\{\\s*if\(dataSaver\)return \[\]/);\n  assert.doesNotMatch(html, /async function loadPeerTubeVideos\(page=1,searchTerm='short film'\)\{\\s*if\(dataSaver/);\n  assert.doesNotMatch(html, /async function loadMoreArchiveOnly\(\)\{\\s*if\(dataSaver\)return/);\n  assert.match(html, /if\(!dataSaver&&v&&!v\.getAttribute\('src'\)&&v\.dataset\.src\)/);\n});\n\ntest('video feed avoids downloading every clip at once and never inserts fabricated demo clips', () => {
+test('Data Saver keeps video discovery and infinite scrolling active without preloading source media', () => {
+  assert.doesNotMatch(html, /async function loadOpenArchiveVideos\(page=1\)\{\s*if\(dataSaver\)return \[\]/);
+  assert.doesNotMatch(html, /async function loadPeerTubeVideos\(page=1,searchTerm='short film'\)\{\s*if\(dataSaver/);
+  assert.doesNotMatch(html, /async function loadMoreArchiveOnly\(\)\{\s*if\(dataSaver\)return/);
+  assert.match(html, /if\(!dataSaver&&v&&!v\.getAttribute\('src'\)&&v\.dataset\.src\)/);
+});
+
+test('video feed avoids downloading every clip at once and never inserts fabricated demo clips', () => {
   assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
   assert.match(html, /v\.preload='auto';v\.load\(\)/);
   assert.doesNotMatch(html, /demo-1|VYBORA Daily|Showing demo videos|featured demo/);
