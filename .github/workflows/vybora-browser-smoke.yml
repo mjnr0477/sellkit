@@ -9,6 +9,8 @@ on:
       - 'design-refresh.css'
       - 'clean-feed.css'
       - 'clean-feed.js'
+      - 'clean-feed.css'
+      - 'clean-feed.js'
       - 'tests/vybora-browser-smoke.cjs'
       - 'service-worker.js'
       - '.github/workflows/vybora-browser-smoke.yml'
