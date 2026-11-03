@@ -552,3 +552,13 @@ test('Following feed fetches public posts from the signed-in viewer’s followed
   assert.match(html, /async function refreshActiveFeed\(\)\{if\(activeTab==='Following'&&user\)return loadFollowingFeed\(\);return loadFeed\(\)\}/);
   assert.doesNotMatch(html, /allPosts\.filter\(p=>p\.following/);
 });
+
+
+test('Following feed paginates its own creator-only result set', () => {
+  assert.match(html, /followingPostOffset=\(rows\|\|\[\]\)\.length/);
+  assert.match(html, /\.range\(0,pageSize-1\)/);
+  assert.match(html, /async function loadMoreFollowingFeed\(\)/);
+  assert.match(html, /\.range\(followingPostOffset,followingPostOffset\+pageSize-1\)/);
+  assert.match(html, /followingHasMore=\(rows\|\|\[\]\)\.length===pageSize/);
+  assert.match(html, /if\(activeTab==='Following'\)loadMoreFollowingFeed\(\);else\{loadMoreFeed\(\);loadMoreArchiveOnly\(\)\}/);
+});
