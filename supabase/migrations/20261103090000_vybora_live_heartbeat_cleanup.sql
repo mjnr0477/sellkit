@@ -6,6 +6,29 @@ create index if not exists vybora_live_sessions_stale_heartbeat_idx
   on public.vybora_live_sessions(heartbeat_at)
   where status = 'live';
 
+-- Clients may end their own room, but only this ownership-checked RPC may refresh presence.
+revoke update on public.vybora_live_sessions from authenticated;
+grant update (status, ended_at) on public.vybora_live_sessions to authenticated;
+
+create or replace function public.vybora_touch_live_session(p_session_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $
+begin
+  update public.vybora_live_sessions
+     set heartbeat_at = clock_timestamp()
+   where id = p_session_id
+     and host_id = (select auth.uid())
+     and status = 'live';
+  return found;
+end;
+$;
+
+revoke all on function public.vybora_touch_live_session(uuid) from public, anon;
+grant execute on function public.vybora_touch_live_session(uuid) to authenticated;
+
 -- Atomic cleanup prevents a heartbeat arriving during cleanup from ending a live room.
 create or replace function public.vybora_cleanup_stale_live_sessions(p_stale_before timestamptz)
 returns jsonb
