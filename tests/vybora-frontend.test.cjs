@@ -541,3 +541,13 @@ test('Data Saver reduces community feed page sizes without changing normal brows
   assert.match(html, /\.range\(feedPostOffset,feedPostOffset\+postBatchSize-1\)/);
   assert.match(html, /feedHasMore=\(rows\|\|\[\]\)\.length===postBatchSize/);
 });
+
+
+test('Following feed fetches public posts from the signed-in viewer’s followed creators', () => {
+  assert.match(html, /async function loadFollowingFeed\(\)/);
+  assert.match(html, /sb\.from\('vybora_follows'\)\.select\('followed_id'\)\.eq\('follower_id',user\.id\)/);
+  assert.match(html, /sb\.from\('vybora_posts'\)[\s\S]*?\.in\('author_id',followedIds\)/);
+  assert.match(html, /function setTab\(tab\)[\s\S]*?if\(tab==='Following'\)[\s\S]*?loadFollowingFeed\(\)/);
+  assert.match(html, /if\(activeTab==='Following'\)await loadFollowingFeed\(\);else await loadFeed\(\)/);
+  assert.doesNotMatch(html, /allPosts\.filter\(p=>p\.following/);
+});
