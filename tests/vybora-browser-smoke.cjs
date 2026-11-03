@@ -41,7 +41,7 @@ test('hosted VYBORA feed loads and guest account gates work for available feed c
       if (!('serviceWorker' in navigator)) return false;
       const registration = await navigator.serviceWorker.ready;
       const cache = await caches.open('vybora-shell-v3');
-      return Boolean(registration.active && await cache.match('/design-refresh.css'));
+      return Boolean(registration.active && await cache.match('/design-refresh.css?v=20261102b', { ignoreSearch: true }));
     });
     assert.equal(offlineShellReady, true, 'offline shell should cache the production stylesheet');
     assert.ok(await page.locator('.video-card').count() > 0, 'guest feed should show video cards');
