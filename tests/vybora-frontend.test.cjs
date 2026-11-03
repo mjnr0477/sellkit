@@ -43,6 +43,13 @@ test('signup keeps confirmation recovery visible and explains email provider rat
   assert.ok(html.includes("button.textContent='Resend in '+remaining+'s'"));
 });
 
+test('authentication errors give actionable recovery instead of raw provider messages', () => {
+  assert.match(html, /err\?\.code==='invalid_credentials'/);
+  assert.match(html, /use “Forgot your password\?” to reset it/);
+  assert.match(html, /over_email_send_rate_limit/);
+  assert.match(html, /Wait at least 60 seconds before trying again/);
+});
+
 test('account-only interactions prompt guests to authenticate', () => {
   assert.match(html, /if\(!user\)\{authPrompt\('Create an account to like videos\.'/);
   assert.match(html, /if\(!user\)\{authPrompt\('Create an account to comment on videos\.'/);
