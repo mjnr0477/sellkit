@@ -199,7 +199,7 @@ async function loadPeerTubeVideos(){
   const response=await fetchWithTimeout('https://sepiasearch.org/api/v1/search/videos?'+params.toString(),{headers:{Accept:'application/json'}});
   if(!response.ok)throw new Error('PeerTube discovery returned HTTP '+response.status);
   const payload=await response.json(),items=payload?.data||payload?.videos||[];
-  peertubePage=requestPage;peertubeHasMore=items.length===20&&(!Number.isFinite(Number(payload?.total))||page*20<Number(payload.total));
+  peertubePage=requestPage;peertubeHasMore=items.length===20&&(!Number.isFinite(Number(payload?.total))||requestPage*20<Number(payload.total));
   return items.map(video=>{
    try{
     const source=new URL(String(video.url||''));
