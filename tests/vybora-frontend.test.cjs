@@ -582,3 +582,13 @@ test('video signature detection identifies WebM, MP4, MOV and rejects unrelated 
   assert.equal(await detectMime(fakeFile([0,1,2,3,4,5,6,7,8,9,10,11])), null);
   assert.equal(await detectMime({}), null);
 });
+
+
+test('creators can delete only their own posts and uploaded media', () => {
+  assert.match(html, /user&&p\.author_id===user\.id\?'[\s\S]*?data-action="delete"/);
+  assert.match(html, /if\(action==='delete'\)\{if\(!user\|\|post\.author_id!==user\.id/);
+  assert.match(html, /sb\.storage\.from\('vybora-media'\)\.remove\(\[post\.media_path\]\)/);
+  assert.match(html, /sb\.from\('vybora_posts'\)\.delete\(\)\.eq\('id',post\.id\)\.eq\('author_id',user\.id\)/);
+  assert.match(html, /post\.media_path\)\{if\(!String\(post\.media_path\)\.startsWith\(user\.id\+'\\/'\)\)/);
+  assert.doesNotMatch(html, /update\(\{expires_at:new Date\(\)\.toISOString\(\)\}\)/);
+});
