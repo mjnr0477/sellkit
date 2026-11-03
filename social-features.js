@@ -75,7 +75,7 @@ async function sendLiveChat(e){
  e.preventDefault();if(!live||!user)return;
  const input=$('liveChatInput'),button=$('liveChatForm')?.querySelector('button[type="submit"]'),body=String(input?.value||'').trim().slice(0,500);
  if(!body)return;if(button)button.disabled=true;
- try{const {error}=await sb.from('vybora_live_chat_messages').insert({session_id:live.id,sender_id:user.id,body});if(error)throw error;input.value=''}
+ try{const {data,error}=await sb.from('vybora_live_chat_messages').insert({session_id:live.id,sender_id:user.id,body}).select('id,sender_id,body,created_at').single();if(error)throw error;appendLiveChat(data);input.value=''}
  catch(error){console.warn('Live chat send failed',error);say('Live chat message could not be sent.')}
  finally{if(button)button.disabled=false}
 }
