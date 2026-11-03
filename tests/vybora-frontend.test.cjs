@@ -892,7 +892,7 @@ test('PeerTube feed accepts only commercial-use-compatible open licenses and car
 test('all direct video cards defer their source and avoid eager autoplay downloads', () => {
   assert.match(html, /<video data-src="'\+esc\(media\)\+'" muted playsinline loop preload="none"/);
   assert.doesNotMatch(html, /<video '\+\(dataSaver\?/);
-  assert.match(html, /video\.preload=active\?'auto':'metadata';video\.load\(\)/);
+  assert.match(html, /video\.preload=dataSaver\?'none':\(active\?'auto':'metadata'\);video\.load\(\)/);
 });
 
 test('only the active card loads provider embeds and a single observer owns playback', () => {
