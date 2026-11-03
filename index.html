@@ -136,9 +136,9 @@ async function loadOpenverseVideos(page=1,queryOverride=''){
   return {id:'openverse-'+String(item.id||url),external_video_id:'openverse:'+String(item.id||url),body:String(item.title||'Open video').replace(/<[^>]*>/g,' ').slice(0,220),media_url:url,media_type:'external',source_url:String(item.foreign_landing_url||item.detail_url||url),source_name:'Openverse',username:String(item.creator||'Open video creator').slice(0,90),handle:'@openfeed',created_at:item.created_on||new Date().toISOString(),views_count:0,likes:0,comments_count:0,archiveLicense:licenseUrl||'https://creativecommons.org/licenses/'+license+'/4.0/'};
  }).filter(Boolean);
 }
-async function loadNasaVideos(page=1){
+async function loadNasaVideos(page=1,queryOverride=''){
  if(!nasaHasMore&&page>nasaPage)return [];
- const params=new URLSearchParams({q:'NASA',media_type:'video',page:String(page),page_size:'12'});
+ const params=new URLSearchParams({q:String(queryOverride||'NASA').slice(0,100),media_type:'video',page:String(page),page_size:'12'});
  const response=await fetchWithTimeout('https://images-api.nasa.gov/search?'+params.toString(),{headers:{Accept:'application/json'}});
  if(!response.ok)throw new Error('NASA video search returned HTTP '+response.status);
  const payload=await response.json(),items=payload?.collection?.items||[];
@@ -193,7 +193,7 @@ async function loadPeerTubeVideos(page=1,searchTerm='short film'){
  peertubeLoading=true;
  const requestPage=page;
  try{
-  const params=new URLSearchParams({search:String(searchTerm||'short film').slice(0,100),count:'20',start:String((requestPage-1)*20),sort:searchTerm==='short film'?'-trending':'-match',nsfw:'false',licenceOneOf:'1,2,7,8'});
+  const params=new URLSearchParams({search:String(searchTerm||'short film').slice(0,100),count:'20',start:String((requestPage-1)*20),nsfw:'false',licenceOneOf:'1,2,7,8'});if(searchTerm==='short film')params.set('sort','-trending');
   const response=await fetchWithTimeout('https://sepiasearch.org/api/v1/search/videos?'+params.toString(),{headers:{Accept:'application/json'}});
   if(!response.ok)throw new Error('PeerTube discovery returned HTTP '+response.status);
   const payload=await response.json(),items=payload?.data||payload?.videos||[];
