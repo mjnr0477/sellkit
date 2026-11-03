@@ -34,6 +34,13 @@ test('guest browsing remains available without account creation', () => {
   assert.match(html, /You can keep watching without one/);
 });
 
+test('signup keeps confirmation recovery visible and explains email provider rate limits', () => {
+  assert.match(html, /authMode='signin';setAuthMode\(\);\$\('resendConfirmation'\)\.hidden=false/);
+  assert.match(html, /Account created\. Check your inbox and spam folder/);
+  assert.match(html, /over_email_send_rate_limit/);
+  assert.match(html, /Wait at least 60 seconds/);
+});
+
 test('account-only interactions prompt guests to authenticate', () => {
   assert.match(html, /if\(!user\)\{authPrompt\('Create an account to like videos\.'/);
   assert.match(html, /if\(!user\)\{authPrompt\('Create an account to comment on videos\.'/);
