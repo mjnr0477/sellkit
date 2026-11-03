@@ -1,4 +1,3 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -35,6 +34,19 @@ Deno.serve(async (req: Request) => {
   if (!claimed) {
     return new Response(JSON.stringify({ ok: true, skipped: "throttled" }), {
       status: 200, headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // A host refreshes heartbeat every 30 seconds. Thirty minutes allows mobile/background
+  // throttling and older app versions while ensuring abandoned rooms are eventually reclaimed.
+  const staleBefore = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const { data: liveCleanup, error: liveCleanupError } = await supabase.rpc(
+    "vybora_cleanup_stale_live_sessions", { p_stale_before: staleBefore },
+  );
+  if (liveCleanupError) {
+    console.error("Stale live-room cleanup failed", liveCleanupError.message);
+    return new Response(JSON.stringify({ error: "Live-room cleanup failed" }), {
+      status: 500, headers: { "Content-Type": "application/json" },
     });
   }
 
@@ -76,7 +88,7 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return new Response(JSON.stringify({ ok: true, deletedPosts: ids.length, removedFiles: paths.length }), {
+  return new Response(JSON.stringify({ ok: true, deletedPosts: ids.length, removedFiles: paths.length, endedLiveSessions: Number(liveCleanup?.endedSessions || 0), removedLiveParticipants: Number(liveCleanup?.removedParticipants || 0), removedLiveSignals: Number(liveCleanup?.removedSignals || 0) }), {
     status: 200, headers: { "Content-Type": "application/json" },
   });
 });

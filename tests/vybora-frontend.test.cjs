@@ -12,6 +12,9 @@ const moderationMigration = fs.readFileSync(new URL('../supabase/migrations/2026
 const moderationHardening = fs.readFileSync(new URL('../supabase/migrations/20261102073755_harden_vybora_moderation_audit.sql', 'file://' + __filename), 'utf8');
 const readReceiptsMigration = fs.readFileSync(new URL('../supabase/migrations/20261102074553_vybora_message_read_receipts.sql', 'file://' + __filename), 'utf8');
 const readReceiptHardening = fs.readFileSync(new URL('../supabase/migrations/20261102074733_harden_vybora_read_receipt_policy.sql', 'file://' + __filename), 'utf8');
+const liveHeartbeatMigration = fs.readFileSync(new URL('../supabase/migrations/20261103090000_vybora_live_heartbeat_cleanup.sql', 'file://' + __filename), 'utf8');
+const liveHeartbeatHardeningMigration = fs.readFileSync(new URL('../supabase/migrations/20261103091000_vybora_live_heartbeat_trigger_guard.sql', 'file://' + __filename), 'utf8');
+const cleanupFunction = fs.readFileSync(new URL('../supabase/functions/vybora-cleanup-expired-videos/index.ts', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
   assert.match(html, /name="viewport"[^>]*width=device-width/);
@@ -687,6 +690,28 @@ test('live signaling waits for realtime readiness and reconciles viewers that jo
   assert.match(signaling, /if\(host\)\{const \{data,error\}=await sb\.from\('vybora_live_participants'\)\.select\('user_id'\)/);
   assert.match(signaling, /for\(const participant of data\|\|\[\]\)await offerViewer\(participant\.user_id\)/);
   assert.match(socialSource, /liveSay\('Joining live…'\);try\{await liveRealtime\(\)\}/);
-  assert.match(socialSource, /liveSay\('You are live\. Keep this screen open\.'\);try\{await liveRealtime\(\)\}/);
+  assert.match(socialSource, /liveSay\('You are live\. Keep this screen open\.'\);try\{await liveRealtime\(\);startLiveHeartbeat\(\)\}/);
   assert.match(socialSource, /async function offerViewer\(id\)[\s\S]*?pc\.close\(\);peers\.delete\(id\)/);
+});
+
+
+test('live host heartbeats keep active rooms alive and scheduled cleanup ends abandoned rooms atomically', () => {
+  assert.match(liveHeartbeatMigration, /add column if not exists heartbeat_at timestamptz not null default now\(\)/i);
+  assert.match(liveHeartbeatMigration, /where status = 'live'[\s\S]*heartbeat_at < p_stale_before/i);
+  assert.match(liveHeartbeatMigration, /delete from public\.vybora_live_participants[\s\S]*delete from public\.vybora_live_signals/i);
+  assert.match(liveHeartbeatMigration, /grant execute on function public\.vybora_cleanup_stale_live_sessions\(timestamptz\) to service_role/i);
+  assert.match(liveHeartbeatMigration, /revoke update on public\.vybora_live_sessions from authenticated/i);
+  assert.match(liveHeartbeatMigration, /grant update \(status, ended_at\) on public\.vybora_live_sessions to authenticated/i);
+  assert.match(liveHeartbeatHardeningMigration, /drop function if exists public\.vybora_touch_live_session\(uuid\)/i);
+  assert.match(liveHeartbeatHardeningMigration, /grant update \(status, ended_at, heartbeat_at\)\s+on public\.vybora_live_sessions to authenticated/i);
+  assert.match(liveHeartbeatHardeningMigration, /before insert or update on public\.vybora_live_sessions/i);
+  assert.match(liveHeartbeatHardeningMigration, /auth\.uid\(\) <> old\.host_id/i);
+  assert.match(liveHeartbeatHardeningMigration, /new\.heartbeat_at := clock_timestamp\(\)/i);
+  assert.match(socialSource, /async function touchLiveHeartbeat\(\)/);
+  assert.match(socialSource, /sb\.from\('vybora_live_sessions'\)\.update\(\{heartbeat_at:new Date\(\)\.toISOString\(\)\}\)/);
+  assert.match(socialSource, /setInterval\(\(\)=>touchLiveHeartbeat\(\)\.catch\(error=>console\.warn\('Live heartbeat update failed',error\)\),30000\)/);
+  assert.match(socialSource, /try\{await liveRealtime\(\);startLiveHeartbeat\(\)\}/);
+  assert.match(socialSource, /async function leaveLive\(\)\{stopLiveHeartbeat\(\)/);
+  assert.match(cleanupFunction, /vybora_cleanup_stale_live_sessions/);
+  assert.match(cleanupFunction, /Date\.now\(\) - 30 \* 60 \* 1000/);
 });
