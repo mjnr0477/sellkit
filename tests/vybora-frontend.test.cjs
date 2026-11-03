@@ -859,12 +859,20 @@ test('Live tab discovers and re-verifies currently live PeerTube streams before 
   assert.match(html, /function setTab\(tab\)\{if\(tab!=='Live'\)window\.vyboraLiveScrollController\?\.abort\(\)/);
 });
 
-test('Live search queries the federated stream network for the requested topic', () => {\n  assert.match(html, /async function loadPeerTubeLiveEvents\(hub,signal,searchTerm=''\)/);
+test('Live search queries the federated stream network for the requested topic', () => {
+  assert.match(html, /async function loadPeerTubeLiveEvents\(hub,signal,searchTerm=''\)/);
   assert.match(html, /const topics=searchTerm\?\[String\(searchTerm\)\.slice\(0,100\)\]/);
   assert.match(html, /loadPeerTubeLiveEvents\(hub,window\.vyboraLiveSearchController\.signal,q\)/);
-  assert.match(html, /setTimeout\(\(\)=>\{hub\.querySelectorAll\('\.peertube-live-event,\.peertube-live-status'\)/);\n});\n\ntest('official live event pagination receives the active abort signal and is cleaned up when leaving Live', () => {\n  assert.match(html, /async function loadOfficialEvents\(signal\)/);
+  assert.match(html, /setTimeout\(\(\)=>\{hub\.querySelectorAll\('\.peertube-live-event,\.peertube-live-status'\)/);
+});
+
+test('official live event pagination receives the active abort signal and is cleaned up when leaving Live', () => {
+  assert.match(html, /async function loadOfficialEvents\(signal\)/);
   assert.match(html, /loadOfficialEvents\(liveScrollSignal\)/);
-  assert.match(html, /feed\.addEventListener\('scroll',[\s\S]*?signal\}\);await appendPage\(\)/);\n});\n\ntest('live event embeds support additional providers and satisfy Twitch parent-domain requirements', () => {
+  assert.match(html, /feed\.addEventListener\('scroll',[\s\S]*?signal\}\);await appendPage\(\)/);
+});
+
+test('live event embeds support additional providers and satisfy Twitch parent-domain requirements', () => {
   assert.match(html, /geo\.dailymotion\.com/);
   assert.match(html, /player\.kick\.com/);
   assert.match(html, /u\.searchParams\.set\('parent',location\.hostname\)/);
