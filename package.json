@@ -5,7 +5,8 @@
   "description": "Android Capacitor packaging for the VYBORA website",
   "scripts": {
     "build:web": "node scripts/prepare-web.mjs",
-    "android:sync": "npm run build:web && cap add android && cap sync android"
+    "android:sync": "npm run build:web && cap add android && cap sync android",
+    "verify": "node scripts/verify-production.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.3",

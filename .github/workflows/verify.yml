@@ -1,0 +1,33 @@
+name: VYBORA production guardrails
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vybora-guardrails-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Static and syntax verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify production interface and safety invariants
+        run: node scripts/verify-production.mjs
+      - name: Build Android live-site launcher
+        run: npm run build:web
+      - name: Verify generated launcher
+        run: grep -q 'https://vybora-social-live-8yyn.onrender.com/' www/index.html
