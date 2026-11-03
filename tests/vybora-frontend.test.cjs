@@ -903,8 +903,8 @@ test('only the active card loads provider embeds and a single observer owns play
 });
 
 test('frontend styles remain structurally balanced for consistent browser parsing', () => {
-  assert.equal((html.match(/<style(?:\\s|>)/g) || []).length, (html.match(/<\\/style>/g) || []).length);
-  assert.doesNotMatch(html, /<style>\\.live-room-list/);
+  assert.equal((html.match(/<style(?:\s|>)/g) || []).length, (html.match(/<\/style>/g) || []).length);
+  assert.doesNotMatch(html, /<style>\.live-room-list/);
 });
 
 test('guest fallback renders fast public sources before slower catalogue discovery', () => {
