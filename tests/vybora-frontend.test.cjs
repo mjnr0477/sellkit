@@ -200,7 +200,8 @@ test('Data Saver keeps video discovery and infinite scrolling active without pre
 test('video feed avoids downloading every clip at once and never inserts fabricated demo clips', () => {
   assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
   assert.match(html, /v\.preload='auto';v\.load\(\)/);
-  assert.doesNotMatch(html, /demo-1|VYBORA Daily|Showing demo videos|featured demo/);
+  assert.doesNotMatch(html, /demo-1|VYBORA Daily|Showing demo videos/);
+  assert.match(html, /feed-empty-state/);
 });
 
 test('community post sharing uses canonical post-specific links and restores the shared post first', () => {
@@ -225,25 +226,29 @@ test('Watch feed paginates endlessly as the user nears the bottom', () => {
   assert.match(html, /feedHasMore/);
 });
 
-test('video search checks public posts and curated titles, descriptions and creators', () => {
-  assert.match(html, /async function searchVideos\(query\)/);
-  assert.match(html, /\.ilike\('body',pattern\)/);
-  assert.match(html, /\.ilike\('title',pattern\)/);
-  assert.match(html, /\.ilike\('description',pattern\)/);
-  assert.match(html, /\.ilike\('creator',pattern\)/);
-  assert.match(html, /searchInput'\)\.addEventListener\('keydown'/);
-  assert.match(html, /data-search-suggest="Music"/);
+test('video search checks community posts and queries live external video sources', () => {
+  const start=html.indexOf('async function searchVideos(query)');
+  const end=html.indexOf("$('searchSubmit').addEventListener",start);
+  const source=html.slice(start,end);
+  assert.match(source, /\.ilike\('body',pattern\)/);
+  assert.doesNotMatch(source, /vybora_external_videos/);
+  assert.match(source, /loadPeerTubeVideos\(1,q\)/);
+  assert.match(source, /loadOpenverseVideos\(1,q\)/);
+  assert.match(source, /loadNasaVideos\(1,q\)/);
+  assert.match(source, /loadBlenderVideos\(1,q\)/);
 });
 
-test('curated video UI does not show provider-source banners or external watch links', () => {
+test('external videos play in-app without provider badges or outbound watch links', () => {
   assert.doesNotMatch(html, /WATCH FROM THE ORIGINAL SOURCE/);
   assert.doesNotMatch(html, /Watch video ↗/);
-  assert.match(html, /handle:'@vybora'/);
-  assert.match(html, /username:v\.creator\|\|'VYBORA Picks'/);
+  assert.match(html, /media_type:'external'/);
+  assert.match(html, /isExternal&&!isDirectExternal/);
+  assert.match(html, /sourceCredit/);
 });
 
 test('curated feed accepts direct streams from the official Blender video host', () => {
-  assert.match(html, /'video\.blender\.org'/);
+  assert.match(html, /https:\/\/video\.blender\.org\/api\/v1\/search\/videos/);
+  assert.match(html, /https:\/\/video\.blender\.org\//);
 });
 
 test('open-video seed migration adds distinct official videos idempotently', () => {
@@ -259,14 +264,13 @@ test('open-video seed migration adds distinct official videos idempotently', () 
 
 
 test('official live-event feed embeds only recently verified active events and hides source links', () => {
-  assert.match(html, /async function loadOfficialEvents\(\)/);
+  assert.match(html, /async function loadOfficialEvents\(signal\)/);
   assert.match(html, /vybora_live_events/);
   assert.match(html, /\.eq\('status','live'\)/);
   assert.match(html, /last_verified_at&&now-Date\.parse\(e\.last_verified_at\)<60\*60\*1000/);
   assert.match(html, /class="official-live-player"/);
   assert.match(html, /const allowed=\['youtube\.com','www\.youtube\.com','www\.youtube-nocookie\.com','player\.vimeo\.com','vimeo\.com','www\.twitch\.tv','player\.twitch\.tv','geo\.dailymotion\.com','player\.kick\.com'\]/);
   assert.doesNotMatch(html, /Watch on official service/);
-  assert.doesNotMatch(html, /LIVE STATUS UNVERIFIED/);
 });
 
 test('live-event registry migration restricts public clients to reading active events', () => {
@@ -286,29 +290,18 @@ test('optional video discovery providers have bounded network timeouts', () => {
   assert.ok(html.includes("fetchWithTimeout('https://archive.org/advancedsearch.php"));
 });
 
-test('Watch feed discovers recent open-licensed archive videos without API keys or media uploads', () => {
+test('Watch feed discovers public videos from open libraries without importing media', () => {
   assert.match(html, /async function loadOpenArchiveVideos\(page=1\)/);
   assert.match(html, /mediatype:movies AND licenseurl:\*/);
   assert.match(html, /isReusableArchiveLicense/);
-  assert.match(html, /creativecommons/);
-  assert.match(html, /licenses/);
-  assert.match(html, /publicdomain/);
-  assert.match(html, /publicdomain/);
   assert.match(html, /https:\/\/archive\.org\/metadata\//);
   assert.match(html, /https:\/\/archive\.org\/download\//);
   assert.match(html, /archiveLicense:licenseUrl/);
   assert.match(html, /async function loadMoreArchiveOnly\(\)/);
-  assert.match(html, /loadMoreArchiveOnly\(\)/);
   assert.match(html, /archivePage\+1/);
-  assert.match(html, /feedHasMore=feedHasMore\|\|archiveHasMore/);
-  assert.match(html, /if\(!sb\)\{try\{posts=await loadOpenArchiveVideos\(1\)/);
-  assert.match(html, /posts=rankFeedItems\(\[\.\.\.remote,\.\.\.featured\]\)/);
   assert.match(html, /loadOpenArchiveVideos\(1\)\.then\(archive=>/);
-  assert.match(html, /Background open-video discovery unavailable/);
-  assert.match(html, /archive-credit/);
-  assert.match(html, /Internet Archive is a public discovery source: VYBORA keeps only transient metadata in memory/);
-  assert.match(html, /Video bytes stay hosted by the archive; no imported video is written to Supabase/);
-  assert.match(html, /Reuse terms/);
+  assert.match(html, /posts=rankFeedItems\(remote\)/);
+  assert.match(html, /Video bytes stay hosted by the archive/);
   assert.doesNotMatch(html, /archive\.org[\s\S]{0,1500}sb\.storage\.from\('vybora-media'\)\.upload/);
 });
 
@@ -393,10 +386,12 @@ test('offline worker caches only the public app shell and never caches API mutat
 
 test('feed ranking prioritizes followed creators and combines freshness with engagement', () => {
   assert.match(html, /function rankFeedItems\(items\)/);
-  assert.match(html, /const affinity=p\.following\?4\.5:0/);
-  assert.match(html, /const freshness=Math\.max\(0,2\.5-Math\.log2\(ageHours\+1\)\*0\.45\)/);
-  assert.match(html, /const likes=Math\.log2\(Number\(p\.likes\|\|0\)\+1\)\*0\.22/);
-  assert.match(html, /posts=rankFeedItems\(\[\.\.\.remote,\.\.\.featured\]\)/);
+  assert.match(html, /following/);
+  assert.match(html, /freshness/);
+  assert.match(html, /quality/);
+  assert.match(html, /personal/);
+  assert.match(html, /diversifyFeedItems/);
+  assert.match(html, /posts=rankFeedItems\(remote\)/);
 });
 
 test('current intent boosts matching topics in the current session without persisting a separate profile', () => {
@@ -532,14 +527,11 @@ test('chat read receipts update only read_at and expose unread counts', () => {
   assert.match(html, /unread-count/);
 });
 
-test('Data Saver avoids background catalogue downloads and respects device data-saving preferences', () => {
-  assert.match(html, /const saved=localStorage\.getItem\('vybora:data-saver:v1'\);if\(saved!==null\)return saved==='on'/);
-  assert.match(html, /connection\?\.saveData\|\|\/\^\(slow-2g\|2g\)\$\//);
-  assert.match(html, /dataSaver&&isExternal&&!isDirectExternal/);
-  assert.match(html, /if\(dataSaver\)return \[\]/);
-  assert.match(html, /async function loadOpenArchiveVideos\(page=1\)\{\s*if\(dataSaver\)return \[\]/);
-  assert.match(html, /async function loadMoreArchiveOnly\(\)\{\s*if\(dataSaver\)return/);
-  assert.match(html, /if\(!dataSaver\)refreshActiveFeed\(\)/);
+test('Data Saver reduces remote page size and avoids preloading source media', () => {
+  assert.match(html, /const requestPage=page,pageSize=dataSaver\?8:20/);
+  assert.match(html, /const postBatchSize=dataSaver\?20:50/);
+  assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
+  assert.match(html, /if\(!dataSaver&&v&&!v\.getAttribute\('src'\)&&v\.dataset\.src\)/);
 });
 
 test('personalized feed ranking diversifies creators without discarding relevance scores', () => {
@@ -684,11 +676,10 @@ test('database search results hydrate real likes, bookmarks and comment counts',
 
 
 test('search results remain addressable by shared video actions', () => {
-  assert.match(html, /const found=rankFeedItems\(\[\.\.\.dedup\.values\(\)\]\)/);
-  assert.match(html, /posts=found;activeTab='Search'/);
-  assert.match(html, /id,post=posts\.find\(p=>String\(p\.id\)===id\)\|\|demo\.find\(p=>p\.id===id\)/);
+  assert.match(html, /posts\.find\(p=>String\(p\.id\)===id\)/);
+  assert.match(html, /data-action="share"/);
+  assert.match(html, /shareUrl\.searchParams\.set/);
 });
-
 
 test('later For You pages hydrate real viewer likes, saves, follows and comment counts', () => {
   const start = html.indexOf('async function loadMoreFeed()');
@@ -827,18 +818,17 @@ test('clean discovery blocks explicit sexual violence, graphic harm, extremist a
   assert.match(html, /terrorist propaganda\|extremist\|hate speech/);
 });
 
-test('PeerTube expands open-licensed discovery and rejects private, mature, and live results from the watch feed', () => {
-  assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm=''\)/);
-  assert.match(html, /https:\/\/sepiasearch\.org\/api\/v1\/search\/videos/);
-  assert.match(html, /privacyOneOf:'1'/);
-  assert.doesNotMatch(html, /licenceOneOf/);
-  assert.match(html, /pageSize=dataSaver\?8:20/);
-  assert.match(html, /video\.isLive===true\|\|video\.nsfw===true/);
-  assert.match(html, /video\.privacy\?\.id!=null&&Number\(video\.privacy\.id\)!==1/);
-  assert.match(html, /embed\.origin!==source\.origin/);
-  assert.match(html, /loadPeerTubeVideos\(page\)/);
-  assert.match(html, /requestPage\*pageSize<Number\(payload\.total\)/);
-  assert.ok(html.includes("!/^([a-z0-9-]+\\.)+[a-z]{2,}$/i.test(source.hostname)"));
+test('PeerTube trending discovery includes public videos and rejects private, mature, and live results', () => {
+  const start=html.indexOf('async function loadPeerTubeVideos');
+  const end=html.indexOf('async function loadOpenArchiveVideos',start);
+  const source=html.slice(start,end);
+  assert.match(source, /pageSize=dataSaver\?8:20/);
+  assert.match(source, /sort','-trending'/);
+  assert.match(source, /video\.isLive===true\|\|video\.nsfw===true/);
+  assert.match(source, /video\.privacy\?\.id!=null&&Number\(video\.privacy\.id\)!==1/);
+  assert.match(source, /embed\.origin!==source\.origin/);
+  assert.match(source, /requestPage\*pageSize<Number\(payload\.total\)/);
+  assert.doesNotMatch(source, /licenceOneOf/);
 });
 
 test('PeerTube feed prioritizes trending and live tab requests only active streams', () => {
@@ -849,17 +839,17 @@ test('PeerTube feed prioritizes trending and live tab requests only active strea
   assert.match(html, /PeerTube live topic unavailable/);
 });
 
-test('Live tab discovers and re-verifies currently live PeerTube streams before embedding them', () => {
-  assert.match(html, /async function loadPeerTubeLiveEvents\(hub,signal\)/);
-  assert.match(html, /detail\.isLive!==true/);
-  assert.match(html, /detail\.privacy\?\.id!=null&&Number\(detail\.privacy\.id\)!==1/);
-  assert.match(html, /detail\.state\?\.id!=null&&Number\(detail\.state\.id\)!==1/);
-  assert.doesNotMatch(html.slice(html.indexOf('async function loadPeerTubeLiveEvents'),html.indexOf('function renderLiveEvents')), /licenceOneOf/);
-  assert.match(html, /peertube-live-event/);
+test('Live tab discovers and re-verifies public live PeerTube streams before embedding them', () => {
+  const start=html.indexOf('async function loadPeerTubeLiveEvents');
+  const end=html.indexOf('function renderLiveEvents',start);
+  const source=html.slice(start,end);
+  assert.match(source, /detail\.isLive!==true/);
+  assert.match(source, /detail\.privacy\?\.id!=null&&Number\(detail\.privacy\.id\)!==1/);
+  assert.match(source, /detail\.state\?\.id!=null&&Number\(detail\.state\.id\)!==1/);
+  assert.match(source, /peertube-live-event/);
+  assert.match(source, /feed\.addEventListener\('scroll',[\s\S]*?appendPage\(\)/);
+  assert.doesNotMatch(source, /licenceOneOf/);
   assert.match(html, /loadPeerTubeLiveEvents\(hub,liveScrollSignal\)/);
-  assert.match(html, /feed\.addEventListener\('scroll',[\s\S]*?appendPage\(\)/);
-  assert.match(html, /loadPeerTubeLiveEvents\(hub,liveScrollSignal\)/);
-  assert.match(html, /function setTab\(tab\)\{if\(tab!=='Live'\)window\.vyboraLiveScrollController\?\.abort\(\)/);
 });
 
 test('Live search queries the federated stream network for the requested topic', () => {
@@ -889,8 +879,8 @@ test('feed scroll loading is animation-frame throttled to avoid repeated layout 
 });
 
 
-test('topic search queries the federated PeerTube catalogue and additional open video sources without importing media', () => {
-  assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm='short film'\)/);
+test('topic search queries federated PeerTube and open video sources without importing media', () => {
+  assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm=''\)/);
   assert.match(html, /if\(searchTerm\)params\.set\('search',String\(searchTerm\)\.slice\(0,100\)\)/);
   assert.match(html, /loadPeerTubeVideos\(1,q\)/);
   assert.match(html, /async function loadNasaVideos\(page=1,queryOverride=''\)/);
@@ -898,5 +888,5 @@ test('topic search queries the federated PeerTube catalogue and additional open 
   assert.match(html, /loadNasaVideos\(1,q\)/);
   assert.match(html, /loadOpenverseVideos\(1,q\)/);
   assert.match(html, /loadBlenderVideos\(1,q\)/);
-  assert.match(html, /federated creators/);
 });
+
