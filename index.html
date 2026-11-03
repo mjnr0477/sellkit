@@ -67,6 +67,24 @@ const DEMO_VIDEO='https://interactive-examples.mdn.mozilla.net/media/cc0-videos/
 const sb=window.supabase?.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $=id=>document.getElementById(id);
 const feed=$('feed'),notice=$('notice');
+// VYBORA_VIDEO_ERROR_FALLBACK: never leave a dead video element as an empty black feed card.
+feed.addEventListener('error',event=>{
+ const video=event.target;
+ if(!(video instanceof HTMLVideoElement))return;
+ const card=video.closest('.video-card');
+ if(!card||card.querySelector('.video-cover'))return;
+ const cover=document.createElement('div');
+ cover.className='video-cover';
+ const orb=document.createElement('div');
+ orb.className='cover-orb';
+ const word=document.createElement('div');
+ word.className='cover-word';
+ const kicker=document.createElement('span');
+ kicker.textContent='VYBORA · KEEP DISCOVERING';
+ word.append(kicker,document.createTextNode(card.dataset.title||'A new spark from the community'));
+ cover.append(orb,word);
+ video.replaceWith(cover);
+},true);
 const requestedPostId=new URLSearchParams(location.search).get('post');
 const requestedSourceUrl=new URLSearchParams(location.search).get('source');
 let dataSaver=(()=>{try{const saved=localStorage.getItem('vybora:data-saver:v1');if(saved!==null)return saved==='on';const connection=navigator.connection||navigator.mozConnection||navigator.webkitConnection;return !!(connection?.saveData||/^(slow-2g|2g)$/.test(connection?.effectiveType||''))}catch{return false}})(),user=null,mutedAuthors=new Set(),blockedAuthors=new Set(),authMode='signup',soundOn=false,posts=[],activeTab='Watch',allPosts=[],profileCache={},busy=false,activeCommentPost=null,savedPosts=[],viewedInSession=new Set();
