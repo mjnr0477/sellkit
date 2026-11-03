@@ -153,7 +153,7 @@ test('successful email sign-in creates a persistent authenticated session in the
       sub: '00000000-0000-4000-8000-000000000123', aud: 'authenticated', role: 'authenticated',
       email: 'signed-in-browser@example.com', iat: now, exp: now + 3600
     }) + '.browser-test-signature';
-    await page.route(/\\/auth\\/v1\\/token\\?grant_type=password$/, route => route.fulfill({
+    await page.route(url => url.pathname.endsWith('/auth/v1/token') && url.searchParams.get('grant_type') === 'password', route => route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({
         access_token: token, token_type: 'bearer', expires_in: 3600, refresh_token: 'browser-test-refresh',
