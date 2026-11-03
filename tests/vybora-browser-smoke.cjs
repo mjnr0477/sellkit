@@ -54,6 +54,20 @@ test('hosted VYBORA feed loads and guest account gates work for available feed c
       'feed should accept natural vertical touch movement');
     assert.ok(await page.locator('#feed .video-card[data-external-id][data-media-url^="https://"]').count() > 0,
       'guest feed must contain real curated video sources, not only decorative cards');
+    const mdnCard = page.locator('#feed .video-card[data-media-url*="interactive-examples.mozilla.net"]').first();
+    assert.equal(await mdnCard.count(), 1, 'curated feed should include a known playable CC0 sample');
+    await mdnCard.scrollIntoViewIfNeeded();
+    const mdnVideo = mdnCard.locator('video');
+    await mdnVideo.waitFor({ state: 'attached', timeout: 15000 });
+    if (!await mdnVideo.getAttribute('src') || await mdnVideo.evaluate(video => video.paused)) {
+      await mdnCard.locator('[data-action="play"]').click();
+    }
+    await page.waitForFunction(() => {
+      const card = [...document.querySelectorAll('#feed .video-card')].find(item =>
+        item.dataset.mediaUrl?.includes('interactive-examples.mozilla.net'));
+      const video = card?.querySelector('video');
+      return Boolean(video && video.readyState >= 2 && video.currentTime > 0);
+    }, null, { timeout: 30000 });
 
     // Curated third-party videos intentionally expose sharing, not community post reactions.
     // Only test the like gate when the live feed actually contains a community post.
