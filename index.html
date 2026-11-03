@@ -203,7 +203,7 @@ async function loadPeerTubeVideos(page=1,searchTerm=''){
    try{
     const source=new URL(String(video.url||''));
     const uuid=String(video.uuid||video.shortUUID||'');
-    const licenceId=Number(video.licence?.id??video.licence),licenceUrls={2:'https://creativecommons.org/licenses/by/4.0/',3:'https://creativecommons.org/licenses/by-sa/4.0/',7:'https://creativecommons.org/publicdomain/mark/1.0/',8:'https://creativecommons.org/publicdomain/zero/1.0/'};const archiveLicense=licenceUrls[licenceId];if(source.protocol!=='https:'||!uuid||!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(source.hostname)||!archiveLicense||video.isLive===true||video.nsfw===true||!isCleanVideoMetadata(video.name,video.description,(video.tags||[]).join(' ')))return null;
+    const licenceId=Number(video.licence?.id??video.licence),licenceUrls={1:'https://creativecommons.org/licenses/by/4.0/',2:'https://creativecommons.org/licenses/by-sa/4.0/',3:'https://creativecommons.org/licenses/by-nd/4.0/',7:'https://creativecommons.org/publicdomain/zero/1.0/',8:'https://creativecommons.org/publicdomain/mark/1.0/'};const archiveLicense=licenceUrls[licenceId];if(source.protocol!=='https:'||!uuid||!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(source.hostname)||!archiveLicense||video.isLive===true||video.nsfw===true||!isCleanVideoMetadata(video.name,video.description,(video.tags||[]).join(' ')))return null;
     if(video.privacy?.id!=null&&Number(video.privacy.id)!==1)return null;
     const embedPath=String(video.embedPath||('/videos/embed/'+uuid));
     const embed=new URL(embedPath,source.origin);
