@@ -28,7 +28,7 @@ test('VYBORA page is mobile-ready and keeps the steering feed free of forced sna
 
 test('guest browsing remains available without account creation', () => {
   assert.match(html, /async function loadFeed\(\)/);
-  assert.match(html, /render\(posts\.length\?posts:demo\)/);
+  assert.match(html, /async function loadOpenArchiveVideos\(page=1\)/);\n  assert.match(html, /feed-empty-state/);\n  assert.match(html, /render\(\[\]\)/);
   assert.ok(html.includes('https://sepiasearch.org/api/v1/search/videos'));
   assert.match(html, /Your universe, in motion/);
   assert.match(html, /You can keep watching without one/);
@@ -98,7 +98,7 @@ test('comments, saved videos, and profile editing have working UI handlers', () 
   assert.match(html, /id="profileForm"/);
   assert.match(html, /id="savedBackdrop"/);
   assert.match(html, /async function openSavedVideos\(\)/);
-  assert.match(html, /if\(tab==='Watch'\)\{posts=allPosts;render\(allPosts.length\?allPosts:demo\);return\}/);
+  assert.match(html, /if\(tab==='Watch'\)\{posts=allPosts;render\(allPosts\);return\}/);
   assert.match(html, /async function loadFollowingFeed\(\)/);
   assert.match(html, /sb\.from\('vybora_profiles'\)\.upsert/);
   assert.match(html, /id="forgotPassword"/);
@@ -188,10 +188,10 @@ test('Data Saver prevents automatic video and embed loading until the viewer req
   assert.match(html, /isExternal&&!isDirectExternal\?'':'<button class="play-toggle" data-action="play"/);
 });
 
-test('video feed avoids downloading every clip at once and does not fake variety with duplicate demo clips', () => {
+test('video feed avoids downloading every clip at once and never inserts fabricated demo clips', () => {
   assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
   assert.match(html, /v\.preload='auto';v\.load\(\)/);
-  assert.equal((html.match(/id:'demo-/g) || []).length, 1);
+  assert.doesNotMatch(html, /demo-1|VYBORA Daily|Showing demo videos|featured demo/);
 });
 
 test('community post sharing uses canonical post-specific links and restores the shared post first', () => {
