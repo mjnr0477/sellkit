@@ -11,7 +11,7 @@ create or replace function public.vybora_cleanup_stale_live_sessions(p_stale_bef
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
   result jsonb;
