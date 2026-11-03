@@ -12,6 +12,8 @@ const moderationMigration = fs.readFileSync(new URL('../supabase/migrations/2026
 const moderationHardening = fs.readFileSync(new URL('../supabase/migrations/20261102073755_harden_vybora_moderation_audit.sql', 'file://' + __filename), 'utf8');
 const readReceiptsMigration = fs.readFileSync(new URL('../supabase/migrations/20261102074553_vybora_message_read_receipts.sql', 'file://' + __filename), 'utf8');
 const readReceiptHardening = fs.readFileSync(new URL('../supabase/migrations/20261102074733_harden_vybora_read_receipt_policy.sql', 'file://' + __filename), 'utf8');
+const liveHeartbeatMigration = fs.readFileSync(new URL('../supabase/migrations/20261103090000_vybora_live_heartbeat_cleanup.sql', 'file://' + __filename), 'utf8');
+const cleanupFunction = fs.readFileSync(new URL('../supabase/functions/vybora-cleanup-expired-videos/index.ts', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and uses immersive vertical snapping', () => {
   assert.match(html, /name="viewport"[^>]*width=device-width/);
@@ -689,4 +691,18 @@ test('live signaling waits for realtime readiness and reconciles viewers that jo
   assert.match(socialSource, /liveSay\('Joining live…'\);try\{await liveRealtime\(\)\}/);
   assert.match(socialSource, /liveSay\('You are live\. Keep this screen open\.'\);try\{await liveRealtime\(\)\}/);
   assert.match(socialSource, /async function offerViewer\(id\)[\s\S]*?pc\.close\(\);peers\.delete\(id\)/);
+});
+
+
+test('live host heartbeats keep active rooms alive and scheduled cleanup ends abandoned rooms atomically', () => {
+  assert.match(liveHeartbeatMigration, /add column if not exists heartbeat_at timestamptz not null default now\(\)/i);
+  assert.match(liveHeartbeatMigration, /where status = 'live'[\s\S]*heartbeat_at < p_stale_before/i);
+  assert.match(liveHeartbeatMigration, /delete from public\.vybora_live_participants[\s\S]*delete from public\.vybora_live_signals/i);
+  assert.match(liveHeartbeatMigration, /grant execute on function public\.vybora_cleanup_stale_live_sessions\(timestamptz\) to service_role/i);
+  assert.match(socialSource, /async function touchLiveHeartbeat\(\)/);
+  assert.match(socialSource, /setInterval\(\(\)=>touchLiveHeartbeat\(\)\.catch\(error=>console\.warn\('Live heartbeat update failed',error\)\),30000\)/);
+  assert.match(socialSource, /try\{await liveRealtime\(\);startLiveHeartbeat\(\)\}/);
+  assert.match(socialSource, /async function leaveLive\(\)\{stopLiveHeartbeat\(\)/);
+  assert.match(cleanupFunction, /vybora_cleanup_stale_live_sessions/);
+  assert.match(cleanupFunction, /Date\.now\(\) - 10 \* 60 \* 1000/);
 });
