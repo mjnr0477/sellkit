@@ -181,6 +181,11 @@ test('successful email sign-in creates a persistent authenticated session in the
     assert.match(await page.locator('#accountStatus').innerText(), /Signed in/);
     assert.equal(await page.locator('#authBackdrop').isVisible(), false,
       'successful sign-in should close the authentication modal');
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 90000 });
+    await page.waitForFunction(() => document.querySelector('#accountStatus')?.innerText.includes('Signed in'),
+      { timeout: 20000 });
+    assert.match(await page.locator('#accountStatus').innerText(), /Signed in/,
+      'authenticated session should survive a page reload');
   } finally {
     await browser.close();
   }
