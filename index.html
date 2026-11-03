@@ -189,7 +189,7 @@ async function loadBlenderVideos(page=1,queryOverride=''){
  }).filter(Boolean);
 }
 async function loadPeerTubeVideos(page=1,searchTerm='short film'){
- if(dataSaver||peertubeLoading||(!peertubeHasMore&&page>peertubePage))return [];
+ if(peertubeLoading||(!peertubeHasMore&&page>peertubePage))return [];
  peertubeLoading=true;
  const requestPage=page;
  try{
@@ -215,7 +215,6 @@ async function loadPeerTubeVideos(page=1,searchTerm='short film'){
  }finally{peertubeLoading=false}
 }
 async function loadOpenArchiveVideos(page=1){
- if(dataSaver)return [];
  if(archiveLoading||(!archiveHasMore&&!commonsHasMore&&!openverseHasMore&&!nasaHasMore&&!blenderHasMore&&!peertubeHasMore&&page>archivePage))return [];
  archiveLoading=true;
  try{
@@ -255,7 +254,6 @@ async function loadOpenArchiveVideos(page=1){
  }finally{archiveLoading=false}
 }
 async function loadMoreArchiveOnly(){
- if(dataSaver)return;
  if(archiveLoading||(!archiveHasMore&&!commonsHasMore&&!openverseHasMore&&!nasaHasMore&&!blenderHasMore&&!peertubeHasMore)||activeTab!=='Watch')return;
  try{
   const batch=await loadOpenArchiveVideos(archivePage+1),known=new Set(allPosts.map(p=>String(p.id))),fresh=rankFeedItems(batch).filter(p=>!known.has(String(p.id)));
