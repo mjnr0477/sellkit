@@ -1,4 +1,3 @@
-import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { Script } from 'node:vm';
@@ -59,6 +58,7 @@ check('Supabase client uses a publishable key', /sb_publishable_[A-Za-z0-9_-]+/.
 check('No Supabase service-role or secret key is embedded in browser code',
   !/(service[_-]?role|sb_secret_[A-Za-z0-9_-]+)/i.test(html + social + worker + launcher));
 
+const application = html + social;
 for (const [label, token] of [
   ['Persistent authentication sessions', 'persistSession:true'],
   ['Auth state listener', 'onAuthStateChange'],
@@ -68,7 +68,7 @@ for (const [label, token] of [
   ['Live video uses WebRTC', 'RTCPeerConnection'],
   ['Personalised feed ranking', 'rankFeedItems'],
   ['Data saver mode', 'dataSaver']
-]) check(label, social.includes(token));
+]) check(label, application.includes(token));
 
 check('Service worker does not cache private Supabase REST/auth/storage APIs',
   !/\/(?:rest|auth|storage)\/v1\//i.test(worker));
