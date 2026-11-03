@@ -20,12 +20,20 @@ function syntaxCheck(path) {
   }
 }
 
-const [html, social, worker, launcher] = await Promise.all([
+const [html, social, worker, launcher, packageJson] = await Promise.all([
   read('index.html'),
   read('social-features.js'),
   read('service-worker.js'),
-  read('scripts/prepare-web.mjs')
+  read('scripts/prepare-web.mjs'),
+  read('package.json')
 ]);
+try {
+  JSON.parse(packageJson);
+  check('package.json is valid JSON', true);
+} catch (error) {
+  check('package.json is valid JSON', false);
+  console.error(error);
+}
 
 // Compile every inline browser script without executing browser-side code.
 const inlineScripts = [...html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)]
