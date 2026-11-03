@@ -241,6 +241,13 @@ test('live-event registry migration restricts public clients to reading active e
 });
 
 
+test('optional video discovery providers have bounded network timeouts', () => {
+  assert.match(html, /function fetchWithTimeout\\(url,options=\\{\\},timeoutMs=12000\\)/);
+  assert.match(html, /controller\\.abort\\(\\)/);
+  assert.match(html, /fetchWithTimeout\\('https:\\/\\/api\\.openverse\\.org\\/v1\\/videos\\//);
+  assert.match(html, /fetchWithTimeout\\('https:\\/\\/archive\\.org\\/advancedsearch\\.php/);
+});
+
 test('Watch feed discovers recent open-licensed archive videos without API keys or media uploads', () => {
   assert.match(html, /async function loadOpenArchiveVideos\(page=1\)/);
   assert.match(html, /mediatype:movies AND licenseurl:\*/);

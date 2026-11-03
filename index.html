@@ -122,10 +122,11 @@ window.addEventListener('pagehide',()=>feed.querySelectorAll('.video-card').forE
 // Video bytes stay hosted by the archive; no imported video is written to Supabase.
 function isReusableArchiveLicense(value){const license=String(value||'').trim();return /creativecommons\.org\/licenses\/(by|by-sa)\//i.test(license)||/creativecommons\.org\/publicdomain\/(zero|mark)\//i.test(license)}
 function isCleanVideoMetadata(...values){const text=values.map(v=>String(v||'')).join(' ').replace(/<[^>]*>/g,' ').toLowerCase();return !/(\b|_)(porn|pornographic|explicit sex|sexual intercourse|erotic|xxx|hentai|fetish|nude|nudity|genital|gore|graphic violence|beheading|snuff|self[- ]?harm|suicide method|drug abuse|weapon|shooting|bloodshed|violent|terrorism|gambling|smoking|cigarette|vaping)(\b|_)/i.test(text)}
+function fetchWithTimeout(url,options={},timeoutMs=12000){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);return fetch(url,{...options,signal:controller.signal}).finally(()=>clearTimeout(timer))}
 async function loadOpenverseVideos(page=1,queryOverride=''){
  if(!queryOverride&&!openverseHasMore&&page>openversePage)return [];
  const params=new URLSearchParams({q:String(queryOverride||'(funny animals | animation | dance | skateboarding | cooking | travel | wildlife | sports | comedy)').slice(0,200),page:String(page),page_size:'20',license:'by,by-sa,cc0,pdm',license_type:'commercial',extension:'mp4,webm',mature:'false',filter_dead:'true',unstable__sort_by:'indexed_on',unstable__sort_dir:'desc'});
- const response=await fetch('https://api.openverse.org/v1/videos/?'+params.toString(),{headers:{Accept:'application/json'}});
+ const response=await fetchWithTimeout('https://api.openverse.org/v1/videos/?'+params.toString(),{headers:{Accept:'application/json'}});
  if(!response.ok)throw new Error('Openverse video search returned HTTP '+response.status);
  const payload=await response.json(),results=payload?.results||[];
  if(!queryOverride){openverseHasMore=!!payload?.next;openversePage=page}
@@ -139,7 +140,7 @@ async function loadOpenverseVideos(page=1,queryOverride=''){
 async function loadNasaVideos(page=1){
  if(!nasaHasMore&&page>nasaPage)return [];
  const params=new URLSearchParams({q:'NASA',media_type:'video',page:String(page),page_size:'12'});
- const response=await fetch('https://images-api.nasa.gov/search?'+params.toString(),{headers:{Accept:'application/json'}});
+ const response=await fetchWithTimeout('https://images-api.nasa.gov/search?'+params.toString(),{headers:{Accept:'application/json'}});
  if(!response.ok)throw new Error('NASA video search returned HTTP '+response.status);
  const payload=await response.json(),items=payload?.collection?.items||[];
  nasaHasMore=items.length===12;nasaPage=page;
@@ -147,7 +148,7 @@ async function loadNasaVideos(page=1){
   try{
    const meta=item.data?.[0]||{},id=String(meta.nasa_id||''),title=String(meta.title||''),description=String(meta.description||''),creator=String(meta.secondary_creator||meta.center||'NASA');
    if(!id||!/NASA/i.test(creator+' '+String(meta.center||''))||!isCleanVideoMetadata(title,description))return null;
-   const manifest=await fetch('https://images-api.nasa.gov/asset/'+encodeURIComponent(id),{headers:{Accept:'application/json'}});
+   const manifest=await fetchWithTimeout('https://images-api.nasa.gov/asset/'+encodeURIComponent(id),{headers:{Accept:'application/json'}});
    if(!manifest.ok)return null;
    const files=(await manifest.json())?.collection?.items||[];
    const videoFiles=files.map(f=>typeof f==='string'?f:f.href).filter(u=>/^https:\/\//i.test(String(u||''))&&/\.mp4(?:[?#].*)?$/i.test(String(u)));videoFiles.sort((a,b)=>((/medium/i.test(b)?3:/large/i.test(b)?2:/orig/i.test(b)?1:0)-(/medium/i.test(a)?3:/large/i.test(a)?2:/orig/i.test(a)?1:0)));const stream=videoFiles[0];
@@ -159,7 +160,7 @@ async function loadNasaVideos(page=1){
 async function loadWikimediaVideos(page=1){
  if(!commonsHasMore&&page>commonsPage)return [];
  const params=new URLSearchParams({action:'query',format:'json',origin:'*',generator:'search',gsrnamespace:'6',gsrsearch:'filetype:video',gsrlimit:'12',gsroffset:String((page-1)*12),prop:'imageinfo',iiprop:'url|mime|size|extmetadata',iiurlwidth:'640'});
- const response=await fetch('https://commons.wikimedia.org/w/api.php?'+params.toString(),{headers:{Accept:'application/json'}});
+ const response=await fetchWithTimeout('https://commons.wikimedia.org/w/api.php?'+params.toString(),{headers:{Accept:'application/json'}});
  if(!response.ok)throw new Error('Open Commons catalogue returned HTTP '+response.status);
  const payload=await response.json(),pages=Object.values(payload?.query?.pages||{});
  commonsHasMore=!!payload?.continue?.gsroffset;commonsPage=page;
@@ -175,7 +176,7 @@ async function loadWikimediaVideos(page=1){
 async function loadBlenderVideos(page=1,queryOverride=''){
  if(!blenderHasMore&&page>blenderPage)return [];
  const params=new URLSearchParams({search:String(queryOverride||'Blender Open Movies').slice(0,100),count:'30',start:String((page-1)*30),sort:'-views',nsfw:'false',isLive:'false',licenceOneOf:'1,2,7,8'});
- const response=await fetch('https://video.blender.org/api/v1/search/videos?'+params.toString(),{headers:{Accept:'application/json'}});
+ const response=await fetchWithTimeout('https://video.blender.org/api/v1/search/videos?'+params.toString(),{headers:{Accept:'application/json'}});
  if(!response.ok)throw new Error('Blender open-video catalogue returned HTTP '+response.status);
  const payload=await response.json(),items=payload?.data||[];
  if(!queryOverride){blenderHasMore=Number(payload?.total||0)>page*30;blenderPage=page}
@@ -198,7 +199,7 @@ async function loadOpenArchiveVideos(page=1){
   ['identifier','title','creator','publicdate','date','licenseurl','downloads'].forEach(field=>params.append('fl[]',field));
   params.set('rows','8');params.set('page',String(page));params.set('output','json');params.append('sort[]','publicdate desc');
   const [archiveResult,commonsPromise,openversePromise,nasaPromise,blenderPromise]=await Promise.all([
-   fetch('https://archive.org/advancedsearch.php?'+params.toString(),{headers:{Accept:'application/json'}}).then(async response=>{if(!response.ok)throw new Error('Open-video catalogue returned HTTP '+response.status);return response.json()}).then(payload=>({payload})).catch(error=>({error})),
+   fetchWithTimeout('https://archive.org/advancedsearch.php?'+params.toString(),{headers:{Accept:'application/json'}}).then(async response=>{if(!response.ok)throw new Error('Open-video catalogue returned HTTP '+response.status);return response.json()}).then(payload=>({payload})).catch(error=>({error})),
    loadWikimediaVideos(page).catch(error=>{console.warn('Wikimedia video discovery unavailable',error);return []}),
    loadOpenverseVideos(page).catch(error=>{console.warn('Openverse video discovery unavailable',error);return []}),
    loadNasaVideos(page).catch(error=>{console.warn('NASA video discovery unavailable',error);return []}),
@@ -210,7 +211,7 @@ async function loadOpenArchiveVideos(page=1){
   const entries=await Promise.all(docs.map(async doc=>{
    try{
     if(!doc.identifier||!isReusableArchiveLicense(doc.licenseurl)||!isCleanVideoMetadata(doc.title,doc.creator))return null;
-    const metaResponse=await fetch('https://archive.org/metadata/'+encodeURIComponent(doc.identifier),{headers:{Accept:'application/json'}});
+    const metaResponse=await fetchWithTimeout('https://archive.org/metadata/'+encodeURIComponent(doc.identifier),{headers:{Accept:'application/json'}});
     if(!metaResponse.ok)return null;
     const record=await metaResponse.json(),metadata=record?.metadata||{};
     const licenseUrl=String(metadata.licenseurl||doc.licenseurl||'');
