@@ -169,7 +169,7 @@ test('shared external and open-license source links restore the matching feed ca
 
 test('Watch feed paginates endlessly as the user nears the bottom', () => {
   assert.match(html, /async function loadMoreFeed\(\)/);
-  assert.match(html, /\.range\(feedPostOffset,feedPostOffset\+49\)/);
+  assert.match(html, /\.range\(feedPostOffset,feedPostOffset\+postBatchSize-1\)/);
   assert.match(html, /feed\.addEventListener\('scroll'/);
   assert.match(html, /feed\.insertAdjacentHTML\('beforeend'/);
   assert.match(html, /feedHasMore/);
