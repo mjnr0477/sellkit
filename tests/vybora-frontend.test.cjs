@@ -878,14 +878,12 @@ test('feed scroll loading is animation-frame throttled to avoid repeated layout 
 });
 
 
-test('topic search queries federated PeerTube and open video sources without importing media', () => {
-  assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm=''\)/);
-  assert.match(html, /if\(searchTerm\)params\.set\('search',String\(searchTerm\)\.slice\(0,100\)\)/);
-  assert.match(html, /loadPeerTubeVideos\(1,q\)/);
-  assert.match(html, /async function loadNasaVideos\(page=1,queryOverride=''\)/);
-  assert.match(html, /q:String\(queryOverride\|\|'NASA'\)/);
-  assert.match(html, /loadNasaVideos\(1,q\)/);
-  assert.match(html, /loadOpenverseVideos\(1,q\)/);
-  assert.match(html, /loadBlenderVideos\(1,q\)/);
+test('PeerTube feed accepts only commercial-use-compatible open licenses and carries attribution', () => {
+  assert.match(html, /licenceId=Number\(video\.licence\?\.id\?\?video\.licence\)/);
+  assert.match(html, /licenceUrls=\{2:'https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/',3:'https:\/\/creativecommons\.org\/licenses\/by-sa\/4\.0\/',7:'https:\/\/creativecommons\.org\/publicdomain\/mark\/1\.0\/',8:'https:\/\/creativecommons\.org\/publicdomain\/zero\/1\.0\/'\}/);
+  assert.match(html, /!archiveLicense\|\|video\.isLive===true/);
+  assert.match(html, /source_name:'PeerTube',archiveLicense/);
+  assert.match(html, /Creator credit[\s\S]*Reuse terms/);
 });
+
 
