@@ -603,3 +603,9 @@ test('search results preserve mute and block preferences when refreshed', () => 
 test('feed actions refresh the active search instead of replacing it with For You', () => {
   assert.ok(html.includes("if(activeTab==='Search')return searchVideos($('searchInput').value)"));
 });
+
+
+test('blocked creators stay hidden in the initial and paginated community feed', () => {
+  assert.match(html, /rows=rows\.filter\(p=>\(window\.vyboraAllowMature\|\|!p\.mature_content\)&&!mutedAuthors\.has\(p\.author_id\)&&!blockedAuthors\.has\(p\.author_id\)\)/);
+  assert.match(html, /const clean=\(rows\|\|\[\]\)\.filter\(p=>\(window\.vyboraAllowMature\|\|!p\.mature_content\)&&!mutedAuthors\.has\(p\.author_id\)&&!blockedAuthors\.has\(p\.author_id\)\)/);
+});
