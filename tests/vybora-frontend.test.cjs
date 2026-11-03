@@ -901,3 +901,8 @@ test('only the active card loads provider embeds and a single observer owns play
   assert.match(html, /if\(active&&!frame\.getAttribute\('src'\)&&frame\.dataset\.src\)/);
   assert.doesNotMatch(html, /<script src="clean-feed\.js"><\/script>/);
 });
+
+test('frontend styles remain structurally balanced for consistent browser parsing', () => {
+  assert.equal((html.match(/<style(?:\\s|>)/g) || []).length, (html.match(/<\\/style>/g) || []).length);
+  assert.doesNotMatch(html, /<style>\\.live-room-list/);
+});
