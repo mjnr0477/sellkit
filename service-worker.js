@@ -1,7 +1,7 @@
 /* VYBORA offline shell. Never cache authenticated API responses or private user data. */
 'use strict';
-const CACHE_NAME = 'vybora-shell-v3';
-const SHELL = ['/', '/index.html', '/design-refresh.css', '/social-features.js'];
+const CACHE_NAME = 'vybora-shell-v4';
+const SHELL = ['/', '/index.html', '/design-refresh.css', '/social-features.js', '/clean-feed.css', '/clean-feed.js'];
 const SUPABASE_SCRIPT = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 
 self.addEventListener('install', event => {
@@ -80,6 +80,19 @@ self.addEventListener('fetch', event => {
 
   // Network-first: online users receive the newest application logic immediately;
   // retain the last successful public script only as an offline fallback.
+  if (url.pathname === '/clean-feed.css' || url.pathname === '/clean-feed.js') {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      try {
+        const response = await fetch(request, { cache: 'no-store' });
+        if (response.ok) await cache.put(request, response.clone());
+        return response;
+      } catch (_) {
+        return (await cache.match(request)) || Response.error();
+      }
+    })());
+  }
+
   if (url.pathname === '/social-features.js') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
