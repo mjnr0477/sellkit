@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "VYBORA — Your universe, in motion",
+  "short_name": "VYBORA",
+  "description": "Watch, discover, connect and share your universe.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080810",
+  "theme_color": "#080810",
+  "icons": [
+    {
+      "src": "/icons/vybora-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
