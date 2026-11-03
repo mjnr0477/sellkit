@@ -805,3 +805,33 @@ test('stale live cleanup preserves participant authorization during terminal-eve
   assert.match(liveCleanupGraceMigration, /s\.status = 'live'/i);
   assert.match(liveCleanupGraceMigration, /join public\.vybora_live_sessions s[\s\S]*s\.status = 'live'/i);
 });
+
+
+test('PeerTube expands open-licensed discovery and rejects private, mature, and live results from the watch feed', () => {
+  assert.match(html, /async function loadPeerTubeVideos\(page=1\)/);
+  assert.match(html, /https:\/\/sepiasearch\.org\/api\/v1\/search\/videos/);
+  assert.match(html, /licenceOneOf:'1,2,7,8'/);
+  assert.match(html, /video\.isLive===true\|\|video\.nsfw===true/);
+  assert.match(html, /video\.privacy\?\.id!=null&&Number\(video\.privacy\.id\)!==1/);
+  assert.match(html, /embed\.origin!==source\.origin/);
+  assert.match(html, /loadPeerTubeVideos\(page\)/);
+});
+
+test('Live tab discovers and re-verifies currently live PeerTube streams before embedding them', () => {
+  assert.match(html, /async function loadPeerTubeLiveEvents\(hub\)/);
+  assert.match(html, /detail\.isLive!==true/);
+  assert.match(html, /detail\.state\?\.id!=null&&Number\(detail\.state\.id\)!==1/);
+  assert.match(html, /peertube-live-event/);
+  assert.match(html, /loadPeerTubeLiveEvents\(hub\)/);
+});
+
+test('live event embeds support additional providers and satisfy Twitch parent-domain requirements', () => {
+  assert.match(html, /geo\.dailymotion\.com/);
+  assert.match(html, /player\.kick\.com/);
+  assert.match(html, /u\.searchParams\.set\('parent',location\.hostname\)/);
+});
+
+test('feed scroll loading is animation-frame throttled to avoid repeated layout and network work', () => {
+  assert.match(html, /let feedScrollQueued=false;feed\.addEventListener\('scroll'/);
+  assert.match(html, /requestAnimationFrame\(\(\)=>\{feedScrollQueued=false/);
+});
