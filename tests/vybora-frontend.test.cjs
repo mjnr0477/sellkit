@@ -703,7 +703,7 @@ test('live host heartbeats keep active rooms alive and scheduled cleanup ends ab
   assert.match(liveHeartbeatMigration, /revoke update on public\.vybora_live_sessions from authenticated/i);
   assert.match(liveHeartbeatMigration, /grant update \(status, ended_at\) on public\.vybora_live_sessions to authenticated/i);
   assert.match(liveHeartbeatHardeningMigration, /drop function if exists public\.vybora_touch_live_session\(uuid\)/i);
-  assert.match(liveHeartbeatHardeningMigration, /grant update \(status, ended_at, heartbeat_at\) on public\.vybora_live_sessions to authenticated/i);
+  assert.match(liveHeartbeatHardeningMigration, /grant update \(status, ended_at, heartbeat_at\)\s+on public\.vybora_live_sessions to authenticated/i);
   assert.match(liveHeartbeatHardeningMigration, /before insert or update on public\.vybora_live_sessions/i);
   assert.match(liveHeartbeatHardeningMigration, /auth\.uid\(\) <> old\.host_id/i);
   assert.match(liveHeartbeatHardeningMigration, /new\.heartbeat_at := clock_timestamp\(\)/i);
