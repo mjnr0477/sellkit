@@ -179,9 +179,9 @@ test('uploaded community videos are limited to short clips', () => {
 test('Data Saver defers bytes until a video enters view, then automatically plays it', () => {
   assert.match(html, /id="dataSaverBtn" aria-pressed="false"/);
   assert.match(html, /vybora:data-saver:v1/);
-  assert.match(html, /dataSaver\?'data-src="'\+esc\(media\)\+'" ':'src="'\+esc\(media\)\+'" '/);
-  assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
-  assert.match(html, /<script src="clean-feed\.js"><\/script>/);
+  assert.match(html, /<video data-src="'\+esc\(media\)\+'" muted playsinline loop preload="none"/);
+  assert.match(html, /if\(video&&near&&!video\.getAttribute\('src'\)&&video\.dataset\.src\)/);
+  assert.doesNotMatch(html, /<script src="clean-feed\.js"><\/script>/);
   assert.match(cleanFeed, /video\.dataset\.src&&!video\.src/);
   assert.match(cleanFeed, /video\.play\(\)/);
   assert.match(cleanFeed, /frame\.dataset\.src&&!frame\.src/);
@@ -193,12 +193,13 @@ test('Data Saver keeps video discovery and infinite scrolling active without pre
   assert.doesNotMatch(html, /async function loadOpenArchiveVideos\(page=1\)\{\s*if\(dataSaver\)return \[\]/);
   assert.doesNotMatch(html, /async function loadPeerTubeVideos\(page=1,searchTerm=''\)\{\s*if\(dataSaver/);
   assert.doesNotMatch(html, /async function loadMoreArchiveOnly\(\)\{\s*if\(dataSaver\)return/);
-  assert.match(html, /if\(!dataSaver&&v&&!v\.getAttribute\('src'\)&&v\.dataset\.src\)/);
+  assert.match(html, /if\(video&&near&&!video\.getAttribute\('src'\)&&video\.dataset\.src\)/);
+  assert.match(html, /if\(active&&!frame\.getAttribute\('src'\)&&frame\.dataset\.src\)/);
 });
 
 test('video feed avoids downloading every clip at once and never inserts fabricated demo clips', () => {
-  assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
-  assert.match(html, /v\.preload='auto';v\.load\(\)/);
+  assert.match(html, /preload="none"/);
+  assert.match(html, /video\.preload=active\?'auto':'metadata';video\.load\(\)/);
   assert.doesNotMatch(html, /demo-1|VYBORA Daily|Showing demo videos/);
   assert.match(html, /feed-empty-state/);
 });
@@ -343,9 +344,9 @@ test('feed cards remove platform-source badges while preserving mature-content w
 
 
 test('scrolling videos autoplay muted and pause offscreen to protect playback performance', () => {
-  assert.match(html, /<video '\+\(dataSaver\?'data-src="'\+esc\(media\)\+'" ':'src="'\+esc\(media\)\+'" '\)\+\(dataSaver\?'':'autoplay '\)\+'muted playsinline loop/);
-  assert.match(html, /if\(v\)\{v\.muted=true;if\(!dataSaver\)\{const playback=v\.play\(\)/);
-  assert.match(html, /finishWatchSession\(card\);if\(v\)v\.pause\(\)/);
+  assert.match(html, /<video data-src="'\+esc\(media\)\+'" muted playsinline loop preload="none"/);
+  assert.match(html, /video\.muted=true;\s*const playback=video\.play\(\)/);
+  assert.match(html, /finishWatchSession\(card\);if\(video\)video\.pause\(\)/);
 });
 
 test('official live embeds remain in-app and do not display provider attribution or outbound watch links', () => {
@@ -529,8 +530,8 @@ test('chat read receipts update only read_at and expose unread counts', () => {
 test('Data Saver reduces remote page size and avoids preloading source media', () => {
   assert.match(html, /const requestPage=page,pageSize=dataSaver\?8:20/);
   assert.match(html, /const postBatchSize=dataSaver\?20:50/);
-  assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
-  assert.match(html, /if\(!dataSaver&&v&&!v\.getAttribute\('src'\)&&v\.dataset\.src\)/);
+  assert.match(html, /const requestPage=page,pageSize=dataSaver\?8:20/);
+  assert.match(html, /if\(video&&near&&!video\.getAttribute\('src'\)&&video\.dataset\.src\)/);
 });
 
 test('personalized feed ranking diversifies creators without discarding relevance scores', () => {
@@ -873,8 +874,8 @@ test('live event embeds support additional providers and satisfy Twitch parent-d
 test('feed scroll loading is animation-frame throttled to avoid repeated layout and network work', () => {
   assert.match(html, /let feedScrollQueued=false;feed\.addEventListener\('scroll'/);
   assert.match(html, /requestAnimationFrame\(\(\)=>\{feedScrollQueued=false/);
-  assert.match(html, /if\(!entry\.isIntersecting\)\{if\(v&&v\.getAttribute\('src'\)\)/);
-  assert.match(html, /v\.dataset\.src=v\.getAttribute\('src'\)/);
+  assert.match(html, /if\(!entry\.isIntersecting\)\{\s*pauseCard\(card\)/);
+  assert.match(html, /video\.dataset\.src=card\.dataset\.mediaUrl/);
 });
 
 
