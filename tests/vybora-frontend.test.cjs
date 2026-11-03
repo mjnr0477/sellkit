@@ -880,7 +880,7 @@ test('feed scroll loading is animation-frame throttled to avoid repeated layout 
 
 test('PeerTube feed accepts only commercial-use-compatible open licenses and carries attribution', () => {
   assert.match(html, /licenceId=Number\(video\.licence\?\.id\?\?video\.licence\)/);
-  assert.match(html, /licenceUrls=\{2:'https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/',3:'https:\/\/creativecommons\.org\/licenses\/by-sa\/4\.0\/',7:'https:\/\/creativecommons\.org\/publicdomain\/mark\/1\.0\/',8:'https:\/\/creativecommons\.org\/publicdomain\/zero\/1\.0\/'\}/);
+  assert.match(html, /licenceUrls=\{1:'https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/',2:'https:\/\/creativecommons\.org\/licenses\/by-sa\/4\.0\/',3:'https:\/\/creativecommons\.org\/licenses\/by-nd\/4\.0\/',7:'https:\/\/creativecommons\.org\/publicdomain\/zero\/1\.0\/',8:'https:\/\/creativecommons\.org\/publicdomain\/mark\/1\.0\/'\}/);
   assert.match(html, /!archiveLicense\|\|video\.isLive===true/);
   assert.match(html, /source_name:'PeerTube',archiveLicense/);
   assert.match(html, /Creator credit[\s\S]*Reuse terms/);
