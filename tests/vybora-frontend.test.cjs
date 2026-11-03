@@ -320,7 +320,7 @@ test('VYBORA registers a visible offline/online status and service worker', () =
 
 test('offline worker caches only the public app shell and never caches API mutations', () => {
   const worker = fs.readFileSync(new URL('../service-worker.js', 'file://' + __filename), 'utf8');
-  assert.match(worker, /const SHELL = \['\/', '\/index\.html', '\/social-features\.js'\]/);
+  assert.ok(worker.includes("const SHELL = ['/', '/index.html', '/design-refresh.css', '/social-features.js'];"));
   assert.match(worker, /request\.method !== 'GET'/);
   assert.match(worker, /request\.mode === 'navigate'/);
   assert.match(worker, /url\.pathname === '\/social-features\.js'/);
