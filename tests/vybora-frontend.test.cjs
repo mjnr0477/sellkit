@@ -616,8 +616,5 @@ test('like and save actions refresh the active feed instead of forcing For You',
   const followStart = html.indexOf("if(action==='follow')", likeStart);
   assert.ok(likeStart >= 0 && followStart > likeStart);
   assert.match(html.slice(likeStart, followStart), /await refreshActiveFeed\(\);return/);
-  const saveStart = html.indexOf("if(action==='save')");
-  const saveEnd = html.indexOf('return}}', saveStart);
-  assert.ok(saveStart >= 0 && saveEnd > saveStart);
-  assert.match(html.slice(saveStart, saveEnd), /await refreshActiveFeed\(\);return/);
+  assert.ok(html.includes("tell(existing?'Removed from saved videos.':'Video saved to your account.');await refreshActiveFeed();return}}"));
 });
