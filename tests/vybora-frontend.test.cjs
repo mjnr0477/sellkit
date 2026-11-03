@@ -320,7 +320,7 @@ test('VYBORA registers a visible offline/online status and service worker', () =
 
 test('offline worker caches only the public app shell and never caches API mutations', () => {
   const worker = fs.readFileSync(new URL('../service-worker.js', 'file://' + __filename), 'utf8');
-  assert.match(worker, /const SHELL = \['\/', '\/index\.html', '\/social-features\.js'\]/);
+  assert.ok(worker.includes("const SHELL = ['/', '/index.html', '/design-refresh.css', '/social-features.js'];"));
   assert.match(worker, /request\.method !== 'GET'/);
   assert.match(worker, /request\.mode === 'navigate'/);
   assert.match(worker, /url\.pathname === '\/social-features\.js'/);
@@ -518,4 +518,13 @@ test('viewers can understand why a video was recommended without sending watch h
   assert.match(html, /Because you follow this creator/);
   assert.match(html, /creator variety/);
   assert.doesNotMatch(html, /sb\.from\(['"]vybora_watch_interests/);
+});
+
+test('offline worker caches the VYBORA stylesheet and serves its last good copy offline', () => {
+  const worker = fs.readFileSync(new URL('../service-worker.js', 'file://' + __filename), 'utf8');
+  assert.match(worker, /const CACHE_NAME = 'vybora-shell-v3'/);
+  assert.ok(worker.includes("'/design-refresh.css'"));
+  assert.ok(worker.includes("url.pathname === '/design-refresh.css'"));
+  assert.ok(worker.includes('if (response.ok) await cache.put(request, response.clone())'));
+  assert.ok(worker.includes('(await cache.match(request, { ignoreSearch: true })) || Response.error()'));
 });

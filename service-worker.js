@@ -1,7 +1,7 @@
 /* VYBORA offline shell. Never cache authenticated API responses or private user data. */
 'use strict';
-const CACHE_NAME = 'vybora-shell-v2';
-const SHELL = ['/', '/index.html', '/social-features.js'];
+const CACHE_NAME = 'vybora-shell-v3';
+const SHELL = ['/', '/index.html', '/design-refresh.css', '/social-features.js'];
 const SUPABASE_SCRIPT = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 
 self.addEventListener('install', event => {
@@ -58,6 +58,21 @@ self.addEventListener('fetch', event => {
           '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>VYBORA offline</title><main style="font:16px system-ui;padding:24px;background:#080810;color:#f8f7ff;min-height:90vh"><h1>VYBORA</h1><p>You are offline. Reconnect to load the latest feed and community features.</p><button onclick="location.reload()">Try again</button></main>',
           { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
         );
+      }
+    })());
+    return;
+  }
+
+  // Network-first: refresh the public stylesheet while retaining an offline copy.
+  if (url.pathname === '/design-refresh.css') {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      try {
+        const response = await fetch(request, { cache: 'no-store' });
+        if (response.ok) await cache.put(request, response.clone());
+        return response;
+      } catch (_) {
+        return (await cache.match(request, { ignoreSearch: true })) || Response.error();
       }
     })());
     return;
