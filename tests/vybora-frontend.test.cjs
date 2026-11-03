@@ -746,6 +746,8 @@ test('live rooms expose participant-only chat and database-maintained viewer cou
 
 test('direct WebRTC live rooms enforce a safe viewer cap until SFU media is available', () => {
   assert.match(liveCapacityMigration, /viewer_count >= 3/i);
+  assert.match(html, /limited to 3 viewers per room/i);
+  assert.match(socialSource, /Number\(x\.viewer_count\|\|0\)>=3\?'disabled':''/);
   assert.match(liveCapacityMigration, /for update/i);
   assert.match(liveCapacityMigration, /as restrictive/i);
   assert.match(liveCapacityMigration, /create trigger vybora_live_participant_capacity_guard/i);
