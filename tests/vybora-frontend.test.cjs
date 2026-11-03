@@ -845,7 +845,8 @@ test('PeerTube feed prioritizes trending and live tab requests only active strea
 
 test('Live tab discovers and re-verifies currently live PeerTube streams before embedding them', () => {
   assert.match(html, /async function loadPeerTubeLiveEvents\(hub,signal\)/);
-  assert.match(html, /detail\.isLive!==true/);\n  assert.match(html, /detail\.privacy\?\.id!=null&&Number\(detail\.privacy\.id\)!==1/);
+  assert.match(html, /detail\.isLive!==true/);
+  assert.match(html, /detail\.privacy\?\.id!=null&&Number\(detail\.privacy\.id\)!==1/);
   assert.match(html, /detail\.state\?\.id!=null&&Number\(detail\.state\.id\)!==1/);
   assert.match(html, /peertube-live-event/);
   assert.match(html, /loadPeerTubeLiveEvents\(hub,liveScrollSignal\)/);
