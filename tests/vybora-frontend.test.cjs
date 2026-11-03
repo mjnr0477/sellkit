@@ -644,4 +644,5 @@ test('later For You pages hydrate real viewer likes, saves, follows and comment 
   assert.match(loader, /sb\.from\('vybora_follows'\)\.select\('followed_id'\)\.eq\('follower_id',user\.id\)/);
   assert.match(loader, /sb\.from\('vybora_comments'\)\.select\('post_id'\)/);
   assert.match(loader, /liked:myLikes\.has\(p\.id\),saved:mySaves\.has\(p\.id\),following:following\.has\(p\.author_id\),comments_count:commentCounts\[p\.id\]\|\|0/);
+  assert.match(loader, /const \[statsResult,commentsResult,reactsResult,marksResult,followingResult\]=await Promise\.all\(/);
 });
