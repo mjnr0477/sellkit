@@ -135,6 +135,8 @@ test('uploaded community videos are limited to short clips', () => {
 test('Data Saver prevents automatic video and embed loading until the viewer requests it', () => {
   assert.match(html, /id="dataSaverBtn" aria-pressed="false"/);
   assert.match(html, /vybora:data-saver:v1/);
+  assert.match(html, /dataSaver\?'data-src="'\+esc\(media\)\+'" ':'src="'\+esc\(media\)\+'" '/);
+  assert.match(html, /if\(!v\.getAttribute\('src'\)&&v\.dataset\.src\)\{v\.src=v\.dataset\.src;v\.preload='auto';v\.load\(\)\}/);
   assert.match(html, /dataSaver\?'':'autoplay '/);
   assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
   assert.match(html, /dataSaver&&isExternal&&!isDirectExternal/);
@@ -289,7 +291,7 @@ test('feed cards remove platform-source badges while preserving mature-content w
 
 
 test('scrolling videos autoplay muted and pause offscreen to protect playback performance', () => {
-  assert.match(html, /<video src="'\+esc\(media\)\+'" '\+\(dataSaver\?'':'autoplay '\)\+'muted playsinline loop/);
+  assert.match(html, /<video '\+\(dataSaver\?'data-src="'\+esc\(media\)\+'" ':'src="'\+esc\(media\)\+'" '\)\+\(dataSaver\?'':'autoplay '\)\+'muted playsinline loop/);
   assert.match(html, /if\(v\)\{v\.muted=true;if\(!dataSaver\)\{const playback=v\.play\(\)/);
   assert.match(html, /finishWatchSession\(card\);if\(v\)v\.pause\(\)/);
 });
