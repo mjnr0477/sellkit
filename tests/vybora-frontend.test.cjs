@@ -39,8 +39,8 @@ test('signup keeps confirmation recovery visible and explains email provider rat
   assert.match(html, /Account created\. Check your inbox and spam folder/);
   assert.match(html, /over_email_send_rate_limit/);
   assert.match(html, /Wait at least 60 seconds/);
-  assert.match(html, /function startConfirmationCooldown\\(seconds=60\\)/);
-  assert.match(html, /button\\.textContent='Resend in '\\+remaining\\+'s'/);
+  assert.ok(html.includes('function startConfirmationCooldown(seconds=60)'));
+  assert.ok(html.includes("button.textContent='Resend in '+remaining+'s'"));
 });
 
 test('account-only interactions prompt guests to authenticate', () => {
