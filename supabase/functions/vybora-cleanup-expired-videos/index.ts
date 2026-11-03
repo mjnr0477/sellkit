@@ -88,7 +88,7 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return new Response(JSON.stringify({ ok: true, deletedPosts: ids.length, removedFiles: paths.length, endedLiveSessions: Number(liveCleanup?.endedSessions || 0), removedLiveParticipants: Number(liveCleanup?.removedParticipants || 0), removedLiveSignals: Number(liveCleanup?.removedSignals || 0) }), {
+  return new Response(JSON.stringify({ ok: true, deletedPosts: ids.length, removedFiles: paths.length, endedLiveSessions: Number(liveCleanup?.endedSessions || 0), removedLiveParticipants: Number(liveCleanup?.removedParticipants || 0), removedLiveSignals: Number(liveCleanup?.removedSignals || 0), removedLiveChatMessages: Number(liveCleanup?.removedChatMessages || 0) }), {
     status: 200, headers: { "Content-Type": "application/json" },
   });
 });
