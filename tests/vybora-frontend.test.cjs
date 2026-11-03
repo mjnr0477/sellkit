@@ -29,7 +29,7 @@ test('VYBORA page is mobile-ready and keeps the steering feed free of forced sna
 test('guest browsing remains available without account creation', () => {
   assert.match(html, /async function loadFeed\(\)/);
   assert.match(html, /render\(posts\.length\?posts:demo\)/);
-  assert.match(html, /https:\\/\\/sepiasearch\\.org\\/api\\/v1\\/search\\/videos/);
+  assert.ok(html.includes('https://sepiasearch.org/api/v1/search/videos'));
   assert.match(html, /Your universe, in motion/);
   assert.match(html, /You can keep watching without one/);
 });
