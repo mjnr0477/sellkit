@@ -215,3 +215,39 @@ test('Data Saver still auto-loads only the visible video when it enters the watc
     await browser.close();
   }
 });
+
+test('feed media requests stay bounded and rapid feed updates do not break the frontend', async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 1,
+      isMobile: true,
+      hasTouch: true
+    });
+    const page = await context.newPage();
+    const pageErrors = [];
+    page.on('pageerror', error => pageErrors.push(error.message));
+    await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 90000 });
+    await page.waitForSelector('#feed .video-card', { timeout: 60000 });
+    await page.waitForTimeout(1200);
+    const startup = await page.evaluate(() => {
+      const cards = [...document.querySelectorAll('#feed .video-card')];
+      const loadedVideos = cards.flatMap(card => [...card.querySelectorAll('video[src]')]);
+      const loadedFrames = cards.flatMap(card => [...card.querySelectorAll('iframe[src]')]);
+      const videos = cards.flatMap(card => [...card.querySelectorAll('video')]);
+      return {
+        loadedMedia: loadedVideos.length + loadedFrames.length,
+        eagerAutoplayVideos: videos.filter(video => video.hasAttribute('autoplay')).length,
+        deferredVideos: videos.filter(video => !video.getAttribute('src') && video.hasAttribute('data-src')).length
+      };
+    });
+    assert.ok(startup.loadedMedia <= 1,
+      'only the active feed card should load its media at startup: ' + JSON.stringify(startup));
+    assert.equal(startup.eagerAutoplayVideos, 0,
+      'off-screen video elements must not carry eager autoplay');
+    assert.equal(pageErrors.length, 0, 'the frontend should not throw during initial feed startup: ' + pageErrors.join('; '));
+  } finally {
+    await browser.close();
+  }
+});
