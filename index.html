@@ -302,7 +302,7 @@ async function loadPeerTubeLiveEvents(hub,signal){
    hasMore=batches.some(items=>items.length===pageSize);offset+=pageSize;
    const unique=new Map();batches.flat().forEach(v=>{const key=String(v.uuid||v.shortUUID||v.id||'');if(key&&!unique.has(key))unique.set(key,v)});
    const items=[...unique.values()];
-   const candidates=items.filter(v=>v?.isLive===true&&v.nsfw!==true&&isCleanVideoMetadata(v.name,v.description,(v.tags||[]).join(' '))&&[1,2,7,8].includes(Number(v.licence?.id??v.licence))&&!seen.has(String(v.uuid||v.shortUUID||v.id))).slice(0,pageSize);
+   const candidates=items.filter(v=>v?.isLive===true&&v.nsfw!==true&&(v.privacy?.id==null||Number(v.privacy.id)===1)&&isCleanVideoMetadata(v.name,v.description,(v.tags||[]).join(' '))&&[1,2,7,8].includes(Number(v.licence?.id??v.licence))&&!seen.has(String(v.uuid||v.shortUUID||v.id))).slice(0,pageSize);
    const verified=await Promise.all(candidates.map(async video=>{
     try{
      const source=new URL(String(video.url||'')),uuid=String(video.uuid||video.shortUUID||'');
@@ -311,7 +311,7 @@ async function loadPeerTubeLiveEvents(hub,signal){
      const detailResponse=await fetchWithTimeout(new URL('/api/v1/videos/'+encodeURIComponent(uuid),source.origin).href,{headers:{Accept:'application/json'}},8000);
      if(!detailResponse.ok)return null;
      const detail=await detailResponse.json();
-     if(detail.isLive!==true||detail.nsfw===true||!isCleanVideoMetadata(detail.name,detail.description,(detail.tags||[]).join(' '))||Number(detail.licence?.id??detail.licence)!==Number(video.licence?.id??video.licence)||detail.state?.id!=null&&Number(detail.state.id)!==1)return null;
+     if(detail.isLive!==true||detail.nsfw===true||detail.privacy?.id!=null&&Number(detail.privacy.id)!==1||!isCleanVideoMetadata(detail.name,detail.description,(detail.tags||[]).join(' '))||Number(detail.licence?.id??detail.licence)!==Number(video.licence?.id??video.licence)||detail.state?.id!=null&&Number(detail.state.id)!==1)return null;
      const embed=new URL(String(detail.embedPath||video.embedPath||('/videos/embed/'+uuid)),source.origin);
      if(embed.protocol!=='https:'||embed.origin!==source.origin||!embed.pathname.startsWith('/videos/embed/'))return null;
      const title=esc(detail.name||video.name||'PeerTube live stream');
