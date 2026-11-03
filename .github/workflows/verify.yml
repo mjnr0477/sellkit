@@ -27,3 +27,7 @@ jobs:
           node-version: 22
       - name: Verify production interface and safety invariants
         run: node scripts/verify-production.mjs
+      - name: Build Android live-site launcher
+        run: npm run build:web
+      - name: Verify generated launcher
+        run: grep -q 'https://vybora-social-live-8yyn.onrender.com/' www/index.html
