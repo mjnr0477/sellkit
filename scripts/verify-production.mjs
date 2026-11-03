@@ -29,7 +29,7 @@ const [html, social, worker, launcher] = await Promise.all([
 ]);
 
 // Compile every inline browser script without executing browser-side code.
-const inlineScripts = [...html.matchAll(/<script\\b(?![^>]*\\bsrc=)[^>]*>([\\s\\S]*?)<\\/script>/gi)]
+const inlineScripts = [...html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)]
   .map(match => match[1])
   .filter(source => source.trim());
 check('At least one inline application script exists', inlineScripts.length > 0);
@@ -50,11 +50,11 @@ const requiredIds = [
   'friendSearch', 'friendList', 'chatForm', 'liveBackdrop',
   'startLiveBtn', 'liveRoom', 'reportForm', 'moderationList'
 ];
-const htmlIds = new Set([...html.matchAll(/\\bid="([^"]+)"/g)].map(match => match[1]));
+const htmlIds = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
 for (const id of requiredIds) check(`Required interface element #${id}`, htmlIds.has(id));
 
-check('Social feature bundle is loaded by the production page', /<script[^>]+src=["'][^"']*social-features\\.js(?:\\?[^"']*)?["']/i.test(html));
-check('Service worker is registered by the production page', /serviceWorker\\.register\\([^)]*service-worker\\.js/i.test(html));
+check('Social feature bundle is loaded by the production page', /<script[^>]+src=["'][^"']*social-features\.js(?:\?[^"']*)?["']/i.test(html));
+check('Service worker is registered by the production page', /serviceWorker\.register\([^)]*service-worker\.js/i.test(html));
 check('Supabase client uses a publishable key', /sb_publishable_[A-Za-z0-9_-]+/.test(html));
 check('No Supabase service-role or secret key is embedded in browser code',
   !/(service[_-]?role|sb_secret_[A-Za-z0-9_-]+)/i.test(html + social + worker + launcher));
@@ -71,8 +71,8 @@ for (const [label, token] of [
 ]) check(label, social.includes(token));
 
 check('Service worker does not cache private Supabase REST/auth/storage APIs',
-  !/\\/(?:rest|auth|storage)\\/v1\\//i.test(worker));
-check('Service worker limits caching to GET requests', /request\\.method\\s*!==\\s*['"]GET['"]/.test(worker));
+  !/\/(?:rest|auth|storage)\/v1\//i.test(worker));
+check('Service worker limits caching to GET requests', /request\.method\s*!==\s*['"]GET['"]/.test(worker));
 check('Android launcher targets the production VYBORA service',
   launcher.includes('https://vybora-social-live-8yyn.onrender.com/'));
 
@@ -81,9 +81,9 @@ syntaxCheck('service-worker.js');
 syntaxCheck('scripts/prepare-web.mjs');
 
 if (failures.length) {
-  console.error(`\\n${failures.length} verification check(s) failed:`);
+  console.error(`\n${failures.length} verification check(s) failed:`);
   for (const failure of failures) console.error(' -', failure);
   process.exitCode = 1;
 } else {
-  console.log('\\nVYBORA production guardrails passed.');
+  console.log('\nVYBORA production guardrails passed.');
 }
