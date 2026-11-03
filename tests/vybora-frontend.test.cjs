@@ -855,7 +855,9 @@ test('Live tab discovers and re-verifies currently live PeerTube streams before 
   assert.match(html, /function setTab\(tab\)\{if\(tab!=='Live'\)window\.vyboraLiveScrollController\?\.abort\(\)/);
 });
 
-test('official live event pagination receives the active abort signal and is cleaned up when leaving Live', () => {\n  assert.match(html, /async function loadOfficialEvents\(signal\)/);\n  assert.match(html, /loadOfficialEvents\(liveScrollSignal\)/);\n  assert.match(html, /feed\.addEventListener\('scroll',[\s\S]*?signal\}\);await appendPage\(\)/);\n});\n\ntest('live event embeds support additional providers and satisfy Twitch parent-domain requirements', () => {
+test('official live event pagination receives the active abort signal and is cleaned up when leaving Live', () => {\n  assert.match(html, /async function loadOfficialEvents\(signal\)/);
+  assert.match(html, /loadOfficialEvents\(liveScrollSignal\)/);
+  assert.match(html, /feed\.addEventListener\('scroll',[\s\S]*?signal\}\);await appendPage\(\)/);\n});\n\ntest('live event embeds support additional providers and satisfy Twitch parent-domain requirements', () => {
   assert.match(html, /geo\.dailymotion\.com/);
   assert.match(html, /player\.kick\.com/);
   assert.match(html, /u\.searchParams\.set\('parent',location\.hostname\)/);
