@@ -111,34 +111,44 @@ security definer
 set search_path = pg_catalog, public
 as $cleanup$
 declare
-  result jsonb;
+  v_session_id uuid;
+  v_ended integer := 0;
+  v_participants integer := 0;
+  v_signals integer := 0;
+  v_chat integer := 0;
+  v_rows integer;
 begin
-  with stale as (
+  -- Process each room in order so row triggers see status='ended'
+  -- before participant deletions can affect viewer counts.
+  for v_session_id in
+    select id from public.vybora_live_sessions
+     where status = 'live' and heartbeat_at < p_stale_before
+     for update
+  loop
     update public.vybora_live_sessions
        set status = 'ended', ended_at = now(), viewer_count = 0
-     where status = 'live'
-       and heartbeat_at < p_stale_before
-    returning id
-  ),
-  removed_participants as (
-    delete from public.vybora_live_participants p
-     using stale s where p.session_id = s.id returning 1
-  ),
-  removed_signals as (
-    delete from public.vybora_live_signals x
-     using stale s where x.session_id = s.id returning 1
-  ),
-  removed_chat_messages as (
-    delete from public.vybora_live_chat_messages c
-     using stale s where c.session_id = s.id returning 1
-  )
-  select jsonb_build_object(
-    'endedSessions', (select count(*) from stale),
-    'removedParticipants', (select count(*) from removed_participants),
-    'removedSignals', (select count(*) from removed_signals),
-    'removedChatMessages', (select count(*) from removed_chat_messages)
-  ) into result;
-  return result;
+     where id = v_session_id;
+    v_ended := v_ended + 1;
+
+    delete from public.vybora_live_participants where session_id = v_session_id;
+    get diagnostics v_rows = row_count;
+    v_participants := v_participants + v_rows;
+
+    delete from public.vybora_live_signals where session_id = v_session_id;
+    get diagnostics v_rows = row_count;
+    v_signals := v_signals + v_rows;
+
+    delete from public.vybora_live_chat_messages where session_id = v_session_id;
+    get diagnostics v_rows = row_count;
+    v_chat := v_chat + v_rows;
+  end loop;
+
+  return jsonb_build_object(
+    'endedSessions', v_ended,
+    'removedParticipants', v_participants,
+    'removedSignals', v_signals,
+    'removedChatMessages', v_chat
+  );
 end;
 $cleanup$;
 
