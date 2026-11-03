@@ -845,7 +845,7 @@ test('Live tab discovers and re-verifies currently live PeerTube streams before 
   assert.match(html, /detail\.state\?\.id!=null&&Number\(detail\.state\.id\)!==1/);
   assert.match(html, /peertube-live-event/);
   assert.match(html, /loadPeerTubeLiveEvents\(hub\)/);
-  assert.match(html, /hub\.addEventListener\('scroll',[\s\S]*?appendPage\(\)/);
+  assert.match(html, /feed\.addEventListener\('scroll',[\s\S]*?appendPage\(\)/);\n  assert.match(html, /loadPeerTubeLiveEvents\(hub,liveScrollSignal\)/);\n  assert.match(html, /function setTab\(tab\)\{if\(tab!=='Live'\)window\.vyboraLiveScrollController\?\.abort\(\)/);
 });
 
 test('live event embeds support additional providers and satisfy Twitch parent-domain requirements', () => {
