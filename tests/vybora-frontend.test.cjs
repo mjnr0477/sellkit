@@ -147,7 +147,11 @@ test('inline application JavaScript parses without syntax errors', () => {
   for (const source of scripts) new vm.Script(source);
 });
 
-test('new account profile creation retries with a unique username when email-derived names collide', () => {\n  assert.match(html, /uniqueUsername=username\\.slice\\(0,22\\)\\+'_ '\.trim\\(\\)\\+user\\.id/);\n});\n\ntest('feed uses touch-friendly smooth scrolling and avoids forced stop on every card', () => {
+test('new account profile creation retries with a unique username when email-derived names collide', () => {
+  assert.ok(html.includes("uniqueUsername=username.slice(0,22)+'_'+user.id.replace(/-/g,'').slice(0,7)"));
+});
+
+test('feed uses touch-friendly smooth scrolling and avoids forced stop on every card', () => {
   assert.match(html, /scroll-behavior:smooth;-webkit-overflow-scrolling:touch;touch-action:pan-y/);
   assert.match(html, /\.video-card\{[^}]*scroll-snap-stop:normal/);
 });
