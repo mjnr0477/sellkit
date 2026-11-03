@@ -37,9 +37,9 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // A host refreshes heartbeat every 30 seconds. Ten minutes allows mobile/background
-  // throttling while ensuring abandoned rooms and transient signaling rows are reclaimed.
-  const staleBefore = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  // A host refreshes heartbeat every 30 seconds. Thirty minutes allows mobile/background
+  // throttling and older app versions while ensuring abandoned rooms are eventually reclaimed.
+  const staleBefore = new Date(Date.now() - 30 * 60 * 1000).toISOString();
   const { data: liveCleanup, error: liveCleanupError } = await supabase.rpc(
     "vybora_cleanup_stale_live_sessions", { p_stale_before: staleBefore },
   );
