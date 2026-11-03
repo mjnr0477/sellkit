@@ -555,7 +555,7 @@ test('Following feed fetches public posts from the signed-in viewer’s followed
   assert.match(html, /sb\.from\('vybora_follows'\)\.select\('followed_id'\)\.eq\('follower_id',user\.id\)/);
   assert.match(html, /sb\.from\('vybora_posts'\)[\s\S]*?\.in\('author_id',followedIds\)/);
   assert.match(html, /function setTab\(tab\)[\s\S]*?if\(tab==='Following'\)[\s\S]*?loadFollowingFeed\(\)/);
-  assert.match(html, /async function refreshActiveFeed\(\)\{if\(activeTab==='Following'&&user\)return loadFollowingFeed\(\);return loadFeed\(\)\}/);
+  assert.match(html, /async function refreshActiveFeed\(\)\{if\(activeTab==='Following'&&user\)return loadFollowingFeed\(\);if\(activeTab==='Search'\)return searchVideos\(\$\('searchInput'\)\.value\);return loadFeed\(\)\}/);
   assert.doesNotMatch(html, /allPosts\.filter\(p=>p\.following/);
 });
 
@@ -591,4 +591,21 @@ test('creators can delete only their own posts and uploaded media', () => {
   assert.match(html, /sb\.from\('vybora_posts'\)\.delete\(\)\.eq\('id',post\.id\)\.eq\('author_id',user\.id\)/);
   assert.ok(html.includes("post.media_path){if(!String(post.media_path).startsWith(user.id+'/'))"));
   assert.doesNotMatch(html, /update\(\{expires_at:new Date\(\)\.toISOString\(\)\}\)/);
+});
+
+
+test('search results preserve mute and block preferences when refreshed', () => {
+  assert.match(html, /filter\(p=>\(p\.body\+' '\+\(p\.username\|\|''\)\+' '\+\(p\.handle\|\|''\)\)\.toLowerCase\(\)\.includes\(q\.toLowerCase\(\)\)&&!mutedAuthors\.has\(p\.author_id\)&&!blockedAuthors\.has\(p\.author_id\)\)/);
+  assert.match(html, /const dbPosts=\(postResult\.data\|\|\[\]\)\.filter\(p=>\(window\.vyboraAllowMature\|\|!p\.mature_content\)&&!mutedAuthors\.has\(p\.author_id\)&&!blockedAuthors\.has\(p\.author_id\)\)/);
+  assert.match(html, /\.eq\('visibility','public'\)\.not\('media_url','is',null\)\.or\('expires_at\.is\.null,expires_at\.gt\.'\+new Date\(\)\.toISOString\(\)\)\.ilike\('body',pattern\)/);
+});
+
+test('feed actions refresh the active search instead of replacing it with For You', () => {
+  assert.ok(html.includes("if(activeTab==='Search')return searchVideos($('searchInput').value)"));
+});
+
+
+test('blocked creators stay hidden in the initial and paginated community feed', () => {
+  assert.match(html, /rows=rows\.filter\(p=>\(window\.vyboraAllowMature\|\|!p\.mature_content\)&&!mutedAuthors\.has\(p\.author_id\)&&!blockedAuthors\.has\(p\.author_id\)\)/);
+  assert.match(html, /const clean=\(rows\|\|\[\]\)\.filter\(p=>\(window\.vyboraAllowMature\|\|!p\.mature_content\)&&!mutedAuthors\.has\(p\.author_id\)&&!blockedAuthors\.has\(p\.author_id\)\)/);
 });
