@@ -120,7 +120,7 @@ await activateTopmostControl('#authClose');
     assert.equal(await page.locator('#resendConfirmation').isVisible(), false,
       'confirmation resend should stay hidden until an unconfirmed account is detected');
     let resendRequested = false;
-    await page.route(/\/auth\/v1\/token\?grant_type=password$/, route => route.fulfill({
+    await page.route(url => url.pathname.endsWith('/auth/v1/token') && url.searchParams.get('grant_type') === 'password', route => route.fulfill({
       status: 400, contentType: 'application/json',
       body: JSON.stringify({ code: 'email_not_confirmed', msg: 'Email not confirmed' })
     }));
@@ -165,7 +165,7 @@ test('successful email sign-in creates a persistent authenticated session in the
         }
       })
     }));
-    await page.route(/\\/rest\\/v1\\//, route => route.fulfill({
+    await page.route(url => url.pathname.includes('/rest/v1/'), route => route.fulfill({
       status: route.request().method() === 'POST' ? 201 : 200,
       contentType: 'application/json', body: '[]'
     }));
