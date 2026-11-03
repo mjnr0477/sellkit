@@ -840,3 +840,14 @@ test('feed scroll loading is animation-frame throttled to avoid repeated layout 
   assert.match(html, /if\(!entry\.isIntersecting\)\{if\(v&&v\.getAttribute\('src'\)\)/);
   assert.match(html, /v\.dataset\.src=v\.getAttribute\('src'\)/);
 });
+
+
+test('topic search queries the federated PeerTube catalogue and additional open video sources without importing media', () => {
+  assert.match(html, /async function loadPeerTubeVideos\(page=1,searchTerm='short film'\)/);
+  assert.match(html, /search:String\(searchTerm\|\|'short film'\)/);
+  assert.match(html, /loadPeerTubeVideos\(1,q\)/);
+  assert.match(html, /loadNasaVideos\(1,q\)/);
+  assert.match(html, /loadOpenverseVideos\(1,q\)/);
+  assert.match(html, /loadBlenderVideos\(1,q\)/);
+  assert.match(html, /federated creators/);
+});
