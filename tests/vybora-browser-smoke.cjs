@@ -195,7 +195,6 @@ test('Data Saver still auto-loads only the visible video when it enters the watc
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const page = await context.newPage();
     await page.addInitScript(() => localStorage.setItem('vybora:data-saver:v1', 'on'));
-    await page.route('https://media.test/**', route => route.abort());
     await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 90000 });
     await page.waitForSelector('#feed .video-card', { timeout: 60000 });
     await page.evaluate(() => {
