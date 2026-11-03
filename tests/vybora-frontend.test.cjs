@@ -175,19 +175,17 @@ test('uploaded community videos are limited to short clips', () => {
 });
 
 
-test('Data Saver prevents automatic video and embed loading until the viewer requests it', () => {
+test('Data Saver defers bytes until a video enters view, then automatically plays it', () => {
   assert.match(html, /id="dataSaverBtn" aria-pressed="false"/);
   assert.match(html, /vybora:data-saver:v1/);
   assert.match(html, /dataSaver\?'data-src="'\+esc\(media\)\+'" ':'src="'\+esc\(media\)\+'" '/);
-  assert.match(html, /if\(!dataSaver&&v&&!v\.getAttribute\('src'\)&&v\.dataset\.src\)\{v\.src=v\.dataset\.src;v\.preload='auto';v\.load\(\)\}/);
-  assert.match(html, /dataSaver\?'':'autoplay '/);
   assert.match(html, /index===0&&!dataSaver\?'auto':'none'/);
-  assert.match(html, /dataSaver&&isExternal&&!isDirectExternal/);
-  assert.match(html, /data-action="load-external"/);
-  assert.match(html, /if\(!dataSaver&&entry\.isIntersecting/);
-  assert.match(html, /if\(!dataSaver\)\{const playback=v\.play\(\)/);
-  assert.match(html, /action==='load-external'/);
-  assert.match(html, /isExternal&&!isDirectExternal\?'':'<button class="play-toggle" data-action="play"/);
+  assert.match(html, /<script src="clean-feed\.js"><\/script>/);
+  assert.match(cleanFeed, /video\.dataset\.src&&!video\.src/);
+  assert.match(cleanFeed, /video\.play\(\)/);
+  assert.match(cleanFeed, /frame\.dataset\.src&&!frame\.src/);
+  assert.doesNotMatch(html, /data-action="load-external"/);
+  assert.doesNotMatch(html, /vybora_external_video_(?:stats|reactions|bookmarks|comments)/);
 });
 
 test('Data Saver keeps video discovery and infinite scrolling active without preloading source media', () => {
