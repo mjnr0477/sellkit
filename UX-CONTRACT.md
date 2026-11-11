@@ -19,8 +19,8 @@
 ## Visual and token ownership
 
 - **Visual identity:** DESIGN.md.
-- **Runtime token owner:** Existing CSS variables in index.html and design-refresh.css.
-- **Component layer:** clean-feed.css.
+- **Runtime token owner:** Base app variables in index.html; scoped `--vb-*` component tokens in clean-feed.css.
+- **Component layer:** clean-feed.css, including the scoped `--vb-*` palette used by the new Watch/Live surface.
 - **Drift policy:** Update the runtime CSS and DESIGN.md in the same change when a durable token changes.
 
 ## Canonical navigation
