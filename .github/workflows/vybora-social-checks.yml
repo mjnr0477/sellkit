@@ -14,6 +14,10 @@ jobs:
           node-version: 22
       - name: Check social feature JavaScript syntax
         run: node --check social-features.js
+      - name: Run production guardrails
+        run: npm run verify
+      - name: Run frontend regression tests
+        run: node --test tests/clean-feed.test.cjs tests/video-startup-contract.test.cjs tests/vybora-frontend.test.cjs
       - name: Set up Deno for Supabase Edge Function type checking
         uses: denoland/setup-deno@v2
       - name: Type-check the VYBORA cleanup Edge Function
