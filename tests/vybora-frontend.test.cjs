@@ -923,7 +923,8 @@ test('Watch cards keep creator identity, captions, credits, and a secondary desk
   assert.match(feedCss, /\.video-info>\*\{display:block!important/);
   assert.match(feedCss, /\.side\{\s*display:flex!important/);
   assert.match(feedCss, /\.video-caption\{/);
-  assert.match(feedCss, /\.required-credit/);
+  assert.match(feedCss, /\.archive-credit/);
+  assert.match(html, /required-credit/);
   assert.match(feedCss, /\.side\{display:none!important\}/);
 });
 
