@@ -1,6 +1,6 @@
 /* VYBORA offline shell. Never cache authenticated API responses or private user data. */
 'use strict';
-const CACHE_NAME = 'vybora-shell-v4';
+const CACHE_NAME = 'vybora-shell-v5';
 const SHELL = ['/', '/index.html', '/design-refresh.css', '/social-features.js', '/clean-feed.css', '/clean-feed.js'];
 const SUPABASE_SCRIPT = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 
