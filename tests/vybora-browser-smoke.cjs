@@ -40,7 +40,7 @@ test('hosted VYBORA feed loads and guest account gates work for available feed c
     const offlineShellReady = await page.evaluate(async () => {
       if (!('serviceWorker' in navigator)) return false;
       const registration = await navigator.serviceWorker.ready;
-      const cache = await caches.open('vybora-shell-v4');
+      const cache = await caches.open('vybora-shell-v5');
       return Boolean(registration.active && await cache.match('/design-refresh.css?v=20261102b', { ignoreSearch: true }) && await cache.match('/clean-feed.css') && await cache.match('/clean-feed.js'));
     });
     assert.equal(offlineShellReady, true, 'offline shell should cache the production stylesheet');
