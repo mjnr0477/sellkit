@@ -53,7 +53,7 @@ for (let index = 0; index < inlineScripts.length; index += 1) {
 const requiredIds = [
   'feed', 'accountBtn', 'authForm', 'postForm', 'videoFile',
   'commentsBackdrop', 'commentForm', 'profileForm', 'savedList',
-  'searchInput', 'dataSaverBtn', 'soundBtn', 'friendsBackdrop',
+  'searchInput', 'dataSaverBtn', 'soundBtn', 'focusModeBtn', 'friendsBackdrop',
   'friendSearch', 'friendList', 'chatForm', 'liveBackdrop',
   'startLiveBtn', 'liveRoom', 'reportForm', 'moderationList'
 ];
@@ -77,6 +77,13 @@ for (const [label, token] of [
   ['Personalised feed ranking', 'rankFeedItems'],
   ['Data saver mode', 'dataSaver']
 ]) check(label, application.includes(token));
+
+check('Optional Focus mode advances supported direct video only on a real ended event',
+  html.includes("vybora:focus-mode:v1") && html.includes("feed.addEventListener('ended'") && html.includes("video.loop=!focusMode"));
+check('Live event players are lazy-loaded and released by their visibility observer',
+  html.includes("function installLiveEventPlayerObserver(hub)") && html.includes("window.vyboraLivePlayerMutationObserver"));
+check('Offline shell cache has the current version',
+  worker.includes("const CACHE_NAME = 'vybora-shell-v5'"));
 
 check('Service worker does not cache private Supabase REST/auth/storage APIs',
   !/\/(?:rest|auth|storage)\/v1\//i.test(worker));

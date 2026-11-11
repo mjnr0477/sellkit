@@ -40,7 +40,7 @@ test('hosted VYBORA feed loads and guest account gates work for available feed c
     const offlineShellReady = await page.evaluate(async () => {
       if (!('serviceWorker' in navigator)) return false;
       const registration = await navigator.serviceWorker.ready;
-      const cache = await caches.open('vybora-shell-v4');
+      const cache = await caches.open('vybora-shell-v5');
       return Boolean(registration.active && await cache.match('/design-refresh.css?v=20261102b', { ignoreSearch: true }) && await cache.match('/clean-feed.css') && await cache.match('/clean-feed.js'));
     });
     assert.equal(offlineShellReady, true, 'offline shell should cache the production stylesheet');
@@ -88,7 +88,7 @@ await activateTopmostControl('#authClose');
 await activateTopmostControl('#authClose');
     await page.waitForFunction(() => !document.querySelector('#authBackdrop').classList.contains('open'));
     const headerTargets = await page.evaluate(() => {
-      const ids = ['friendsBtn', 'liveBtn', 'dataSaverBtn', 'soundBtn', 'accountBtn'];
+      const ids = ['friendsBtn', 'liveBtn', 'dataSaverBtn', 'soundBtn', 'focusModeBtn', 'accountBtn'];
       return ids.map(id => {
         const el = document.getElementById(id), r = el.getBoundingClientRect();
         return { id, left:r.left, right:r.right, top:r.top, bottom:r.bottom, width:r.width, height:r.height };
@@ -111,6 +111,24 @@ await activateTopmostControl('#authClose');
       assert.ok(headerTargets[i].right <= headerTargets[j].left || headerTargets[j].right <= headerTargets[i].left,
         'mobile header controls must not overlap: ' + JSON.stringify(headerTargets));
     }
+    await page.setViewportSize({ width: 360, height: 844 });
+    const narrowHeader = await page.evaluate(() => {
+      const ids = ['friendsBtn', 'liveBtn', 'dataSaverBtn', 'soundBtn', 'focusModeBtn', 'accountBtn'];
+      return ids.map(id => { const r = document.getElementById(id).getBoundingClientRect(); return { left:r.left, right:r.right, width:r.width }; });
+    });
+    const narrowWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    assert.ok(narrowHeader.every(r => r.width > 0 && r.left >= 0 && r.right <= narrowWidth),
+      'header controls must fit at 360px: ' + JSON.stringify({narrowWidth,narrowHeader}));
+    const narrowSorted = [...narrowHeader].sort((a,b) => a.left-b.left);
+    for (let i=1;i<narrowSorted.length;i++) assert.ok(narrowSorted[i-1].right <= narrowSorted[i].left,
+      'header controls must not overlap at 360px: ' + JSON.stringify(narrowSorted));
+    await page.setViewportSize({ width: 390, height: 844 });
+    const focusButton = page.locator('#focusModeBtn');
+    assert.equal(await focusButton.getAttribute('aria-pressed'), 'false');
+    await focusButton.click();
+    assert.equal(await focusButton.getAttribute('aria-pressed'), 'true');
+    await focusButton.click();
+    assert.equal(await focusButton.getAttribute('aria-pressed'), 'false');
     await page.locator('#accountBtn').click();
     await page.locator('#authSwitch').click();
     assert.equal(await page.locator('#forgotPassword').isVisible(), true,
@@ -177,6 +195,7 @@ test('successful email sign-in creates a persistent authenticated session in the
     await page.waitForFunction(() => document.querySelector('#accountStatus')?.innerText.includes('Signed in'),
       { timeout: 20000 });
     assert.match(await page.locator('#accountStatus').innerText(), /Signed in/);
+    await page.waitForSelector('#authBackdrop', { state: 'hidden', timeout: 20000 });
     assert.equal(await page.locator('#authBackdrop').isVisible(), false,
       'successful sign-in should close the authentication modal');
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 90000 });
