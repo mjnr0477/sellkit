@@ -919,29 +919,29 @@ test('guest fallback renders fast public sources before slower catalogue discove
 
 
 test('Watch cards keep creator identity, captions, credits, and a secondary desktop discovery rail visible', () => {
-  assert.doesNotMatch(feedCss, /\\.video-info>\\*\\{display:none/);
-  assert.match(feedCss, /\\.video-info>\\*\\{display:block!important/);
-  assert.match(feedCss, /\\.side\\{\\s*display:flex!important/);
-  assert.match(feedCss, /\\.video-caption\\{/);
-  assert.match(feedCss, /\\.required-credit/);
-  assert.match(feedCss, /\\.side\\{display:none!important\\}/);
+  assert.doesNotMatch(feedCss, /\.video-info>\*\{display:none/);
+  assert.match(feedCss, /\.video-info>\*\{display:block!important/);
+  assert.match(feedCss, /\.side\{\s*display:flex!important/);
+  assert.match(feedCss, /\.video-caption\{/);
+  assert.match(feedCss, /\.required-credit/);
+  assert.match(feedCss, /\.side\{display:none!important\}/);
 });
 
 test('Live hub lazily starts verified event players in view and releases off-screen embeds', () => {
-  assert.match(html, /function installLiveEventPlayerObserver\\(hub\\)/);
-  assert.match(html, /new IntersectionObserver\\(entries=>\\{/);
-  assert.match(html, /entry\\.intersectionRatio>=\\.45/);
-  assert.match(html, /window\\.vyboraLivePlayerMutationObserver=new MutationObserver\\(observeLiveCards\\)/);
-  assert.match(html, /frame\\.dataset\\.src=frame\\.getAttribute\\('src'\\)/);
-  assert.match(feedCss, /\\.official-live-player\\{\\s*position:relative!important/);
-  assert.match(feedCss, /\\.official-tracked-event h2/);
+  assert.match(html, /function installLiveEventPlayerObserver\(hub\)/);
+  assert.match(html, /new IntersectionObserver\(entries=>\{/);
+  assert.match(html, /entry\.intersectionRatio>=\.45/);
+  assert.match(html, /window\.vyboraLivePlayerMutationObserver=new MutationObserver\(observeLiveCards\)/);
+  assert.match(html, /frame\.dataset\.src=frame\.getAttribute\('src'\)/);
+  assert.match(feedCss, /\.official-live-player\{\s*position:relative!important/);
+  assert.match(feedCss, /\.official-tracked-event h2/);
 });
 
 test('Focus mode is opt-in, device-local, and advances only when a direct video ends', () => {
   assert.match(html, /id="focusModeBtn"[^>]*aria-pressed="false"/);
   assert.match(html, /vybora:focus-mode:v1/);
-  assert.match(html, /video\\.loop=!focusMode/);
-  assert.match(html, /feed\\.addEventListener\\('ended',event=>\\{[\\s\\S]*?\\},true\\)/);
+  assert.match(html, /video\.loop=!focusMode/);
+  assert.match(html, /feed\.addEventListener\('ended',event=>\{[\s\S]*?\},true\)/);
   assert.match(html, /prefers-reduced-motion: reduce/);
   assert.match(html, /provider players keep their own controls/);
 });
