@@ -6,6 +6,7 @@ const vm = require('node:vm');
 const html = fs.readFileSync(new URL('../index.html', 'file://' + __filename), 'utf8');
 const cleanFeed = fs.readFileSync(new URL('../clean-feed.js', 'file://' + __filename), 'utf8');
 const designCss = fs.readFileSync(new URL('../design-refresh.css', 'file://' + __filename), 'utf8');
+const feedCss = fs.readFileSync(new URL('../clean-feed.css', 'file://' + __filename), 'utf8');
 const muteMigration = fs.readFileSync(new URL('../supabase/migrations/20261102072105_vybora_creator_mutes.sql', 'file://' + __filename), 'utf8');
 const blockMigration = fs.readFileSync(new URL('../supabase/migrations/20261102073022_vybora_account_blocking.sql', 'file://' + __filename), 'utf8');
 const socialSource = fs.readFileSync(new URL('../social-features.js', 'file://' + __filename), 'utf8');
@@ -578,7 +579,7 @@ test('viewers can understand why a video was recommended without sending watch h
 
 test('offline worker caches the VYBORA stylesheet and serves its last good copy offline', () => {
   const worker = fs.readFileSync(new URL('../service-worker.js', 'file://' + __filename), 'utf8');
-  assert.match(worker, /const CACHE_NAME = 'vybora-shell-v4'/);
+  assert.match(worker, /const CACHE_NAME = 'vybora-shell-v5'/);
   assert.ok(worker.includes("'/design-refresh.css'"));
   assert.ok(worker.includes("url.pathname === '/design-refresh.css'"));
   assert.ok(worker.includes('if (response.ok) await cache.put(request, response.clone())'));
@@ -914,4 +915,33 @@ test('guest fallback renders fast public sources before slower catalogue discove
   assert.match(html, /loadOpenArchiveVideos\(1\)\.then\(batch=>/);
   assert.match(html, /if\(!queryOverride&&page<=openversePage\)return \[\]/);
   assert.match(html, /if\(peertubeLoading\|\|\(!searchTerm&&page<=peertubePage\)/);
+});
+
+
+test('Watch cards keep creator identity, captions, credits, and a secondary desktop discovery rail visible', () => {
+  assert.doesNotMatch(feedCss, /\\.video-info>\\*\\{display:none/);
+  assert.match(feedCss, /\\.video-info>\\*\\{display:block!important/);
+  assert.match(feedCss, /\\.side\\{\\s*display:flex!important/);
+  assert.match(feedCss, /\\.video-caption\\{/);
+  assert.match(feedCss, /\\.required-credit/);
+  assert.match(feedCss, /\\.side\\{display:none!important\\}/);
+});
+
+test('Live hub lazily starts verified event players in view and releases off-screen embeds', () => {
+  assert.match(html, /function installLiveEventPlayerObserver\\(hub\\)/);
+  assert.match(html, /new IntersectionObserver\\(entries=>\\{/);
+  assert.match(html, /entry\\.intersectionRatio>=\\.45/);
+  assert.match(html, /window\\.vyboraLivePlayerMutationObserver=new MutationObserver\\(observeLiveCards\\)/);
+  assert.match(html, /frame\\.dataset\\.src=frame\\.getAttribute\\('src'\\)/);
+  assert.match(feedCss, /\\.official-live-player\\{\\s*position:relative!important/);
+  assert.match(feedCss, /\\.official-tracked-event h2/);
+});
+
+test('Focus mode is opt-in, device-local, and advances only when a direct video ends', () => {
+  assert.match(html, /id="focusModeBtn"[^>]*aria-pressed="false"/);
+  assert.match(html, /vybora:focus-mode:v1/);
+  assert.match(html, /video\\.loop=!focusMode/);
+  assert.match(html, /feed\\.addEventListener\\('ended',event=>\\{[\\s\\S]*?\\},true\\)/);
+  assert.match(html, /prefers-reduced-motion: reduce/);
+  assert.match(html, /provider players keep their own controls/);
 });
