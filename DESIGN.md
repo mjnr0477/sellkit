@@ -59,7 +59,7 @@ A compact late-night screening room for the internet: the moving picture owns th
 - **Memorable signature:** Full-height video stage with a real creator lower-third and a restrained vertical action rail.
 - **Restraint:** Captions, creator identity, playback controls, credits, and touch targets remain readable; no decorative glow competes with the video.
 - **Anti-references:** Avoid anonymous video walls that hide creators, dense action stacks, and interfaces that look like static marketing mockups.
-- **Token ownership/runtime mapping:** Existing CSS variables in index.html and design-refresh.css remain canonical. DESIGN.md mirrors those values; clean-feed.css is the responsive component layer. Do not introduce a second token package.
+- **Token ownership/runtime mapping:** The original app variables (`--bg`, `--panel`, `--panel2`, `--line`, `--text`, `--muted`, `--violet`, `--aqua`, `--pink`) remain defined in index.html. The refreshed Watch/Live layer uses scoped `--vb-*` presentation tokens in clean-feed.css. DESIGN.md records the scoped component palette; keep the relationship explicit and avoid another token package.
 
 ## Colors
 
