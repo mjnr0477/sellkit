@@ -48,10 +48,10 @@
 
 **Interfaces:** Preserve the existing video-card, video-info, creator, video-caption, video-actions, live-hub, live-event-card, and official-live-player markup. Keep required creator credits clickable and visible. Maintain a full-height Watch card without forced scroll snapping.
 
-- [ ] Restore creator identity, handle/time, follow action, caption, recommendation explanation, and required source credits.
-- [ ] Restore a secondary desktop discovery rail; hide it only on mobile.
-- [ ] Make the Live hub content-height and scrollable, and retain official event context around embeds.
-- [ ] Add responsive regression assertions.
+- [x] Restore creator identity, handle/time, follow action, caption, recommendation explanation, and required source credits.
+- [x] Restore a secondary desktop discovery rail; hide it only on mobile.
+- [x] Make the Live hub content-height and scrollable, and retain official event context around embeds.
+- [x] Add responsive regression assertions.
 
 ---
 
@@ -61,11 +61,11 @@
 
 **Interfaces:** New button #focusModeBtn; state exposed through aria-pressed; local preference key vybora:focus-mode:v1. Existing activateVideoObserver remains the only owner of video/iframe activation. A feed-level capture listener handles the non-bubbling native ended event.
 
-- [ ] Add an accessible Focus mode utility control.
-- [ ] Apply video.loop = !focusMode as cards become active and when the user toggles the setting.
-- [ ] Advance to the next video card on a genuine direct-video ended event.
-- [ ] At the end of loaded content, request the next page and advance when a new card arrives; never auto-skip an iframe on a timer.
-- [ ] Add regression coverage for opt-in state, end-event handling, and narrow header geometry.
+- [x] Add an accessible Focus mode utility control.
+- [x] Apply video.loop = !focusMode as cards become active and when the user toggles the setting.
+- [x] Advance to the next video card on a genuine direct-video ended event.
+- [x] At the end of loaded content, request the next page and advance when a new card arrives; never auto-skip an iframe on a timer.
+- [x] Add regression coverage for opt-in state, end-event handling, and narrow header geometry.
 
 ---
 
@@ -75,9 +75,9 @@
 
 **Interfaces:** Cache name becomes vybora-shell-v5. Public app shell remains network-first for application logic; Supabase auth/REST/storage responses remain uncached.
 
-- [ ] Bump the offline shell cache version.
-- [ ] Document the Focus mode contract and known iframe limitation.
-- [ ] Run npm run verify.
-- [ ] Run node --test tests/clean-feed.test.cjs tests/video-startup-contract.test.cjs tests/vybora-frontend.test.cjs.
+- [x] Bump the offline shell cache version.
+- [x] Document the Focus mode contract and known iframe limitation.
+- [x] Run npm run verify (passed in GitHub Actions).
+- [ ] Run node --test tests/clean-feed.test.cjs tests/video-startup-contract.test.cjs tests/vybora-frontend.test.cjs (re-run after correcting the source-selector assertion).
 - [ ] Review the branch diff, open a PR, and wait for required GitHub checks before merging.
 - [ ] Confirm Render's automatic deploy and inspect the resulting service status before calling the change live.
