@@ -88,7 +88,7 @@ await activateTopmostControl('#authClose');
 await activateTopmostControl('#authClose');
     await page.waitForFunction(() => !document.querySelector('#authBackdrop').classList.contains('open'));
     const headerTargets = await page.evaluate(() => {
-      const ids = ['friendsBtn', 'liveBtn', 'dataSaverBtn', 'soundBtn', 'accountBtn'];
+      const ids = ['friendsBtn', 'liveBtn', 'dataSaverBtn', 'soundBtn', 'focusModeBtn', 'accountBtn'];
       return ids.map(id => {
         const el = document.getElementById(id), r = el.getBoundingClientRect();
         return { id, left:r.left, right:r.right, top:r.top, bottom:r.bottom, width:r.width, height:r.height };
@@ -111,6 +111,24 @@ await activateTopmostControl('#authClose');
       assert.ok(headerTargets[i].right <= headerTargets[j].left || headerTargets[j].right <= headerTargets[i].left,
         'mobile header controls must not overlap: ' + JSON.stringify(headerTargets));
     }
+    await page.setViewportSize({ width: 360, height: 844 });
+    const narrowHeader = await page.evaluate(() => {
+      const ids = ['friendsBtn', 'liveBtn', 'dataSaverBtn', 'soundBtn', 'focusModeBtn', 'accountBtn'];
+      return ids.map(id => { const r = document.getElementById(id).getBoundingClientRect(); return { left:r.left, right:r.right, width:r.width }; });
+    });
+    const narrowWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    assert.ok(narrowHeader.every(r => r.width > 0 && r.left >= 0 && r.right <= narrowWidth),
+      'header controls must fit at 360px: ' + JSON.stringify({narrowWidth,narrowHeader}));
+    const narrowSorted = [...narrowHeader].sort((a,b) => a.left-b.left);
+    for (let i=1;i<narrowSorted.length;i++) assert.ok(narrowSorted[i-1].right <= narrowSorted[i].left,
+      'header controls must not overlap at 360px: ' + JSON.stringify(narrowSorted));
+    await page.setViewportSize({ width: 390, height: 844 });
+    const focusButton = page.locator('#focusModeBtn');
+    assert.equal(await focusButton.getAttribute('aria-pressed'), 'false');
+    await focusButton.click();
+    assert.equal(await focusButton.getAttribute('aria-pressed'), 'true');
+    await focusButton.click();
+    assert.equal(await focusButton.getAttribute('aria-pressed'), 'false');
     await page.locator('#accountBtn').click();
     await page.locator('#authSwitch').click();
     assert.equal(await page.locator('#forgotPassword').isVisible(), true,
