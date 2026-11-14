@@ -30,7 +30,7 @@ test('VYBORA page is mobile-ready and keeps the steering feed free of forced sna
 
 test('guest browsing remains available without account creation', () => {
   assert.match(html, /async function loadFeed\(\)/);
-  assert.match(html, /async function loadOpenArchiveVideos\(page=1\)/);
+  assert.match(html, /async function loadOpenArchiveVideos\(page=1,onBatch=null\)/);
   assert.match(html, /feed-empty-state/);
   assert.match(html, /render\(\[\]\)/);
   assert.ok(html.includes('https://sepiasearch.org/api/v1/search/videos'));
@@ -165,7 +165,7 @@ test('external video discovery streams from live sources without reading the per
   const searchSource = html.slice(html.indexOf('async function searchVideos(query)'), html.indexOf("$('searchSubmit').addEventListener"));
   assert.doesNotMatch(feedSource, /sb\.from\('vybora_external_videos'\)/);
   assert.doesNotMatch(searchSource, /sb\.from\('vybora_external_videos'\)/);
-  assert.match(feedSource, /loadOpenArchiveVideos\(1\)/);
+  assert.match(feedSource, /loadOpenArchiveVideos\(1,appendDiscoveredVideos\)/);
   assert.match(searchSource, /loadPeerTubeVideos\(1,q\)/);
   assert.match(searchSource, /loadOpenverseVideos\(1,q\)/);
 });
@@ -191,7 +191,7 @@ test('Data Saver defers bytes until a video enters view, then automatically play
 });
 
 test('Data Saver keeps video discovery and infinite scrolling active without preloading source media', () => {
-  assert.doesNotMatch(html, /async function loadOpenArchiveVideos\(page=1\)\{\s*if\(dataSaver\)return \[\]/);
+  assert.doesNotMatch(html, /async function loadOpenArchiveVideos\(page=1,onBatch=null\)\{\s*if\(dataSaver\)return \[\]/);
   assert.doesNotMatch(html, /async function loadPeerTubeVideos\(page=1,searchTerm=''\)\{\s*if\(dataSaver/);
   assert.doesNotMatch(html, /async function loadMoreArchiveOnly\(\)\{\s*if\(dataSaver\)return/);
   assert.match(html, /if\(video&&near&&!video\.getAttribute\('src'\)&&video\.dataset\.src\)/);
@@ -292,7 +292,7 @@ test('optional video discovery providers have bounded network timeouts', () => {
 });
 
 test('Watch feed discovers public videos from open libraries without importing media', () => {
-  assert.match(html, /async function loadOpenArchiveVideos\(page=1\)/);
+  assert.match(html, /async function loadOpenArchiveVideos\(page=1,onBatch=null\)/);
   assert.match(html, /mediatype:movies AND licenseurl:\*/);
   assert.match(html, /isReusableArchiveLicense/);
   assert.match(html, /https:\/\/archive\.org\/metadata\//);
@@ -300,7 +300,7 @@ test('Watch feed discovers public videos from open libraries without importing m
   assert.match(html, /archiveLicense:licenseUrl/);
   assert.match(html, /async function loadMoreArchiveOnly\(\)/);
   assert.match(html, /archivePage\+1/);
-  assert.match(html, /loadOpenArchiveVideos\(1\)\.then\(archive=>/);
+  assert.match(html, /loadOpenArchiveVideos\(1,appendDiscoveredVideos\)\.then\(archive=>/);
   assert.match(html, /posts=rankFeedItems\(remote\)/);
   assert.match(html, /Video bytes stay hosted by the archive/);
   assert.doesNotMatch(html, /archive\.org[\s\S]{0,1500}sb\.storage\.from\('vybora-media'\)\.upload/);
@@ -875,7 +875,7 @@ test('live event embeds support additional providers and satisfy Twitch parent-d
 test('feed scroll loading is animation-frame throttled to avoid repeated layout and network work', () => {
   assert.match(html, /let feedScrollQueued=false;feed\.addEventListener\('scroll'/);
   assert.match(html, /requestAnimationFrame\(\(\)=>\{feedScrollQueued=false/);
-  assert.match(html, /if\(!entry\.isIntersecting\)\{\s*pauseCard\(card\)/);
+  assert.match(html, /if\(!entry\.isIntersecting\)\{\s*(?:if\([^\n]+\)\s*)?pauseCard\(card\)/);
   assert.match(html, /video\.dataset\.src=card\.dataset\.mediaUrl/);
 });
 
@@ -912,7 +912,7 @@ test('guest fallback renders fast public sources before slower catalogue discove
   assert.match(html, /quickSources=\[\s*loadOpenverseVideos\(1\),\s*loadPeerTubeVideos\(1\)\s*\]/);
   assert.match(html, /quickSources\.forEach\(\(request,index\)=>request\.then\(batch=>/);
   assert.match(html, /await Promise\.allSettled\(quickSources\)/);
-  assert.match(html, /loadOpenArchiveVideos\(1\)\.then\(batch=>/);
+  assert.match(html, /loadOpenArchiveVideos\(1,appendDiscoveredVideos\)\.then\(batch=>/);
   assert.match(html, /if\(!queryOverride&&page<=openversePage\)return \[\]/);
   assert.match(html, /if\(peertubeLoading\|\|\(!searchTerm&&page<=peertubePage\)/);
 });
