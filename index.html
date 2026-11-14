@@ -145,8 +145,8 @@ function activateVideoObserver(){
     else if(!active&&frame.getAttribute('src'))controlYoutubeFrame(frame,'pauseVideo');
    }
    if(!entry.isIntersecting){
-    if(video&&activeVideoElement===video)activeVideoElement=null;
     pauseCard(card);
+    if(video&&activeVideoElement===video)activeVideoElement=null;
     if(video&&video.getAttribute('src')){video.removeAttribute('src');video.dataset.src=card.dataset.mediaUrl||'';video.preload='none';video.load()}
     if(frame&&frame.getAttribute('src')){frame.dataset.src=frame.src;frame.removeAttribute('src')}
    }
