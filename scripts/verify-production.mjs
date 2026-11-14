@@ -78,6 +78,15 @@ for (const [label, token] of [
   ['Data saver mode', 'dataSaver']
 ]) check(label, application.includes(token));
 
+check('Public video catalogues stream each completed source batch without waiting for every provider',
+  html.includes('function appendDiscoveredVideos(batch)') &&
+  html.includes('async function loadOpenArchiveVideos(page=1,onBatch=null)') &&
+  html.includes('loadWikimediaVideos(page).then(emit)') &&
+  html.includes('emit(entries.filter(Boolean))'));
+check('Sound control targets the active visible native video, not the first feed card',
+  html.includes('activeVideoElement=video') &&
+  html.includes('const video=activeVideoElement?.isConnected?activeVideoElement:null'));
+
 check('Optional Focus mode advances supported direct video only on a real ended event',
   html.includes("vybora:focus-mode:v1") && html.includes("feed.addEventListener('ended'") && html.includes("video.loop=!focusMode"));
 check('Live event players are lazy-loaded and released by their visibility observer',
