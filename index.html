@@ -382,12 +382,14 @@ function setCurrentIntent(value){currentIntentTokens=[...new Set(watchTokens(val
 function intentScore(post){if(!currentIntentTokens.length)return 0;const words=watchTokens([post.body,post.title,post.description,post.username,post.name,post.handle,post.creator].filter(Boolean).join(' '));const matches=currentIntentTokens.filter(token=>words.includes(token)).length;return Math.min(3,matches*1.15)}
 function feedCreatorKey(post){return String(post.author_id||post.username||post.creator||post.handle||post.external_video_id||post.id||'unknown')}function diversifyFeedItems(ranked){const remaining=[...ranked],output=[];while(remaining.length){const recent=new Set(output.slice(-2).map(feedCreatorKey));let index=remaining.findIndex(post=>!recent.has(feedCreatorKey(post)));if(index<0)index=0;output.push(remaining.splice(index,1)[0])}return output}function rankFeedItems(items){const now=Date.now(),interests=readWatchInterests(),hiddenPosts=new Set((Array.isArray(interests.hiddenPosts)?interests.hiddenPosts:[]).map(String)),avoidCreators=interests.avoidCreators||{},avoidTopics=interests.avoidTopics||{};const ranked=items.filter(p=>!hiddenPosts.has(String(p.id))).map((p,index)=>{const ageHours=Math.max(0,(now-Date.parse(p.created_at||new Date(now).toISOString()))/3600000);const freshness=Math.max(0,2.5-Math.log2(ageHours+1)*0.45);const likes=Math.log2(Number(p.likes||0)+1)*0.22;const views=Math.log2(Number(p.views_count||0)+1)*0.08;const affinity=p.following?4.5:0;const savedSignal=p.saved?0.35:0;const quality=likes+views;const personal=interestScore(p,interests);const intent=intentScore(p);const creator=feedCreatorKey(p);const avoidCreator=Math.min(6,(Number(avoidCreators[creator])||0)*1.8);const words=watchTokens(p.body||p.title||p.description||'');const avoidTopic=Math.min(4,words.reduce((sum,word)=>sum+(Number(avoidTopics[word])||0),0)*.25);const negative=avoidCreator+avoidTopic;return {p,score:affinity+freshness+quality+savedSignal+personal+intent-negative,index}}).sort((a,b)=>b.score-a.score||a.index-b.index).map(x=>x.p);return diversifyFeedItems(ranked)}
 function appendDiscoveredVideos(batch){
- if(activeTab!=='Watch'||!Array.isArray(batch)||!batch.length)return 0;
+ if(!Array.isArray(batch)||!batch.length)return 0;
  const known=new Set(allPosts.map(post=>String(post.id)));
  const fresh=rankFeedItems(batch).filter(post=>post?.id&&!known.has(String(post.id)));
  if(!fresh.length)return 0;
+ allPosts=allPosts.concat(fresh);
+ if(activeTab!=='Watch')return fresh.length;
  const firstIndex=feed.querySelectorAll('.video-card').length;
- allPosts=allPosts.concat(fresh);posts=posts.concat(fresh);
+ posts=posts.concat(fresh);
  if(feed.querySelector('.feed-empty-state'))render(posts);
  else{
   feed.insertAdjacentHTML('beforeend',fresh.map((post,index)=>videoCard(post,firstIndex+index)).join(''));
