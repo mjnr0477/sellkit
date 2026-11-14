@@ -160,6 +160,10 @@ test('feed uses touch-friendly smooth scrolling and avoids forced stop on every 
   assert.match(html, /\.video-card\{[^}]*scroll-snap-stop:normal/);
 });
 
+test('progressive catalogue results remain available when a viewer switches tabs', () => {
+  assert.match(html, /allPosts=allPosts\.concat\(fresh\);\s*if\(activeTab!=='Watch'\)return fresh\.length/);
+});
+
 test('external video discovery streams from live sources without reading the persisted video catalogue', () => {
   const feedSource = html.slice(html.indexOf('async function loadFeed()'), html.indexOf('async function ensureProfile()'));
   const searchSource = html.slice(html.indexOf('async function searchVideos(query)'), html.indexOf("$('searchSubmit').addEventListener"));
