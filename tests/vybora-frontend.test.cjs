@@ -477,6 +477,16 @@ test('content reports prevent duplicate submissions, validate state, recover fro
 });
 
 
+test('closing the live dialog always cancels startup and releases camera, microphone, and live resources', () => {
+  assert.match(socialSource, /liveStarting=false,liveStartCancelled=false,liveStartPendingParticipant=false/);
+  assert.match(socialSource, /if\(liveStarting\|\|live\)return;liveStarting=true;liveStartCancelled=false/);
+  assert.match(socialSource, /if\(liveStartCancelled\|\|!\$\('liveBackdrop'\)\?\.classList\.contains\('open'\)\)\{s\.getTracks\(\)\.forEach\(t=>t\.stop\(\)\);return\}/);
+  assert.match(socialSource, /liveStartPendingParticipant=true;const \{error:j\}=await sb\.from\('vybora_live_participants'\)/);
+  assert.match(socialSource, /if\(b\.dataset\.close==='liveBackdrop'\)\{liveStartCancelled=true;if\(stream\)stream\.getTracks\(\)\.forEach\(t=>t\.stop\(\)\);if\(live&&!liveStartPendingParticipant\)leaveLive\(\)\}/);
+  assert.match(socialSource, /async function leaveLive\(\)\{stopLiveHeartbeat\(\)/);
+  assert.match(socialSource, /if\(liveStartCancelled\|\|live\?\.id!==x\.id\)return;startLiveHeartbeat\(\)/);
+});
+
 test('live WebRTC buffers early ICE candidates until remote descriptions are ready', () => {
   const social = fs.readFileSync(new URL('../social-features.js', 'file://' + __filename), 'utf8');
   assert.match(social, /pendingIce=new Map\(\)/);
