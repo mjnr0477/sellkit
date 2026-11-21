@@ -20,6 +20,8 @@ const liveChatMigration = fs.readFileSync(new URL('../supabase/migrations/202611
 const liveCleanupGraceMigration = fs.readFileSync(new URL('../supabase/migrations/20261103094000_vybora_live_cleanup_grace.sql', 'file://' + __filename), 'utf8');
 const liveCapacityMigration = fs.readFileSync(new URL('../supabase/migrations/20261103093000_vybora_live_direct_viewer_cap.sql', 'file://' + __filename), 'utf8');
 const videoLimitMigration = fs.readFileSync(new URL('../supabase/migrations/20261121073539_vybora_serialize_video_limit.sql', 'file://' + __filename), 'utf8');
+const legacyExternalAccessMigration = fs.readFileSync(new URL('../supabase/migrations/20261121074057_vybora_legacy_external_table_access_hardening.sql', 'file://' + __filename), 'utf8');
+const uploadQuotaMigration = fs.readFileSync(new URL('../supabase/migrations/20261121074252_vybora_serialize_storage_upload_quota.sql', 'file://' + __filename), 'utf8');
 const cleanupFunction = fs.readFileSync(new URL('../supabase/functions/vybora-cleanup-expired-videos/index.ts', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and keeps the steering feed free of forced snapping', () => {
@@ -68,6 +70,32 @@ test('frontend uses the canonical production host for auth callbacks and public 
   assert.match(html, /redirectTo:'https:\/\/vybora-social-live-8yyn\.onrender\.com\/'/);
   assert.doesNotMatch(html, /location\.origin\+location\.pathname/);
   assert.doesNotMatch(html, /service_role|sb_secret_/);
+});
+
+test('VYBORA storage quota checks serialize concurrent uploads', () => {
+  const lockIndex = uploadQuotaMigration.indexOf('pg_advisory_xact_lock');
+  const totalIndex = uploadQuotaMigration.indexOf('into total_bytes');
+  const userCountIndex = uploadQuotaMigration.indexOf('into recent_user_uploads');
+  assert.ok(lockIndex >= 0 && totalIndex > lockIndex && userCountIndex > lockIndex,
+    'the global transaction lock must be acquired before checking either quota');
+  assert.match(uploadQuotaMigration, /language plpgsql[\s\S]*volatile[\s\S]*security definer/i);
+  assert.match(uploadQuotaMigration, /total_bytes < 400 \* 1024 \* 1024/);
+  assert.match(uploadQuotaMigration, /recent_user_uploads < 3/);
+  assert.match(uploadQuotaMigration, /if \(select auth\.uid\(\)\) is null then[\s\S]*return false/i);
+});
+
+test('unused legacy external-video tables are inaccessible to client roles', () => {
+  assert.match(legacyExternalAccessMigration, /revoke all privileges on table[\s\S]*from public, anon, authenticated/i);
+  for (const table of [
+    'vybora_external_video_bookmarks',
+    'vybora_external_video_comments',
+    'vybora_external_video_reactions',
+    'vybora_external_video_stats',
+    'vybora_external_videos'
+  ]) {
+    assert.ok(legacyExternalAccessMigration.includes('public.' + table), table + ' must be covered by the access-hardening migration');
+    assert.ok(!html.includes(table) && !socialSource.includes(table), table + ' must remain unused by the client');
+  }
 });
 
 test('daily video cap is safe against simultaneous publishes by the same account', () => {
