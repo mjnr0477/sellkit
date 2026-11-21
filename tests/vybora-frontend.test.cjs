@@ -484,6 +484,13 @@ test('closing the live dialog always cancels startup and releases camera, microp
   assert.match(socialSource, /liveStartPendingParticipant=true;const \{error:j\}=await sb\.from\('vybora_live_participants'\)/);
   assert.match(socialSource, /if\(b\.dataset\.close==='liveBackdrop'\)\{liveStartCancelled=true;if\(stream\)stream\.getTracks\(\)\.forEach\(t=>t\.stop\(\)\);if\(live&&!liveStartPendingParticipant\)leaveLive\(\)\}/);
   assert.match(socialSource, /async function leaveLive\(\)\{stopLiveHeartbeat\(\)/);
+  const leaveStart = socialSource.indexOf('async function leaveLive()');
+  const leaveEnd = socialSource.indexOf('async function openModeration()', leaveStart);
+  const leaveBody = socialSource.slice(leaveStart, leaveEnd);
+  assert.ok(leaveBody.indexOf("localStream.getTracks().forEach(t=>t.stop())") < leaveBody.indexOf('await '),
+    'camera and microphone must stop before network cleanup starts');
+  assert.ok(leaveBody.indexOf('peers.forEach(p=>p.close())') < leaveBody.indexOf('await '),
+    'peer connections must close before network cleanup starts');
   assert.match(socialSource, /if\(liveStartCancelled\|\|live\?\.id!==x\.id\)return;startLiveHeartbeat\(\)/);
 });
 
