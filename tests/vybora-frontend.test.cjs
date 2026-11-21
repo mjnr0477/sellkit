@@ -75,6 +75,8 @@ test('video upload uses VYBORA storage and database records', () => {
   assert.match(html, /media_path:path/);
   assert.match(html, /expires_at:new Date\(Date\.now\(\)\+24\*60\*60\*1000\)/);
   assert.match(html, /file\.size>25\*1024\*1024/);
+  assert.ok(html.includes("$('fileHint').textContent='Maximum 25 MB · maximum 3 videos per 24 hours · posts expire after 24 hours.'"));
+  assert.doesNotMatch(html, /Maximum 10 MB/);
   assert.match(html, /async function getSupportedVideoMimeType\(file\)/);
   assert.match(html, /header\[0\]===0x1a&&header\[1\]===0x45&&header\[2\]===0xdf&&header\[3\]===0xa3/);
   assert.match(html, /String\.fromCharCode\(\.\.\.header\.slice\(4,8\)\)==='ftyp'/);
