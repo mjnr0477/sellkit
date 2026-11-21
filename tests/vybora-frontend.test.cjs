@@ -477,6 +477,23 @@ test('content reports prevent duplicate submissions, validate state, recover fro
 });
 
 
+test('closing the live dialog always cancels startup and releases camera, microphone, and live resources', () => {
+  assert.match(socialSource, /liveStarting=false,liveStartCancelled=false,liveStartPendingParticipant=false/);
+  assert.match(socialSource, /if\(liveStarting\|\|live\)return;liveStarting=true;liveStartCancelled=false/);
+  assert.match(socialSource, /if\(liveStartCancelled\|\|!\$\('liveBackdrop'\)\?\.classList\.contains\('open'\)\)\{s\.getTracks\(\)\.forEach\(t=>t\.stop\(\)\);return\}/);
+  assert.match(socialSource, /liveStartPendingParticipant=true;const \{error:j\}=await sb\.from\('vybora_live_participants'\)/);
+  assert.match(socialSource, /if\(b\.dataset\.close==='liveBackdrop'\)\{liveStartCancelled=true;if\(stream\)stream\.getTracks\(\)\.forEach\(t=>t\.stop\(\)\);if\(live&&!liveStartPendingParticipant\)leaveLive\(\)\}/);
+  assert.match(socialSource, /async function leaveLive\(\)\{stopLiveHeartbeat\(\)/);
+  const leaveStart = socialSource.indexOf('async function leaveLive()');
+  const leaveEnd = socialSource.indexOf('async function openModeration()', leaveStart);
+  const leaveBody = socialSource.slice(leaveStart, leaveEnd);
+  assert.ok(leaveBody.indexOf("localStream.getTracks().forEach(t=>t.stop())") < leaveBody.indexOf('await '),
+    'camera and microphone must stop before network cleanup starts');
+  assert.ok(leaveBody.indexOf('peers.forEach(p=>p.close())') < leaveBody.indexOf('await '),
+    'peer connections must close before network cleanup starts');
+  assert.match(socialSource, /if\(liveStartCancelled\|\|live\?\.id!==x\.id\)return;startLiveHeartbeat\(\)/);
+});
+
 test('live WebRTC buffers early ICE candidates until remote descriptions are ready', () => {
   const social = fs.readFileSync(new URL('../social-features.js', 'file://' + __filename), 'utf8');
   assert.match(social, /pendingIce=new Map\(\)/);
@@ -779,7 +796,7 @@ test('live signaling waits for realtime readiness and reconciles viewers that jo
   assert.match(signaling, /if\(host\)\{const \{data,error\}=await sb\.from\('vybora_live_participants'\)\.select\('user_id'\)/);
   assert.match(signaling, /for\(const participant of data\|\|\[\]\)await offerViewer\(participant\.user_id\)/);
   assert.match(socialSource, /liveSay\('Joining live…'\);try\{await liveRealtime\(\)\}/);
-  assert.match(socialSource, /liveSay\('You are live\. Keep this screen open\.'\);try\{await liveRealtime\(\);startLiveHeartbeat\(\)\}/);
+  assert.match(socialSource, /liveSay\('You are live\. Keep this screen open\.'\);try\{await liveRealtime\(\);if\(liveStartCancelled\|\|live\?\.id!==x\.id\)return;startLiveHeartbeat\(\)\}/);
   assert.match(socialSource, /async function offerViewer\(id\)[\s\S]*?pc\.close\(\);peers\.delete\(id\)/);
 });
 
@@ -799,7 +816,7 @@ test('live host heartbeats keep active rooms alive and scheduled cleanup ends ab
   assert.match(socialSource, /async function touchLiveHeartbeat\(\)/);
   assert.match(socialSource, /sb\.from\('vybora_live_sessions'\)\.update\(\{heartbeat_at:new Date\(\)\.toISOString\(\)\}\)/);
   assert.match(socialSource, /setInterval\(\(\)=>touchLiveHeartbeat\(\)\.catch\(error=>console\.warn\('Live heartbeat update failed',error\)\),30000\)/);
-  assert.match(socialSource, /try\{await liveRealtime\(\);startLiveHeartbeat\(\)\}/);
+  assert.match(socialSource, /try\{await liveRealtime\(\);if\(liveStartCancelled\|\|live\?\.id!==x\.id\)return;startLiveHeartbeat\(\)\}/);
   assert.match(socialSource, /async function leaveLive\(\)\{stopLiveHeartbeat\(\)/);
   assert.match(cleanupFunction, /vybora_cleanup_stale_live_sessions/);
   assert.match(cleanupFunction, /Date\.now\(\) - 30 \* 60 \* 1000/);
