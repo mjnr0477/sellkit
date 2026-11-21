@@ -19,6 +19,7 @@ const liveHeartbeatHardeningMigration = fs.readFileSync(new URL('../supabase/mig
 const liveChatMigration = fs.readFileSync(new URL('../supabase/migrations/20261103092000_vybora_live_chat_viewer_counts.sql', 'file://' + __filename), 'utf8');
 const liveCleanupGraceMigration = fs.readFileSync(new URL('../supabase/migrations/20261103094000_vybora_live_cleanup_grace.sql', 'file://' + __filename), 'utf8');
 const liveCapacityMigration = fs.readFileSync(new URL('../supabase/migrations/20261103093000_vybora_live_direct_viewer_cap.sql', 'file://' + __filename), 'utf8');
+const videoLimitMigration = fs.readFileSync(new URL('../supabase/migrations/20261121073539_vybora_serialize_video_limit.sql', 'file://' + __filename), 'utf8');
 const cleanupFunction = fs.readFileSync(new URL('../supabase/functions/vybora-cleanup-expired-videos/index.ts', 'file://' + __filename), 'utf8');
 
 test('VYBORA page is mobile-ready and keeps the steering feed free of forced snapping', () => {
@@ -67,6 +68,16 @@ test('frontend uses the canonical production host for auth callbacks and public 
   assert.match(html, /redirectTo:'https:\/\/vybora-social-live-8yyn\.onrender\.com\/'/);
   assert.doesNotMatch(html, /location\.origin\+location\.pathname/);
   assert.doesNotMatch(html, /service_role|sb_secret_/);
+});
+
+test('daily video cap is safe against simultaneous publishes by the same account', () => {
+  const lockIndex = videoLimitMigration.indexOf('pg_advisory_xact_lock');
+  const countIndex = videoLimitMigration.indexOf('select count(*)::integer');
+  assert.ok(lockIndex >= 0 && countIndex > lockIndex, 'the per-author transaction lock must be acquired before counting recent videos');
+  assert.match(videoLimitMigration, /hashtextextended\(new\.author_id::text,\s*0\)/);
+  assert.match(videoLimitMigration, /p\.created_at > now\(\) - interval '24 hours'/);
+  assert.match(videoLimitMigration, /maximum three videos in any 24-hour period/);
+  assert.match(videoLimitMigration, /new\.expires_at := now\(\) \+ interval '24 hours'/);
 });
 
 test('video upload uses VYBORA storage and database records', () => {
