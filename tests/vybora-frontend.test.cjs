@@ -789,7 +789,7 @@ test('live signaling waits for realtime readiness and reconciles viewers that jo
   assert.match(signaling, /if\(host\)\{const \{data,error\}=await sb\.from\('vybora_live_participants'\)\.select\('user_id'\)/);
   assert.match(signaling, /for\(const participant of data\|\|\[\]\)await offerViewer\(participant\.user_id\)/);
   assert.match(socialSource, /liveSay\('Joining live…'\);try\{await liveRealtime\(\)\}/);
-  assert.match(socialSource, /liveSay\('You are live\. Keep this screen open\.'\);try\{await liveRealtime\(\);startLiveHeartbeat\(\)\}/);
+  assert.match(socialSource, /liveSay\('You are live\. Keep this screen open\.'\);try\{await liveRealtime\(\);if\(liveStartCancelled\|\|live\?\.id!==x\.id\)return;startLiveHeartbeat\(\)\}/);
   assert.match(socialSource, /async function offerViewer\(id\)[\s\S]*?pc\.close\(\);peers\.delete\(id\)/);
 });
 
@@ -809,7 +809,7 @@ test('live host heartbeats keep active rooms alive and scheduled cleanup ends ab
   assert.match(socialSource, /async function touchLiveHeartbeat\(\)/);
   assert.match(socialSource, /sb\.from\('vybora_live_sessions'\)\.update\(\{heartbeat_at:new Date\(\)\.toISOString\(\)\}\)/);
   assert.match(socialSource, /setInterval\(\(\)=>touchLiveHeartbeat\(\)\.catch\(error=>console\.warn\('Live heartbeat update failed',error\)\),30000\)/);
-  assert.match(socialSource, /try\{await liveRealtime\(\);startLiveHeartbeat\(\)\}/);
+  assert.match(socialSource, /try\{await liveRealtime\(\);if\(liveStartCancelled\|\|live\?\.id!==x\.id\)return;startLiveHeartbeat\(\)\}/);
   assert.match(socialSource, /async function leaveLive\(\)\{stopLiveHeartbeat\(\)/);
   assert.match(cleanupFunction, /vybora_cleanup_stale_live_sessions/);
   assert.match(cleanupFunction, /Date\.now\(\) - 30 \* 60 \* 1000/);
