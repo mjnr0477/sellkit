@@ -848,6 +848,14 @@ test('live rooms expose participant-only chat and database-maintained viewer cou
 });
 
 
+test('live playback exposes manual controls and clear network connection states', () => {
+  assert.match(html, /<video id="liveRemote" class="live-video" autoplay playsinline controls>/);
+  assert.match(socialSource, /pc\.onconnectionstatechange=/);
+  assert.match(socialSource, /pc\.connectionState==='failed'[\s\S]*?Try another Wi-Fi or mobile network/);
+  assert.match(socialSource, /remote\.controls=true;remote\.srcObject=e\.streams\[0\]/);
+  assert.match(socialSource, /const playback=remote\.play\(\);if\(playback\?\.catch\)playback\.catch\(\(\)=>liveSay\('Connected\. Tap play on the video to start watching\.'\)\)/);
+});
+
 test('direct live video uses a mobile data-saving capture and per-viewer bitrate cap', () => {
   assert.match(socialSource, /width:\{ideal:640\},height:\{ideal:360\},frameRate:\{ideal:24,max:24\}/);
   assert.match(socialSource, /noiseSuppression:true/);
