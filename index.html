@@ -42,7 +42,7 @@
 <nav class="bottom" aria-label="Main navigation">
   <button class="nav-btn active" data-tab="Watch"><span class="ico">▶</span><span>Watch</span></button>
   <button class="nav-btn" data-tab="Discover"><span class="ico">⌕</span><span>Discover</span></button>
-  <a class="nav-btn books-nav-link" href="https://dream-ai-live.onrender.com/books.html" target="_blank" rel="noopener noreferrer" aria-label="Browse books by Mathias Simiyu"><span class="ico" aria-hidden="true">▤</span><span>Books</span></a>
+  <a class="nav-btn books-nav-link" href="https://dream-ai-live.onrender.com/books.html" aria-label="Browse books and choose a bookstore"><span class="ico" aria-hidden="true">▤</span><span>Books</span></a>
   <button class="nav-btn" data-tab="Live"><span class="ico">●</span><span>Live</span></button>
   <button class="nav-btn create" id="createBtn"><span class="ico">＋</span><span>Create</span></button>
   <button class="nav-btn" data-tab="Following"><span class="ico">◎</span><span>Following</span></button>
@@ -610,6 +610,10 @@ render([]); // Show a neutral loading state while public sources are queried.
   .video-card{width:100%;min-width:0;height:100%;min-height:100%;}
   .side{display:none!important;}
 }
+</style>
+<style id="vybora-books-nav-layout">
+@media(max-width:850px){.bottom{justify-content:space-between;gap:3px;padding-left:5px;padding-right:5px}.bottom .nav-btn{flex:1;min-width:0;font-size:9px}.bottom .nav-btn .ico{font-size:18px}.bottom .nav-btn.create .ico{width:32px;height:30px}}
+@media(max-width:650px){.bottom:has([data-tab="Live"]){gap:2px}.bottom:has([data-tab="Live"]) .nav-btn{flex:1;min-width:0;font-size:8.5px}}
 </style>
 </body>
 </html>
